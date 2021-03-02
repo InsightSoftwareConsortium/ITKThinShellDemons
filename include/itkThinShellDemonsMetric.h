@@ -123,6 +123,9 @@ private:
   typedef itk::MapContainer<int, InputPointType> TargetMapType;
   TargetMapType targetMap;
 
+  typedef itk::MapContainer<int, vtkIdList> NeighborhodMapType;
+  NeighborhodMapType neighborMap;
+
   vtkSmartPointer<vtkPolyData> movingVTKMesh; // a VTKPolyData copy of the moving mesh
 
   double m_StretchWeight;

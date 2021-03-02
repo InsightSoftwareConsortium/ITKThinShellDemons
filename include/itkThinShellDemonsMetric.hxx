@@ -77,7 +77,39 @@ throw ( ExceptionObject )
   // using Euclidean + Curvature distance
   this->targetMap.Initialize();
   this->ComputeTargetPosition();
+
+  this->ComputeNeighbors();
+
 }
+
+template< typename TFixedMesh, typename TMovingMesh >
+void
+ThinShellDemonsMetric< TFixedMesh, TMovingMesh >
+::ComputeNeighbors() const
+{
+  this->neighborMap.Initialize();
+  for(int id=0; id<movingVTKMesh->GetNumberOfPoints(); id++)
+    {
+    //Collect all neighbors
+    vtkSmartPointer<vtkIdList> cellIdList = vtkSmartPointer<vtkIdList>::New();
+    movingVTKMesh->GetPointCells(id, cellIdList);
+    vtkSmartPointer<vtkIdList> pointIdList = vtkSmartPointer<vtkIdList>::New();
+    for(int i = 0; i < cellIdList->GetNumberOfIds(); i++)
+      {
+      vtkSmartPointer<vtkIdList> pointIdListTmp = vtkSmartPointer<vtkIdList>::New();
+      movingVTKMesh->GetCellPoints(cellIdList->GetId(i), pointIdListTmp);
+      for(int j=0; j < pointIdListTmp->GetNumberOfIds(); j++)
+        {
+        if(pointIdListTmp->GetId(j) != id)
+          {
+          pointIdList->InsertUniqueId (pointIdListTmp->GetId(j) );
+          }
+        }
+      }
+    neighborMap[i] = pointIdList;
+    }
+}
+
 
 template< typename TFixedMesh, typename TMovingMesh >
 void
@@ -156,30 +188,15 @@ ThinShellDemonsMetric< TFixedMesh, TMovingMesh >
   stretch.Fill(0);
   bend.Fill(0);
 
-  vtkSmartPointer<vtkIdList> cellIdList =
-    vtkSmartPointer<vtkIdList>::New();
-  movingVTKMesh->GetPointCells(identifier, cellIdList);
-
   //Collect all neighbors
-  vtkSmartPointer<vtkIdList> pointIdList =
-    vtkSmartPointer<vtkIdList>::New();
+  vtkSmartPointer<vtkIdList> pointIdList = neighborMap[identifier];
+  int degree = pointIdList->GetNumberOfIds();
   InputVectorType v;
   v[0] = parameters[identifier*3];
   v[1] = parameters[identifier*3+1];
   v[2] = parameters[identifier*3+2];
-
-  for(int i = 0; i < cellIdList->GetNumberOfIds(); i++)
-    {
-    vtkSmartPointer<vtkIdList> pointIdListTmp = vtkSmartPointer<vtkIdList>::New();
-    movingVTKMesh->GetCellPoints(cellIdList->GetId(i), pointIdListTmp);
-    for(int j=0; j < pointIdListTmp->GetNumberOfIds(); j++)
-      {
-      if(pointIdListTmp->GetId(j) != identifier)
-        {
-        pointIdList->InsertUniqueId (pointIdListTmp->GetId(j) );
-        }
-      }
-    }
+  InputVectorType bEnergy;
+  bEnergy.Fill(0);
   for(int i=0; i < pointIdList->GetNumberOfIds(); i++)
     {
     int neighborIdx = pointIdList->GetId(i);
@@ -192,21 +209,17 @@ ThinShellDemonsMetric< TFixedMesh, TMovingMesh >
     // times 4 because edge appears two times in the energy function
     // and the derivative has another factor of 2 from the squared norm
     // TODO: should be corrected for different number of neighbors
-    stretch[0] += 4 * dx[0] / pointIdList->GetNumberOfIds();
-    stretch[1] += 4 * dx[1] / pointIdList->GetNumberOfIds();
-    stretch[2] += 4 * dx[2] / pointIdList->GetNumberOfIds();
-
-    bend += v - vn;
+    int nDegree =  neighborMap[neighborIdx]->GetNumberOfIds();
+    stretch += 4 * dx/ (degree+nDegree);
+    bEnergy += dx
+    bend += 4 * dx / (degree+nDegree);
     }
 
-  bendEnergy = bend.GetSquaredNorm() ;
+  bendEnergy = bEnergy.GetSquaredNorm() / degree;
 
   // times 4 because edge appears two times in the energy function
   // and the derivative has another factor of 2 from the squared norm
   // TODO: should be corrected for different number of neighbors
-  bend[0] *= 4 / pointIdList->GetNumberOfIds();
-  bend[1] *= 4 / pointIdList->GetNumberOfIds();
-  bend[2] *= 4 / pointIdList->GetNumberOfIds();
 
   stretchEnergy /= pointIdList->GetNumberOfIds();
   bendEnergy /= pointIdList->GetNumberOfIds();
