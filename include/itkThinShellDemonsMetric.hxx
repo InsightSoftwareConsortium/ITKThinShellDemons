@@ -19,7 +19,6 @@
 #define itkThinShellDemonsMetric_hxx
 
 #include "itkThinShellDemonsMetric.h"
-#include "itkImageRegionConstIteratorWithIndex.h"
 
 #include <vtkCurvatures.h>
 #include <vtkPolyData.h>
@@ -74,15 +73,14 @@ throw ( ExceptionObject )
     }
 
   //generate a VTK copy of the same mesh
-  itkMeshTovtkPolyData* dataTransfer = new itkMeshTovtkPolyData();
+  itkMeshTovtkPolyData<double>::Pointer dataTransfer =
+    itkMeshTovtkPolyData<double>::New();
   dataTransfer->SetInput(this->m_MovingMesh);
   this->movingVTKMesh = dataTransfer->GetOutput();
-  delete dataTransfer;
 
-  dataTransfer = new itkMeshTovtkPolyData();
+  dataTransfer = itkMeshTovtkPolyData<double>::New();
   dataTransfer->SetInput(this->m_FixedMesh);
   this->fixedVTKMesh = dataTransfer->GetOutput();
-  delete dataTransfer;
 
   vtkSmartPointer<vtkCurvatures> curvaturesFilter =
     vtkSmartPointer<vtkCurvatures>::New();

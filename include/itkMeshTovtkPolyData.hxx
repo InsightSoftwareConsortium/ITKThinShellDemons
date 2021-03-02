@@ -21,20 +21,12 @@
 #include <iostream>
 #include "itkMeshTovtkPolyData.h"
 
-#ifndef vtkDoubleType
-#define vtkDoubleType double
-#endif
-
-#ifndef vtkFloatingPointType
-# define vtkFloatingPointType vtkFloatingPointType
-typedef float vtkFloatingPointType;
-#endif
 namespace itk{
 
-itkMeshTovtkPolyData
+template<typename T>
+itkMeshTovtkPolyData<T>
 ::itkMeshTovtkPolyData()
 {
-
   m_itkTriangleMesh = TriangleMeshType::New();
   m_Points = vtkPoints::New();
   m_PolyData = vtkPolyData::New();
@@ -42,29 +34,33 @@ itkMeshTovtkPolyData
 }
 
 
-itkMeshTovtkPolyData
+template<typename T>
+itkMeshTovtkPolyData<T>
 ::~itkMeshTovtkPolyData()
 {
 
 }
 
+template<typename T>
 void
-itkMeshTovtkPolyData
-::SetInput(TriangleMeshType::ConstPointer mesh)
+itkMeshTovtkPolyData<T>
+::SetInput(typename TriangleMeshType::ConstPointer mesh)
 {
   m_itkTriangleMesh = mesh;
   this->ConvertitkTovtk();
 }
 
+template<typename T>
 vtkPolyData *
-itkMeshTovtkPolyData
+itkMeshTovtkPolyData<T>
 ::GetOutput()
 {
   return m_PolyData;
 }
 
+template<typename T>
 void
-itkMeshTovtkPolyData
+itkMeshTovtkPolyData<T>
 ::ConvertitkTovtk()
 {
   int numPoints =  m_itkTriangleMesh->GetNumberOfPoints();

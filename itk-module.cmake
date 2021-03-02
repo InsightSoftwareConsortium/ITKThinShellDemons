@@ -18,6 +18,10 @@ itk_module(ThinShellDemons
 	  ITKMesh
 	  ITKRegistrationCommon
   	ITKVtkGlue
+    ITKMetricsv4
+    ITKRegistrationMethodsv4
+    ITKOptimizersv4
+    ITKOptimizers
   TEST_DEPENDS
     ITKTestKernel
     ITKMetaIO

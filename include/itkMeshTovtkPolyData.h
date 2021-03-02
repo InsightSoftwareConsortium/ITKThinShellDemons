@@ -36,13 +36,22 @@ namespace itk
  * \sa
  * \ingroup ThinShellDemons
  */
-class itkMeshTovtkPolyData
+template<typename T>
+class ITK_TEMPLATE_EXPORT itkMeshTovtkPolyData : public LightObject
 {
 
  public:
+  /** Standard class typedefs. */
+  typedef itkMeshTovtkPolyData       Self;
+  typedef LightObject                Superclass;
+  typedef SmartPointer< Self >       Pointer;
+  typedef SmartPointer< const Self > ConstPointer;
 
-  itkMeshTovtkPolyData( void );
-  virtual ~itkMeshTovtkPolyData( void );
+  /** Method for creation through the object factory. */
+  itkNewMacro(Self);
+
+  /** Run-time type information (and related methods). */
+  itkTypeMacro(itkMeshTovtkPolyData, LightObject);
 
   typedef itk::DefaultDynamicMeshTraits<double, 3, 3,double,double> TriangleMeshTraits;
   typedef itk::Mesh<double,3>                                       TriangleMeshType;
@@ -59,8 +68,12 @@ class itkMeshTovtkPolyData
   The SetInput method provides pointer to the vtkPolyData
   */
   void SetInput(TriangleMeshType::ConstPointer mesh);
-  vtkPolyData * GetOutput();
+  vtkPolyData *GetOutput();
   void ConvertitkTovtk();
+
+protected:
+  itkMeshTovtkPolyData();
+  virtual ~itkMeshTovtkPolyData();
 
   TriangleMeshType::ConstPointer m_itkTriangleMesh;
 
@@ -68,10 +81,12 @@ class itkMeshTovtkPolyData
   vtkPolyData * m_PolyData;
   vtkCellArray * m_Polys;
 
+private:
+  ITK_DISALLOW_COPY_AND_ASSIGN(itkMeshTovtkPolyData);
 };
 }
 #ifndef ITK_MANUAL_INSTANTIATION
-#include "itkMeshTovtkPolyData.hxx"
+  #include "itkMeshTovtkPolyData.hxx"
 #endif
 
 #endif
