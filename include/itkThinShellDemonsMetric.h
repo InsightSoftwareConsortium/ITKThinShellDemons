@@ -88,6 +88,8 @@ public:
   typedef typename Superclass::InputPointType InputPointType;
   typedef typename InputPointType::VectorType InputVectorType;
 
+  typedef typename Superclass::OutputPointType OutputPointType;
+
 
   /** Get the derivatives of the match measure. */
   void GetDerivative(const TransformParametersType & parameters,
@@ -101,15 +103,23 @@ public:
                              MeasureType & Value,
                              DerivativeType & Derivative) const ITK_OVERRIDE;
 
-  /** Initialize the Metric by computing a target position for each vertex in the fixed mesh using
-      Euclidean + Curvature distance */
+  /** Initialize the Metric by computing a target position
+   * for each vertex in the fixed mesh using
+   * Euclidean + Curvature distance */
   virtual void Initialize(void) throw ( ExceptionObject ) ITK_OVERRIDE;
 
   /** Set/Get algorithm parameters **/
-  void SetStretchWeight(double weight){m_StretchWeight = weight;}
-  double getStretchWeight(){return m_StretchWeight;}
-  void SetBendWeight(double weight){m_BendWeight = weight;}
-  double getBendWeight(){return m_BendWeight;}
+  itkSetMacro(StretchWeight, double);
+  itkGetMacro(StretchWeight, double);
+
+  itkSetMacro(BendWeight, double);
+  itkGetMacro(BendWeight, double);
+
+  itkSetMacro(GeometricFeatureWeight, double);
+  itkGetMacro(GeometricFeatureWeight, double);
+
+  //itkSetMacro(ConfidenceSigma, double);
+  //itkGetMacro(ConfidenceSigma, double);
 
 protected:
   ThinShellDemonsMetric();
@@ -123,13 +133,16 @@ private:
   typedef itk::MapContainer<int, InputPointType> TargetMapType;
   TargetMapType targetMap;
 
-  typedef itk::MapContainer<int, vtkIdList> NeighborhodMapType;
+  typedef itk::MapContainer<int, vtkSmartPointer<vtkIdList>> NeighborhodMapType;
   NeighborhodMapType neighborMap;
 
   vtkSmartPointer<vtkPolyData> movingVTKMesh; // a VTKPolyData copy of the moving mesh
+  vtkSmartPointer<vtkPolyData> fixedVTKMesh; // a VTKPolyData copy of the moving mesh
+  vtkSmartPointer<vtkPolyData> fixedCurvature; // a VTKPolyData copy of the moving mesh
 
   double m_StretchWeight;
   double m_BendWeight;
+  double m_GeometricFeatureWeight;
 
   void ComputeStretchAndBend(int identifier,
                              const TransformParametersType &parmaters,
@@ -138,6 +151,8 @@ private:
                              InputVectorType &stretch,
                              InputVectorType &bend) const;
   void ComputeTargetPosition() const;
+
+  void ComputeNeighbors();
 };
 } // end namespace itk
 

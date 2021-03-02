@@ -21,6 +21,10 @@
 #include "itkThinShellDemonsMetric.h"
 #include "itkImageRegionConstIteratorWithIndex.h"
 
+#include <vtkCurvatures.h>
+#include <vtkPolyData.h>
+#include <vtkPointData.h>
+
 #include <math.h>
 
 namespace itk
@@ -32,6 +36,7 @@ ThinShellDemonsMetric< TFixedMesh, TMovingMesh >
 {
   m_BendWeight = 1;
   m_StretchWeight = 1;
+  m_GeometricFeatureWeight = 50;
 }
 
 /** Initialize the metric */
@@ -72,6 +77,19 @@ throw ( ExceptionObject )
   itkMeshTovtkPolyData* dataTransfer = new itkMeshTovtkPolyData();
   dataTransfer->SetInput(this->m_MovingMesh);
   this->movingVTKMesh = dataTransfer->GetOutput();
+  delete dataTransfer;
+
+  dataTransfer = new itkMeshTovtkPolyData();
+  dataTransfer->SetInput(this->m_FixedMesh);
+  this->fixedVTKMesh = dataTransfer->GetOutput();
+  delete dataTransfer;
+
+  vtkSmartPointer<vtkCurvatures> curvaturesFilter =
+    vtkSmartPointer<vtkCurvatures>::New();
+  curvaturesFilter->SetInputData(fixedVTKMesh);
+  curvaturesFilter->SetCurvatureTypeToGaussian();
+  curvaturesFilter->Update();
+  fixedCurvature = curvaturesFilter->GetOutput();
 
   // Preprocessing: compute the target position of each vertex in the fixed mesh
   // using Euclidean + Curvature distance
@@ -85,7 +103,7 @@ throw ( ExceptionObject )
 template< typename TFixedMesh, typename TMovingMesh >
 void
 ThinShellDemonsMetric< TFixedMesh, TMovingMesh >
-::ComputeNeighbors() const
+::ComputeNeighbors()
 {
   this->neighborMap.Initialize();
   for(int id=0; id<movingVTKMesh->GetNumberOfPoints(); id++)
@@ -106,7 +124,7 @@ ThinShellDemonsMetric< TFixedMesh, TMovingMesh >
           }
         }
       }
-    neighborMap[i] = pointIdList;
+    neighborMap[id] = pointIdList;
     }
 }
 
@@ -117,49 +135,62 @@ ThinShellDemonsMetric< TFixedMesh, TMovingMesh >
 ::ComputeTargetPosition() const
 {
   std::cout << "Compute Target Position" << std::endl;
+
   FixedMeshConstPointer fixedMesh = this->GetFixedMesh();
-
-  if ( !fixedMesh )
-  {
-    itkExceptionMacro(<< "Fixed point set has not been assigned");
-  }
-
   MovingMeshConstPointer movingMesh = this->GetMovingMesh();
-
-  if ( !movingMesh )
-  {
-    itkExceptionMacro(<< "Moving point set has not been assigned");
-  }
-
   MovingPointIterator pointItr = movingMesh->GetPoints()->Begin();
   MovingPointIterator pointEnd = movingMesh->GetPoints()->End();
 
-    // In principal, this part should implement Euclidean + geometric feature similarity
-    // Currently, this is simply a closest point search
+  vtkPoints *pts = movingVTKMesh->GetPoints();
   int identifier = 0;
   while ( pointItr != pointEnd )
     {
     InputPointType inputPoint;
     inputPoint.CastFrom( pointItr.Value() );
-    typename Superclass::OutputPointType transformedPoint =
-      this->m_Transform->TransformPoint(inputPoint);
+    OutputPointType txPoint = this->m_Transform->TransformPoint(inputPoint);
+    pts->SetPoint(identifier, txPoint[0], txPoint[1], txPoint[2]);
+    identifier++;
+    ++pointItr;
+    }
+
+  vtkSmartPointer<vtkCurvatures> curvaturesFilter =
+    vtkSmartPointer<vtkCurvatures>::New();
+  curvaturesFilter->SetInputData(movingVTKMesh);
+  curvaturesFilter->SetCurvatureTypeToGaussian();
+  curvaturesFilter->Update();
+  vtkSmartPointer<vtkPolyData> movingCurvature = curvaturesFilter->GetOutput();
+
+  vtkSmartPointer<vtkDataArray> movingC = movingCurvature->GetPointData()->GetScalars();
+  vtkSmartPointer<vtkDataArray> fixedC = fixedCurvature->GetPointData()->GetScalars();
+  pointItr = movingMesh->GetPoints()->Begin();
+  pointEnd = movingMesh->GetPoints()->End();
+  identifier = 0;
+  while ( pointItr != pointEnd )
+    {
+    InputPointType inputPoint;
+    inputPoint.CastFrom( pointItr.Value() );
+    OutputPointType transformedPoint = this->m_Transform->TransformPoint(inputPoint);
     InputPointType targetPoint;
 
     double minimumDistance = NumericTraits< double >::max();
     FixedPointIterator pointItr2 = fixedMesh->GetPoints()->Begin();
     FixedPointIterator pointEnd2 = fixedMesh->GetPoints()->End();
-
+    int fixedIdentifier = 0;
     while ( pointItr2 != pointEnd2 )
       {
-      double dist = pointItr2.Value().SquaredEuclideanDistanceTo(transformedPoint);
-
-
+      double eDist = pointItr2.Value().SquaredEuclideanDistanceTo(transformedPoint);
+      double fDist = fixedC->GetTuple1(fixedIdentifier)- movingC->GetTuple1(identifier);
+      fDist *= fDist;
+      //std::cout << "eDist: " << eDist << std::endl;
+      //std::cout << "fDist: " << fDist << std::endl;
+      double dist = eDist + m_GeometricFeatureWeight * fDist;
       if ( dist < minimumDistance )
         {
         targetPoint.CastFrom( pointItr2.Value() );
         minimumDistance = dist;
         }
       pointItr2++;
+      fixedIdentifier++;
       }
     const_cast<TargetMapType*>(&targetMap)->SetElement(identifier, targetPoint);
 
@@ -189,7 +220,7 @@ ThinShellDemonsMetric< TFixedMesh, TMovingMesh >
   bend.Fill(0);
 
   //Collect all neighbors
-  vtkSmartPointer<vtkIdList> pointIdList = neighborMap[identifier];
+  const vtkSmartPointer<vtkIdList> &pointIdList = neighborMap.ElementAt(identifier);
   int degree = pointIdList->GetNumberOfIds();
   InputVectorType v;
   v[0] = parameters[identifier*3];
@@ -206,21 +237,21 @@ ThinShellDemonsMetric< TFixedMesh, TMovingMesh >
     vn[2] = parameters[neighborIdx*3+2];
     InputVectorType dx = v - vn;
     stretchEnergy += dx.GetSquaredNorm();
+    bEnergy += dx;
+
     // times 4 because edge appears two times in the energy function
     // and the derivative has another factor of 2 from the squared norm
-    // TODO: should be corrected for different number of neighbors
-    int nDegree =  neighborMap[neighborIdx]->GetNumberOfIds();
-    stretch += 4 * dx/ (degree+nDegree);
-    bEnergy += dx
-    bend += 4 * dx / (degree+nDegree);
+    // divided by the vertex degrees of current and nieghbor vertex
+    int nDegree =  neighborMap.ElementAt(neighborIdx)->GetNumberOfIds();
+    stretch[0] += 4 * dx[0] / (degree+nDegree);
+    stretch[1] += 4 * dx[1] / (degree+nDegree);
+    stretch[2] += 4 * dx[2] / (degree+nDegree);
+    bend[0] += 4 * dx[0] / (degree+nDegree);
+    bend[1] += 4 * dx[1] / (degree+nDegree);
+    bend[2] += 4 * dx[2] / (degree+nDegree);
     }
 
   bendEnergy = bEnergy.GetSquaredNorm() / degree;
-
-  // times 4 because edge appears two times in the energy function
-  // and the derivative has another factor of 2 from the squared norm
-  // TODO: should be corrected for different number of neighbors
-
   stretchEnergy /= pointIdList->GetNumberOfIds();
   bendEnergy /= pointIdList->GetNumberOfIds();
 }

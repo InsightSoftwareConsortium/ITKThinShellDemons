@@ -116,8 +116,10 @@ int itkThinShellDemonsTest( int args, char **argv)
   */
   typedef itk::ThinShellDemonsMetric<MeshType, MeshType> MetricType;
   MetricType::Pointer metric = MetricType::New();
-  metric->SetStretchWeight(4);
-  metric->SetBendWeight(1);
+  metric->SetStretchWeight(0.5);
+  metric->SetBendWeight(0.5);
+  metric->SetGeometricFeatureWeight(100);
+
   /*
     Initialize Thin Shell Demons transformation
   */
