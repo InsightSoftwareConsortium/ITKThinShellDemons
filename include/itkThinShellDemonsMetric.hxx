@@ -189,18 +189,24 @@ ThinShellDemonsMetric< TFixedMesh, TMovingMesh >
     vn[2] = parameters[neighborIdx*3+2];
     InputVectorType dx = v - vn;
     stretchEnergy += dx.GetSquaredNorm();
-    stretch[0] += 2 * dx[0] / pointIdList->GetNumberOfIds();
-    stretch[1] += 2 * dx[1] / pointIdList->GetNumberOfIds();
-    stretch[2] += 2 * dx[2] / pointIdList->GetNumberOfIds();
+    // times 4 because edge appears two times in the energy function
+    // and the derivative has another factor of 2 from the squared norm
+    // TODO: should be corrected for different number of neighbors
+    stretch[0] += 4 * dx[0] / pointIdList->GetNumberOfIds();
+    stretch[1] += 4 * dx[1] / pointIdList->GetNumberOfIds();
+    stretch[2] += 4 * dx[2] / pointIdList->GetNumberOfIds();
 
-    bend += dx;
+    bend += v - vn;
     }
 
   bendEnergy = bend.GetSquaredNorm() ;
 
-  bend[0] *= 2 / pointIdList->GetNumberOfIds();
-  bend[1] *= 2 / pointIdList->GetNumberOfIds();
-  bend[2] *= 2 / pointIdList->GetNumberOfIds();
+  // times 4 because edge appears two times in the energy function
+  // and the derivative has another factor of 2 from the squared norm
+  // TODO: should be corrected for different number of neighbors
+  bend[0] *= 4 / pointIdList->GetNumberOfIds();
+  bend[1] *= 4 / pointIdList->GetNumberOfIds();
+  bend[2] *= 4 / pointIdList->GetNumberOfIds();
 
   stretchEnergy /= pointIdList->GetNumberOfIds();
   bendEnergy /= pointIdList->GetNumberOfIds();
