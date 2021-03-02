@@ -1,6 +1,6 @@
 /*=========================================================================
  *
- *  Copyright Insight Software Consortium
+ *  Copyright NumFOCUS
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -30,21 +30,31 @@ namespace itk
 /** \class ThinShellDemonsMetric
  * \brief This Class inherits the base MeshToMeshMetric
  *
- * \brief This Class inherits the basic MeshToMeshMetric. It expects a mesh-to-mesh transformaton to be plugged in. This class computes a metric value, which is a combination of geometric feature matching quality and the Thin Shell deformation Energy. This metric computation part (objective function) is the core of the Thin Shell Demons algorithm. When initializing a metric object of this class with two meshes, the metric object first pre-computes geometric feature matching between the two meshes. The matching results stay the same during the optimization process.
+ * \brief This Class inherits the basic MeshToMeshMetric.
+ * It expects a mesh-to-mesh transformaton to be plugged in.
+ * This class computes a metric value, which is a combination
+ * of geometric feature matching quality and the Thin Shell
+ * deformation Energy. This metric computation part
+ * (objective function) is the core of the Thin Shell Demons
+ * algorithm. When initializing a metric object of this class
+ * with two meshes, the metric object first pre-computes geometric
+ * feature matching between the two meshes. The matching results
+ * stay the same during the optimization process.
  *
- *  Reference: "Thin Shell Demons: Zhao Q, Price T, Pizer S, Niethammer M, Alterovitz R, Rosenman J, MIUA 2015
+ *  Reference: "Thin Shell Demons"
+ *  Zhao Q, Price T, Pizer S, Niethammer M, Alterovitz R, Rosenman J
+ *  MIUA 2015
  *
+ * \ingroup ThinShellDemons
  */
-template< typename TFixedMesh, typename TMovingMesh,
-          typename TDistanceMap =
-            ::itk::Image< unsigned short, TMovingMesh::PointDimension > >
+template< typename TFixedMesh, typename TMovingMesh >
 class ITK_TEMPLATE_EXPORT ThinShellDemonsMetric:
   public MeshToMeshMetric< TFixedMesh, TMovingMesh >
 {
 public:
 
   /** Standard class typedefs. */
-  typedef ThinShellDemonsMetric                                Self;
+  typedef ThinShellDemonsMetric                       Self;
   typedef MeshToMeshMetric< TFixedMesh, TMovingMesh > Superclass;
 
   typedef SmartPointer< Self >       Pointer;
@@ -62,8 +72,8 @@ public:
   typedef typename Superclass::TransformParametersType TransformParametersType;
   typedef typename Superclass::TransformJacobianType   TransformJacobianType;
 
-  typedef typename Superclass::MeasureType                MeasureType;
-  typedef typename Superclass::DerivativeType             DerivativeType;
+  typedef typename Superclass::MeasureType            MeasureType;
+  typedef typename Superclass::DerivativeType         DerivativeType;
   typedef typename Superclass::FixedMeshType          FixedMeshType;
   typedef typename Superclass::MovingMeshType         MovingMeshType;
   typedef typename Superclass::FixedMeshConstPointer  FixedMeshConstPointer;
@@ -76,8 +86,7 @@ public:
   typedef typename Superclass::MovingPointDataIterator MovingPointDataIterator;
 
   typedef typename Superclass::InputPointType InputPointType;
-  typedef typename itk::Vector<double, TMovingMesh::PointDimension> InputVectorType;
-  typedef itk::MapContainer<int, InputPointType> TargetMapType;
+  typedef typename InputPointType::VectorType InputVectorType;
 
 
   /** Get the derivatives of the match measure. */
@@ -89,7 +98,8 @@ public:
 
   /**  Get value and derivatives for multiple valued optimizers. */
   void GetValueAndDerivative(const TransformParametersType & parameters,
-                             MeasureType & Value, DerivativeType & Derivative) const  ITK_OVERRIDE;
+                             MeasureType & Value,
+                             DerivativeType & Derivative) const ITK_OVERRIDE;
 
   /** Initialize the Metric by computing a target position for each vertex in the fixed mesh using
       Euclidean + Curvature distance */
@@ -100,6 +110,7 @@ public:
   double getStretchWeight(){return m_StretchWeight;}
   void SetBendWeight(double weight){m_BendWeight = weight;}
   double getBendWeight(){return m_BendWeight;}
+
 protected:
   ThinShellDemonsMetric();
   virtual ~ThinShellDemonsMetric() {}
@@ -109,7 +120,7 @@ protected:
 private:
   ITK_DISALLOW_COPY_AND_ASSIGN(ThinShellDemonsMetric);
 
-  bool               m_TargetPositionComputed;
+  typedef itk::MapContainer<int, InputPointType> TargetMapType;
   TargetMapType targetMap;
 
   vtkSmartPointer<vtkPolyData> movingVTKMesh; // a VTKPolyData copy of the moving mesh
@@ -117,7 +128,13 @@ private:
   double m_StretchWeight;
   double m_BendWeight;
 
-  void ComputeTargetPosition();
+  void ComputeStretchAndBend(int identifier,
+                             const TransformParametersType &parmaters,
+                             double &stretchEnergy,
+                             double &bendEnergy,
+                             InputVectorType &stretch,
+                             InputVectorType &bend) const;
+  void ComputeTargetPosition() const;
 };
 } // end namespace itk
 

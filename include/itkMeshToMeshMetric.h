@@ -1,6 +1,6 @@
 /*=========================================================================
  *
- *  Copyright Insight Software Consortium
+ *  Copyright NumFOCUS
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -15,6 +15,7 @@
  *  limitations under the License.
  *
  *=========================================================================*/
+
 #ifndef itkMeshToMeshMetric_h
 #define itkMeshToMeshMetric_h
 
@@ -28,18 +29,24 @@ namespace itk
 {
 /** \class MeshToMeshMetric
  *
- * \brief This class is templated over the type of PointsetToPointsetMetric. This class serves as the basis for all kinds of mesh-to-mesh metrics (in some sense computing the similarity between two meshes). It expects a mesh-to-mesh transformation to be plugged in. This class computes an objective function value (also with its derivative w.r.t. the transformation parameters) that measures a registration metric between the fixed mesh and the moving mesh.
+ * \brief This class is templated over the type of PointsetToPointsetMetric.
+ * This class serves as the basis for all kinds of mesh-to-mesh metrics
+ * (in some sense computing the similarity between two meshes). It expects
+ * a mesh-to-mesh transformation to be plugged in. This class computes an
+ * objective function value (also with its derivative w.r.t. the
+ * transformation parameters) that measures a registration metric between
+ * the fixed mesh and the moving mesh.
  *
+ * \ingroup ThinShellDemons
  */
-
 template< typename TFixedMesh,  typename TMovingMesh >
 class ITK_TEMPLATE_EXPORT MeshToMeshMetric:public SingleValuedCostFunction
 {
 public:
 
   /** Standard class typedefs. */
-  typedef MeshToMeshMetric   Self;
-  typedef SingleValuedCostFunction Superclass;
+  typedef MeshToMeshMetric           Self;
+  typedef SingleValuedCostFunction   Superclass;
   typedef SmartPointer< Self >       Pointer;
   typedef SmartPointer< const Self > ConstPointer;
 

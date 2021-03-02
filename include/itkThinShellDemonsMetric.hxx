@@ -1,6 +1,6 @@
 /*=========================================================================
  *
- *  Copyright Insight Software Consortium
+ *  Copyright NumFOCUS
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -21,360 +21,293 @@
 #include "itkThinShellDemonsMetric.h"
 #include "itkImageRegionConstIteratorWithIndex.h"
 
+#include <math.h>
+
 namespace itk
 {
 
-template< typename TFixedMesh, typename TMovingMesh, typename TDistanceMap >
-ThinShellDemonsMetric< TFixedMesh, TMovingMesh, TDistanceMap >
-::ThinShellDemonsMetric() :
-  m_TargetPositionComputed( false )
+template< typename TFixedMesh, typename TMovingMesh >
+ThinShellDemonsMetric< TFixedMesh, TMovingMesh >
+::ThinShellDemonsMetric()
 {
-	m_BendWeight = 1;
-	m_StretchWeight = 1;
+  m_BendWeight = 1;
+  m_StretchWeight = 1;
 }
-  /** Initialize the metric */
-  template< typename TFixedMesh, typename TMovingMesh, typename TDistanceMap >
-  void
-	  ThinShellDemonsMetric< TFixedMesh, TMovingMesh, TDistanceMap >
-	  ::Initialize(void)
-	  throw ( ExceptionObject )
+
+/** Initialize the metric */
+template< typename TFixedMesh, typename TMovingMesh >
+void
+ThinShellDemonsMetric< TFixedMesh, TMovingMesh >
+::Initialize(void)
+throw ( ExceptionObject )
+{
+  if ( !this->m_Transform )
+    {
+    itkExceptionMacro(<< "Transform is not present");
+    }
+
+  if ( !this->m_MovingMesh )
+    {
+    itkExceptionMacro(<< "MovingMesh is not present");
+    }
+
+  if ( !this->m_FixedMesh )
+    {
+    itkExceptionMacro(<< "FixedMesh is not present");
+    }
+
+  // If the Mesh is provided by a source, update the source.
+  if ( this->m_MovingMesh->GetSource() )
+    {
+    this->m_MovingMesh->GetSource()->Update();
+    }
+
+  // If the point set is provided by a source, update the source.
+  if ( this->m_FixedMesh->GetSource() )
+    {
+    this->m_FixedMesh->GetSource()->Update();
+    }
+
+  //generate a VTK copy of the same mesh
+  itkMeshTovtkPolyData* dataTransfer = new itkMeshTovtkPolyData();
+  dataTransfer->SetInput(this->m_MovingMesh);
+  this->movingVTKMesh = dataTransfer->GetOutput();
+
+  // Preprocessing: compute the target position of each vertex in the fixed mesh
+  // using Euclidean + Curvature distance
+  this->targetMap.Initialize();
+  this->ComputeTargetPosition();
+}
+
+template< typename TFixedMesh, typename TMovingMesh >
+void
+ThinShellDemonsMetric< TFixedMesh, TMovingMesh >
+::ComputeTargetPosition() const
+{
+  std::cout << "Compute Target Position" << std::endl;
+  FixedMeshConstPointer fixedMesh = this->GetFixedMesh();
+
+  if ( !fixedMesh )
   {
-	  if ( !this->m_Transform )
-	  {
-		  itkExceptionMacro(<< "Transform is not present");
-	  }
-
-	  if ( !this->m_MovingMesh )
-	  {
-		  itkExceptionMacro(<< "MovingMesh is not present");
-	  }
-
-	  if ( !this->m_FixedMesh )
-	  {
-		  itkExceptionMacro(<< "FixedMesh is not present");
-	  }
-
-	  // If the Mesh is provided by a source, update the source.
-	  if ( this->m_MovingMesh->GetSource() )
-	  {
-		  this->m_MovingMesh->GetSource()->Update();
-	  }
-
-	  // If the point set is provided by a source, update the source.
-	  if ( this->m_FixedMesh->GetSource() )
-	  {
-		  this->m_FixedMesh->GetSource()->Update();
-	  }
-
-	  // Preprocessing: compute the target position of each vertex in the fixed mesh
-      // using Euclidean + Curvature distance
-	  ComputeTargetPosition();
+    itkExceptionMacro(<< "Fixed point set has not been assigned");
   }
 
-template< typename TFixedMesh, typename TMovingMesh, typename TDistanceMap >
-void
-	ThinShellDemonsMetric< TFixedMesh, TMovingMesh, TDistanceMap >
-	::ComputeTargetPosition()
-{
-	FixedMeshConstPointer fixedMesh = this->GetFixedMesh();
+  MovingMeshConstPointer movingMesh = this->GetMovingMesh();
 
-	if ( !fixedMesh )
-	{
-		itkExceptionMacro(<< "Fixed point set has not been assigned");
-	}
+  if ( !movingMesh )
+  {
+    itkExceptionMacro(<< "Moving point set has not been assigned");
+  }
 
-	MovingMeshConstPointer movingMesh = this->GetMovingMesh();
-
-	if ( !movingMesh )
-	{
-		itkExceptionMacro(<< "Moving point set has not been assigned");
-	}
-
-	this->targetMap.Initialize();
-
-	MovingPointIterator pointItr = movingMesh->GetPoints()->Begin();
-	MovingPointIterator pointEnd = movingMesh->GetPoints()->End();
+  MovingPointIterator pointItr = movingMesh->GetPoints()->Begin();
+  MovingPointIterator pointEnd = movingMesh->GetPoints()->End();
 
     // In principal, this part should implement Euclidean + geometric feature similarity
     // Currently, this is simply a closest point search
-	int identifier = 0;
-	while ( pointItr != pointEnd )
-	{
-		InputPointType inputPoint;
-		inputPoint.CastFrom( pointItr.Value() );
-		typename Superclass::OutputPointType transformedPoint =
-			this->m_Transform->TransformPoint(inputPoint);
-		InputPointType targetPoint;
+  int identifier = 0;
+  while ( pointItr != pointEnd )
+    {
+    InputPointType inputPoint;
+    inputPoint.CastFrom( pointItr.Value() );
+    typename Superclass::OutputPointType transformedPoint =
+      this->m_Transform->TransformPoint(inputPoint);
+    InputPointType targetPoint;
 
-		double minimumDistance = NumericTraits< double >::max();
-		bool   closestPoint = false;
+    double minimumDistance = NumericTraits< double >::max();
+    FixedPointIterator pointItr2 = fixedMesh->GetPoints()->Begin();
+    FixedPointIterator pointEnd2 = fixedMesh->GetPoints()->End();
 
-		// If the closestPoint has not been found, go through the list of fixed
-		// points and find the closest distance
-		if ( !closestPoint )
-		{
-			FixedPointIterator pointItr2 = fixedMesh->GetPoints()->Begin();
-			FixedPointIterator pointEnd2 = fixedMesh->GetPoints()->End();
-
-			while ( pointItr2 != pointEnd2 )
-			{
-				double dist = pointItr2.Value().SquaredEuclideanDistanceTo(transformedPoint);
+    while ( pointItr2 != pointEnd2 )
+      {
+      double dist = pointItr2.Value().SquaredEuclideanDistanceTo(transformedPoint);
 
 
-				if ( dist < minimumDistance )
-				{
-					targetPoint.CastFrom( pointItr2.Value() );
-					minimumDistance = dist;
-				}
-				pointItr2++;
-			}
-		}
+      if ( dist < minimumDistance )
+        {
+        targetPoint.CastFrom( pointItr2.Value() );
+        minimumDistance = dist;
+        }
+      pointItr2++;
+      }
+    const_cast<TargetMapType*>(&targetMap)->SetElement(identifier, targetPoint);
 
-		targetMap[identifier] = targetPoint;
-
-		++pointItr;
-		identifier++;
-	}
-
-	m_TargetPositionComputed = true;
-
-	//generate a VTK copy of the same mesh
-	itkMeshTovtkPolyData* dataTransfer = new itkMeshTovtkPolyData();
-	dataTransfer->SetInput(movingMesh);
-	movingVTKMesh = dataTransfer->GetOutput();
+    ++pointItr;
+    identifier++;
+    }
 }
 
-template< typename TFixedMesh, typename TMovingMesh, typename TDistanceMap >
-typename ThinShellDemonsMetric< TFixedMesh, TMovingMesh, TDistanceMap >::MeasureType
-ThinShellDemonsMetric< TFixedMesh, TMovingMesh, TDistanceMap >
+
+template< typename TFixedMesh, typename TMovingMesh >
+void
+ThinShellDemonsMetric< TFixedMesh, TMovingMesh >
+::ComputeStretchAndBend( int identifier,
+                         const TransformParametersType &parameters,
+                         double &stretchEnergy,
+                         double &bendEnergy,
+                         InputVectorType &stretch,
+                         InputVectorType &bend) const
+{
+  //enumerate all the neighboring vertices (edges) of a given vertex
+  //stretching energy : measure the squared derivative along different edge directions
+  //bending energy : measure the local laplacian around the local patch using
+  //the given vertex and all neighboring vertices
+  stretchEnergy = 0;
+  bendEnergy = 0;
+  stretch.Fill(0);
+  bend.Fill(0);
+
+  vtkSmartPointer<vtkIdList> cellIdList =
+    vtkSmartPointer<vtkIdList>::New();
+  movingVTKMesh->GetPointCells(identifier, cellIdList);
+
+  //Collect all neighbors
+  vtkSmartPointer<vtkIdList> pointIdList =
+    vtkSmartPointer<vtkIdList>::New();
+  InputVectorType v;
+  v[0] = parameters[identifier*3];
+  v[1] = parameters[identifier*3+1];
+  v[2] = parameters[identifier*3+2];
+
+  for(int i = 0; i < cellIdList->GetNumberOfIds(); i++)
+    {
+    vtkSmartPointer<vtkIdList> pointIdListTmp = vtkSmartPointer<vtkIdList>::New();
+    movingVTKMesh->GetCellPoints(cellIdList->GetId(i), pointIdListTmp);
+    for(int j=0; j < pointIdListTmp->GetNumberOfIds(); j++)
+      {
+      if(pointIdListTmp->GetId(j) != identifier)
+        {
+        pointIdList->InsertUniqueId (pointIdListTmp->GetId(j) );
+        }
+      }
+    }
+  for(int i=0; i < pointIdList->GetNumberOfIds(); i++)
+    {
+    int neighborIdx = pointIdList->GetId(i);
+    InputVectorType vn;
+    vn[0] = parameters[neighborIdx*3];
+    vn[1] = parameters[neighborIdx*3+1];
+    vn[2] = parameters[neighborIdx*3+2];
+    InputVectorType dx = v - vn;
+    stretchEnergy += dx.GetSquaredNorm();
+    stretch[0] += 2 * dx[0] / pointIdList->GetNumberOfIds();
+    stretch[1] += 2 * dx[1] / pointIdList->GetNumberOfIds();
+    stretch[2] += 2 * dx[2] / pointIdList->GetNumberOfIds();
+
+    bend += dx;
+    }
+
+  bendEnergy = bend.GetSquaredNorm() ;
+
+  bend[0] *= 2 / pointIdList->GetNumberOfIds();
+  bend[1] *= 2 / pointIdList->GetNumberOfIds();
+  bend[2] *= 2 / pointIdList->GetNumberOfIds();
+
+  stretchEnergy /= pointIdList->GetNumberOfIds();
+  bendEnergy /= pointIdList->GetNumberOfIds();
+}
+
+template< typename TFixedMesh, typename TMovingMesh >
+typename ThinShellDemonsMetric< TFixedMesh, TMovingMesh >::MeasureType
+ThinShellDemonsMetric< TFixedMesh, TMovingMesh >
 ::GetValue(const TransformParametersType & parameters) const
 {
-  FixedMeshConstPointer fixedMesh = this->GetFixedMesh();
+  std::cout << "Get Value" << std::endl;
+  static DerivativeType derivative = DerivativeType(0);
+  MeasureType value = 0;
+  GetValueAndDerivative(parameters, value, derivative);
+  return value;
+}
 
+template< typename TFixedMesh, typename TMovingMesh >
+void
+ThinShellDemonsMetric< TFixedMesh, TMovingMesh >
+::GetDerivative( const TransformParametersType &parameters,
+                 DerivativeType &derivative ) const
+{
+  std::cout << "Get Derivative" << std::endl;
+  MeasureType dummy = 0;
+  this->GetValueAndDerivative(parameters, dummy, derivative);
+}
+
+template< typename TFixedMesh, typename TMovingMesh >
+void
+ThinShellDemonsMetric< TFixedMesh, TMovingMesh >
+::GetValueAndDerivative(const TransformParametersType &parameters,
+                        MeasureType &value, DerivativeType  &derivative) const
+{
+  FixedMeshConstPointer fixedMesh = this->GetFixedMesh();
   if ( !fixedMesh )
     {
     itkExceptionMacro(<< "Fixed point set has not been assigned");
     }
 
   MovingMeshConstPointer movingMesh = this->GetMovingMesh();
-
   if ( !movingMesh )
     {
     itkExceptionMacro(<< "Moving point set has not been assigned");
     }
 
+  this->SetTransformParameters(parameters);
+  this->ComputeTargetPosition();
+
+  // derivative of data fidelity energy (squared distance to target position)
   MovingPointIterator pointItr = movingMesh->GetPoints()->Begin();
   MovingPointIterator pointEnd = movingMesh->GetPoints()->End();
 
+  if( derivative.GetSize() != movingMesh->GetNumberOfPoints() * 3 )
+    {
+    derivative = DerivativeType(movingMesh->GetNumberOfPoints() * 3);
+    }
+  derivative.Fill(0);
 
-  this->SetTransformParameters(parameters);
-
-  // data fidelity energy (squared distance to target position)
   int identifier = 0;
   double functionValue = 0;
+  double stretchEnergy = 0;
+  double bendEnergy = 0;
   while ( pointItr != pointEnd )
-    {
-	// get the current position of the vertex
+  {
     InputPointType inputPoint;
     inputPoint.CastFrom( pointItr.Value() );
-	InputVectorType vec;
-	vec[0] = parameters[identifier*3];
-	vec[1] = parameters[identifier*3+1];
-	vec[2] = parameters[identifier*3+2];
-    // get the transformed vertex
-	typename Superclass::OutputPointType transformedPoint = inputPoint + vec;
+    InputVectorType vec;
+    vec[0] = parameters[identifier*3];
+    vec[1] = parameters[identifier*3+1];
+    vec[2] = parameters[identifier*3+2];
+    typename Superclass::OutputPointType transformedPoint = inputPoint + vec;
 
-    // compute squared Euclidean distance to its target position
-	InputPointType targetPoint = targetMap.ElementAt (identifier);
-	double dist = targetPoint.SquaredEuclideanDistanceTo(transformedPoint);
+    InputPointType targetPoint = targetMap.ElementAt(identifier);
+    InputVectorType distVec = targetPoint - transformedPoint;
 
-	functionValue += dist;
+    derivative[identifier*3] = -2 * distVec[0];
+    derivative[identifier*3 + 1] = -2 * distVec[1];
+    derivative[identifier*3 + 2] = -2 * distVec[2];
+
+    functionValue += distVec.GetSquaredNorm();
+
+    double sE = 0;
+    double bE = 0;
+    InputVectorType sD;
+    InputVectorType bD;
+    this->ComputeStretchAndBend(identifier, parameters, sE, bE, sD, bD);
+    stretchEnergy += sE ;
+    bendEnergy += bE;
+    derivative[identifier*3] += m_StretchWeight * sD[0] + m_BendWeight * bD[0];
+    derivative[identifier*3+1] += m_StretchWeight * sD[1] + m_BendWeight *bD[1];
+    derivative[identifier*3+2] += m_StretchWeight * sD[2] + m_BendWeight * bD[2];
 
     ++pointItr;
     identifier++;
-    }
-
-  // stretching energy
-  identifier = 0;
-  pointItr = movingMesh->GetPoints()->Begin();
-  pointEnd = movingMesh->GetPoints()->End();
-  while ( pointItr != pointEnd )
-  {
-	  vtkSmartPointer<vtkIdList> cellIdList =
-		  vtkSmartPointer<vtkIdList>::New();
-	  movingVTKMesh->GetPointCells(identifier, cellIdList);
-
-	  //enumerate all the neighboring vertices (edges) of a given vertex
-	  //stretching energy : measure the squared derivative along different edge directions
-	  //bending energy : measure the local laplacian around the local patch using the given vertex and all neighboring vertices
-	  int neighborIdx;
-	  double lx = 0; //laplacian
-	  double ly = 0;
-	  double lz = 0;
-	  for(int i = 0; i < cellIdList->GetNumberOfIds(); i++)
-	  {
-		  vtkSmartPointer<vtkIdList> pointIdList =
-			  vtkSmartPointer<vtkIdList>::New();
-		  movingVTKMesh->GetCellPoints(cellIdList->GetId(i), pointIdList);
-
-		  if(pointIdList->GetId(0) != identifier)
-			  neighborIdx = pointIdList->GetId(0);
-		  else
-			  neighborIdx = pointIdList->GetId(1);
-
-		  //derivative
-		  double dx = parameters[identifier*3] - parameters[neighborIdx*3];
-		  double dy = parameters[identifier*3+1] - parameters[neighborIdx*3+1];
-		  double dz = parameters[identifier*3+2] - parameters[neighborIdx*3+2];
-          // stretching energy associated with an edge
-		  functionValue += m_StretchWeight * (dx*dx + dy*dy + dz*dz);
-
-		  lx += dx; ly += dy; lz += dz;
-	  }
-
-      //bending energy associated with a vertex-ring stencil
-	  functionValue += m_BendWeight * (lx*lx + ly*ly + lz*lz);
-	  ++pointItr;
-	  identifier++;
   }
 
-  return functionValue;
+  std::cout << "Dist:    " << functionValue << std::endl;
+  std::cout << "Stretch: " << stretchEnergy << std::endl;
+  std::cout << "Bend:    " << bendEnergy << std::endl;
+
+  value = functionValue + m_StretchWeight * stretchEnergy + m_BendWeight * bendEnergy;
 }
 
-template< typename TFixedMesh, typename TMovingMesh, typename TDistanceMap >
+template< typename TFixedMesh, typename TMovingMesh >
 void
-ThinShellDemonsMetric< TFixedMesh, TMovingMesh, TDistanceMap >
-::GetDerivative( const TransformParametersType & parameters,
-                 DerivativeType & derivative ) const
-{
-	FixedMeshConstPointer fixedMesh = this->GetFixedMesh();
-
-	if ( !fixedMesh )
-	{
-		itkExceptionMacro(<< "Fixed point set has not been assigned");
-	}
-
-	MovingMeshConstPointer movingMesh = this->GetMovingMesh();
-
-	if ( !movingMesh )
-	{
-		itkExceptionMacro(<< "Moving point set has not been assigned");
-	}
-
-
-	if( derivative.GetSize() != movingMesh->GetNumberOfPoints() * 3 )
-	{
-		derivative = DerivativeType(movingMesh->GetNumberOfPoints() * 3);
-	}
-	memset( derivative.data_block(),
-		0,
-		movingMesh->GetNumberOfPoints() * 3 * sizeof( double ) );
-
-	// derivative of data fidelity energy (squared distance to target position)
-	MovingPointIterator pointItr = movingMesh->GetPoints()->Begin();
-	MovingPointIterator pointEnd = movingMesh->GetPoints()->End();
-
-	int identifier = 0;
-	double functionValue = 0;
-	while ( pointItr != pointEnd )
-	{
-		InputPointType inputPoint;
-		inputPoint.CastFrom( pointItr.Value() );
-		InputVectorType vec;
-		vec[0] = parameters[identifier*3];
-		vec[1] = parameters[identifier*3+1];
-		vec[2] = parameters[identifier*3+2];
-		typename Superclass::OutputPointType transformedPoint = inputPoint + vec;
-
-		InputPointType targetPoint = targetMap.ElementAt (identifier);
-
-		typename InputPointType::VectorType distVec = targetPoint - inputPoint;
-		derivative[identifier*3]     = -2 * distVec[0];
-		derivative[identifier*3 + 1] = -2 * distVec[1];
-		derivative[identifier*3 + 2] = -2 * distVec[2];
-
-		++pointItr;
-		identifier++;
-	}
-
-	// derivative of stretching & bending energy
-	identifier = 0;
-	pointItr = movingMesh->GetPoints()->Begin();
-	pointEnd = movingMesh->GetPoints()->End();
-	while ( pointItr != pointEnd )
-	{
-		vtkSmartPointer<vtkIdList> cellIdList =
-			vtkSmartPointer<vtkIdList>::New();
-		movingVTKMesh->GetPointCells(identifier, cellIdList);
-
-		int neighborIdx;
-		double lx = 0;
-		double ly = 0;
-		double lz = 0;
-		for(int i = 0; i < cellIdList->GetNumberOfIds(); i++)
-		{
-			vtkSmartPointer<vtkIdList> pointIdList =
-				vtkSmartPointer<vtkIdList>::New();
-			movingVTKMesh->GetCellPoints(cellIdList->GetId(i), pointIdList);
-
-			if(pointIdList->GetId(0) != identifier)
-				neighborIdx = pointIdList->GetId(0);
-			else
-				neighborIdx = pointIdList->GetId(1);
-
-			double dx = parameters[identifier*3] - parameters[neighborIdx*3];
-			double dy = parameters[identifier*3+1] - parameters[neighborIdx*3+1];
-			double dz = parameters[identifier*3+2] - parameters[neighborIdx*3+2];
-
-            // derivative of stretching energy
-			derivative[identifier*3]   += 2 * dx * m_StretchWeight;
-			derivative[identifier*3+1] += 2 * dy * m_StretchWeight;
-			derivative[identifier*3+2] += 2 * dz * m_StretchWeight;
-			derivative[neighborIdx*3]   -= 2 * dx * m_StretchWeight;
-			derivative[neighborIdx*3+1] -= 2 * dy * m_StretchWeight;
-			derivative[neighborIdx*3+2] -= 2 * dz * m_StretchWeight;
-
-			lx += dx; ly += dy; lz += dz;
-		}
-
-		for(int i = 0; i < cellIdList->GetNumberOfIds(); i++)
-		{
-			vtkSmartPointer<vtkIdList> pointIdList =
-				vtkSmartPointer<vtkIdList>::New();
-			movingVTKMesh->GetCellPoints(cellIdList->GetId(i), pointIdList);
-
-			if(pointIdList->GetId(0) != identifier)
-				neighborIdx = pointIdList->GetId(0);
-			else
-				neighborIdx = pointIdList->GetId(1);
-
-            // derivative of bending energy
-			derivative[identifier*3]   += 2 * lx * m_BendWeight;
-			derivative[identifier*3+1] += 2 * ly * m_BendWeight;
-			derivative[identifier*3+2] += 2 * lz * m_BendWeight;
-			derivative[neighborIdx*3]   -= 2 * lx * m_BendWeight;
-			derivative[neighborIdx*3+1] -= 2 * ly * m_BendWeight;
-			derivative[neighborIdx*3+2] -= 2 * lz * m_BendWeight;
-		}
-
-		++pointItr;
-		identifier++;
-	}
-}
-
-template< typename TFixedMesh, typename TMovingMesh, typename TDistanceMap >
-void
-ThinShellDemonsMetric< TFixedMesh, TMovingMesh, TDistanceMap >
-::GetValueAndDerivative(const TransformParametersType & parameters,
-                        MeasureType & value, DerivativeType  & derivative) const
-{
-  value = this->GetValue(parameters);
-  this->GetDerivative(parameters, derivative);
-}
-
-template< typename TFixedMesh, typename TMovingMesh, typename TDistanceMap >
-void
-ThinShellDemonsMetric< TFixedMesh, TMovingMesh, TDistanceMap >
+ThinShellDemonsMetric< TFixedMesh, TMovingMesh >
 ::PrintSelf(std::ostream & os, Indent indent) const
 {
   Superclass::PrintSelf(os, indent);

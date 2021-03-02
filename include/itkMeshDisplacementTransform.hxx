@@ -1,6 +1,6 @@
 /*=========================================================================
  *
- *  Copyright Insight Software Consortium
+ *  Copyright NumFOCUS
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -27,11 +27,11 @@ namespace itk
 
 template<typename TParametersValueType, unsigned int NDimensions>
 MeshDisplacementTransform<TParametersValueType, NDimensions>
-	::MeshDisplacementTransform() : Superclass(0)
+  ::MeshDisplacementTransform() : Superclass(0)
 {
-	m_MeshTemplate = ITK_NULLPTR;
-	this->SpaceDimension = NDimensions;
-	this->ParametersDimension = 0;
+  m_MeshTemplate = ITK_NULLPTR;
+  this->SpaceDimension = NDimensions;
+  this->ParametersDimension = 0;
 }
 
 
@@ -47,23 +47,23 @@ void
 MeshDisplacementTransform<TParametersValueType, NDimensions>
 ::SetParameters(const ParametersType & parameters)
 {
-	if( parameters.Size() != this->ParametersDimension )
-	{
-		itkExceptionMacro( << "Mismatch between parameters size "
-			<< parameters.Size() << " and expected number of parameters "
-			<< this->ParametersDimension );
-	}
+  if( parameters.Size() != this->ParametersDimension )
+  {
+    itkExceptionMacro( << "Mismatch between parameters size "
+      << parameters.Size() << " and expected number of parameters "
+      << this->ParametersDimension );
+  }
 
-	if( &parameters != &( this->m_VectorField ) )
-	{
-		// Clean up this->m_InternalParametersBuffer because we will
-		// use an externally supplied set of parameters as the buffer
-		this->m_VectorField = parameters;
-	}
+  if( &parameters != &( this->m_VectorField ) )
+  {
+    // Clean up this->m_InternalParametersBuffer because we will
+    // use an externally supplied set of parameters as the buffer
+    this->m_VectorField = parameters;
+  }
 
-	// Modified is always called since we just have a pointer to the
-	// parameters and cannot know if the parameters have changed.
-	this->Modified();
+  // Modified is always called since we just have a pointer to the
+  // parameters and cannot know if the parameters have changed.
+  this->Modified();
 }
 
 template<typename TParametersValueType, unsigned int NDimensions>
@@ -72,41 +72,41 @@ MeshDisplacementTransform<TParametersValueType, NDimensions>
 ::GetParameters() const
 {
 
-	return this->m_VectorField;
+  return this->m_VectorField;
 }
 
 template<typename TParametersValueType, unsigned int NDimensions>
 void
-	MeshDisplacementTransform<TParametersValueType, NDimensions>
-	::SetIdentity()
+  MeshDisplacementTransform<TParametersValueType, NDimensions>
+  ::SetIdentity()
 {
-	if (!m_MeshTemplate)
-	{
-		itkExceptionMacro(<< "Mesh template is not present");
-	}
-	if (ParametersDimension == 0)
-	{
-		itkExceptionMacro(<< "Mesh template has zero vertex");
-	}
+  if (!m_MeshTemplate)
+  {
+    itkExceptionMacro(<< "Mesh template is not present");
+  }
+  if (ParametersDimension == 0)
+  {
+    itkExceptionMacro(<< "Mesh template has zero vertex");
+  }
 
-	m_VectorField.Fill(0);
+  m_VectorField.Fill(0);
 }
 
 template<typename TParametersValueType, unsigned int NDimensions>
 void
-	MeshDisplacementTransform<TParametersValueType, NDimensions>
-	::Initialize()
+  MeshDisplacementTransform<TParametersValueType, NDimensions>
+  ::Initialize()
 {
-	if (!m_MeshTemplate)
-	{
-		itkExceptionMacro(<< "FixedMesh is not present");
-	}
+  if (!m_MeshTemplate)
+  {
+    itkExceptionMacro(<< "FixedMesh is not present");
+  }
 
-	// the size of the parameters can only be determined after knowing the number of vertices
+  // the size of the parameters can only be determined after knowing the number of vertices
     // the template mesh should be available before this initialization step
-	m_VectorField.SetSize(m_MeshTemplate->GetNumberOfPoints() * SpaceDimension);
-	m_VectorField.Fill(0);
-	this->ParametersDimension = m_VectorField.GetSize();
+  m_VectorField.SetSize(m_MeshTemplate->GetNumberOfPoints() * SpaceDimension);
+  m_VectorField.Fill(0);
+  this->ParametersDimension = m_VectorField.GetSize();
 
 }
 
@@ -124,18 +124,18 @@ typename MeshDisplacementTransform<TParametersValueType, NDimensions>::OutputPoi
 MeshDisplacementTransform<TParametersValueType, NDimensions>
 ::TransformPoint(const InputPointType & point) const
 {
-	return point;
+  return point;
 }
 
 template<typename TParametersValueType, unsigned int NDimensions>
 typename MeshDisplacementTransform<TParametersValueType, NDimensions>::OutputPointType
-	MeshDisplacementTransform<TParametersValueType, NDimensions>
-	::TransformNthPoint(const InputPointType & point, int identifier) const
+  MeshDisplacementTransform<TParametersValueType, NDimensions>
+  ::TransformNthPoint(const InputPointType & point, int identifier) const
 {
-	InputVectorType vec;
-	vec[0] = m_VectorField[identifier];
+  InputVectorType vec;
+  vec[0] = m_VectorField[identifier];
 
-	return point + vec;
+  return point + vec;
 }
 
 template<typename TParametersValueType, unsigned int NDimensions>

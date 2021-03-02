@@ -1,5 +1,22 @@
-#ifndef __itkMeshTovtkPolyData_hxx__
-#define __itkMeshTovtkPolyData_hxx__
+/*=========================================================================
+ *
+ *  Copyright NumFOCUS
+ *
+ *  Licensed under the Apache License, Version 2.0 (the "License");
+ *  you may not use this file except in compliance with the License.
+ *  You may obtain a copy of the License at
+ *
+ *         http://www.apache.org/licenses/LICENSE-2.0.txt
+ *
+ *  Unless required by applicable law or agreed to in writing, software
+ *  distributed under the License is distributed on an "AS IS" BASIS,
+ *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *  See the License for the specific language governing permissions and
+ *  limitations under the License.
+ *
+ *=========================================================================*/
+#ifndef itkMeshTovtkPolyData_hxx
+#define itkMeshTovtkPolyData_hxx
 
 #include <iostream>
 #include "itkMeshTovtkPolyData.h"
@@ -12,6 +29,7 @@
 # define vtkFloatingPointType vtkFloatingPointType
 typedef float vtkFloatingPointType;
 #endif
+namespace itk{
 
 itkMeshTovtkPolyData
 ::itkMeshTovtkPolyData()
@@ -27,7 +45,7 @@ itkMeshTovtkPolyData
 itkMeshTovtkPolyData
 ::~itkMeshTovtkPolyData()
 {
-  
+
 }
 
 void
@@ -54,19 +72,19 @@ itkMeshTovtkPolyData
   InputPointsContainerPointer      myPoints = m_itkTriangleMesh->GetPoints();
   InputPointsContainerIterator     points = myPoints->Begin();
   PointType point;
-  
+
   if (numPoints == 0)
     {
       printf( "Aborting: No Points in GRID\n");
-      return; 
+      return;
     }
 
   m_Points->SetNumberOfPoints(numPoints);
-  
+
   int idx=0;
   double vpoint[3];
-  while( points != myPoints->End() ) 
-    {   
+  while( points != myPoints->End() )
+    {
     point = points.Value();
     vpoint[0]= point[0];
     vpoint[1]= point[1];
@@ -88,18 +106,18 @@ itkMeshTovtkPolyData
     CellType::PointIdIterator pointIt = nextCell->PointIdsBegin() ;
     PointType  p;
     int i;
-    
+
     switch (nextCell->GetType())
       {
       case CellType::VERTEX_CELL:
       case CellType::LINE_CELL:
       case CellType::POLYGON_CELL:
-        break;        
+        break;
       case CellType::TRIANGLE_CELL:
         i=0;
-        while (pointIt != nextCell->PointIdsEnd() ) 
+        while (pointIt != nextCell->PointIdsEnd() )
         {
-        pts[i++] = *pointIt++;  
+        pts[i++] = *pointIt++;
         }
         m_Polys->InsertNextCell(3,pts);
         break;
@@ -107,12 +125,12 @@ itkMeshTovtkPolyData
         printf("something \n");
       }
     cellIt++;
-    
+
     }
-  
+
   m_PolyData->SetPolys(m_Polys);
   m_Polys->Delete();
 
 }
-
+}
 #endif

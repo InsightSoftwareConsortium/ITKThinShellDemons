@@ -1,6 +1,6 @@
 /*=========================================================================
  *
- *  Copyright Insight Software Consortium
+ *  Copyright NumFOCUS
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -28,8 +28,8 @@ MeshToMeshMetric< TFixedMesh, TMovingMesh >
 ::MeshToMeshMetric()
 {
   m_FixedMesh = ITK_NULLPTR;    // has to be provided by the user.
-  m_MovingMesh   = ITK_NULLPTR; // has to be provided by the user.
-  m_Transform     = ITK_NULLPTR;    // has to be provided by the user.
+  m_MovingMesh = ITK_NULLPTR; // has to be provided by the user.
+  m_Transform = ITK_NULLPTR;    // has to be provided by the user.
 }
 
 /** Set the parameters that define a unique transform */

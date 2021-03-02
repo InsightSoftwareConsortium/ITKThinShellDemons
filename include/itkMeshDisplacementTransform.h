@@ -1,6 +1,6 @@
 /*=========================================================================
  *
- *  Copyright Insight Software Consortium
+ *  Copyright NumFOCUS
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -15,6 +15,7 @@
  *  limitations under the License.
  *
  *=========================================================================*/
+
 #ifndef itkMeshDisplacementTransform_h
 #define itkMeshDisplacementTransform_h
 
@@ -27,10 +28,17 @@ namespace itk
 {
 
 /** \class MeshDisplacementTransform
- *  \brief The class "MeshDisplacementTransformation" defines a finite dimensional vector space on mesh vertices. Its private member m_VectorField is a 1D parameter array in the form of [x_1,y_1,z_1,x_2,y_2,z_2,...], where the subscript denote the index of the vertex.
+ *  \brief The class "MeshDisplacementTransformation" defines a finite
+ *  dimensional vector space on mesh vertices. Its private member
+ *  m_VectorField is a 1D parameter array in the form of
+ *  [x_1,y_1,z_1,x_2,y_2,z_2,...], where the subscript denote the index
+ *  of the vertex.
+ *  A mesh has to be initially associated with a transformation object to
+ *  serve as a template. The template essentially designates the number of
+ *  vertices, so that m_VectorField can be initialized and allocated with
+ *  a correct size (# of vertices * 3)
  *
- *  \brief A mesh has to be initially associated with a transformation object to serve as a template. The template essentially designates the number of vertices, so that m_VectorField can be initialized and allocated with a correct size (# of vertices * 3)
- *
+ * \ingroup ThinShellDemons
  */
 template<typename TParametersValueType=double,
            unsigned int NDimensions = 3>
@@ -66,19 +74,19 @@ public:
   /** Transform category type. */
   typedef typename Superclass::TransformCategoryType TransformCategoryType;
 
-  typedef typename Superclass::InputPointType  InputPointType;
-  typedef typename Superclass::InputVectorType InputVectorType;
-  typedef typename Superclass::InputVnlVectorType InputVnlVectorType;
-  typedef typename Superclass::InputCovariantVectorType InputCovariantVectorType;
-  typedef typename Superclass::OutputPointType OutputPointType;
-  typedef typename Superclass::OutputVectorType OutputVectorType;
-  typedef typename Superclass::OutputVnlVectorType OutputVnlVectorType;
+  typedef typename Superclass::InputPointType            InputPointType;
+  typedef typename Superclass::InputVectorType           InputVectorType;
+  typedef typename Superclass::InputVnlVectorType        InputVnlVectorType;
+  typedef typename Superclass::InputCovariantVectorType  InputCovariantVectorType;
+  typedef typename Superclass::OutputPointType           OutputPointType;
+  typedef typename Superclass::OutputVectorType          OutputVectorType;
+  typedef typename Superclass::OutputVnlVectorType       OutputVnlVectorType;
   typedef typename Superclass::OutputCovariantVectorType OutputCovariantVectorType;
 
   typedef typename Superclass::InverseTransformBasePointer InverseTransformBasePointer;
 
-  typedef itk::Mesh< TParametersValueType, NDimensions > MeshType;
-  typedef typename MeshType::ConstPointer MeshConstPointer;
+  typedef itk::Mesh< TParametersValueType, NDimensions >       MeshType;
+  typedef typename MeshType::ConstPointer                      MeshConstPointer;
   typedef typename MeshType::PointsContainer::ConstIterator    MeshPointIterator;
   typedef typename MeshType::PointDataContainer::ConstIterator MeshPointDataIterator;
 
@@ -98,10 +106,10 @@ public:
    * This method applies the affine transform given by self to a
    * given point or vector, returning the transformed point or
    * vector. */
-   OutputPointType     TransformPoint(const InputPointType  & point) const ITK_OVERRIDE;
+   OutputPointType TransformPoint(const InputPointType  & point) const ITK_OVERRIDE;
 
    using Superclass::TransformVector;
-   OutputVectorType    TransformVector(const InputVectorType & vector) const ITK_OVERRIDE;
+   OutputVectorType TransformVector(const InputVectorType & vector) const ITK_OVERRIDE;
 
    OutputVnlVectorType TransformVector(const InputVnlVectorType & vector) const ITK_OVERRIDE;
 
