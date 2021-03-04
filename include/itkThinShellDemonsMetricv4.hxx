@@ -63,12 +63,10 @@ ThinShellDemonsMetricv4< TFixedMesh, TMovingMesh >
   this->movingVTKMesh = dataTransfer->GetOutput();
 
   //Needs to be in pointLocator
-  /*
-  dataTransfer = itkMeshTovtkPolyData::New();
-  dataTransfer->SetInput(this->m_FixedMesh);
+  dataTransfer = itkMeshTovtkPolyData<double>::New();
+  dataTransfer->SetInput(this->m_FixedPointSet);
   this->fixedVTKMesh = dataTransfer->GetOutput();
-  delete dataTransfer;
-
+  /*
   vtkSmartPointer<vtkCurvatures> curvaturesFilter =
     vtkSmartPointer<vtkCurvatures>::New();
   curvaturesFilter->SetInputData(fixedVTKMesh);
@@ -86,16 +84,16 @@ ThinShellDemonsMetricv4< TFixedMesh, TMovingMesh >
 ::ComputeNeighbors()
 {
   this->neighborMap.Initialize();
-  for(int id=0; id<movingVTKMesh->GetNumberOfPoints(); id++)
+  for(int id=0; id<fixedVTKMesh->GetNumberOfPoints(); id++)
     {
     //Collect all neighbors
     vtkSmartPointer<vtkIdList> cellIdList = vtkSmartPointer<vtkIdList>::New();
-    movingVTKMesh->GetPointCells(id, cellIdList);
+    fixedVTKMesh->GetPointCells(id, cellIdList);
     vtkSmartPointer<vtkIdList> pointIdList = vtkSmartPointer<vtkIdList>::New();
     for(int i = 0; i < cellIdList->GetNumberOfIds(); i++)
       {
       vtkSmartPointer<vtkIdList> pointIdListTmp = vtkSmartPointer<vtkIdList>::New();
-      movingVTKMesh->GetCellPoints(cellIdList->GetId(i), pointIdListTmp);
+      fixedVTKMesh->GetCellPoints(cellIdList->GetId(i), pointIdListTmp);
       for(int j=0; j < pointIdListTmp->GetNumberOfIds(); j++)
         {
         if(pointIdListTmp->GetId(j) != id)
@@ -114,20 +112,22 @@ typename ThinShellDemonsMetricv4< TFixedMesh, TMovingMesh >::VectorType
 ThinShellDemonsMetricv4< TFixedMesh, TMovingMesh >
 ::GetMovingDirection(int identifier) const
 {
-  PointType p1 = this->m_MovingTransformedPointSet->GetPoint(identifier);
-  PointType p2 = this->m_MovingPointSet->GetPoint(identifier);
+  PointType p1 = this->m_FixedPointSet->GetPoint(identifier);
+  PointType p2 = this->m_FixedTransformedPointSet->GetPoint(identifier);
   return p1 - p2;
 }
 
 template< typename TFixedMesh, typename TMovingMesh >
 void
 ThinShellDemonsMetricv4< TFixedMesh, TMovingMesh >
-::ComputeStretchAndBend( int identifier,
+::ComputeStretchAndBend( const PointType &point,
                          double &stretchEnergy,
                          double &bendEnergy,
                          VectorType &stretch,
                          VectorType &bend) const
 {
+  PointIdentifier identifier = this->m_FixedTransformedPointsLocator->FindClosestPoint(point);
+
   //enumerate all the neighboring vertices (edges) of a given vertex
   //stretching energy : measure the squared derivative along different edge directions
   //bending energy : measure the local laplacian around the local patch using
@@ -166,6 +166,7 @@ ThinShellDemonsMetricv4< TFixedMesh, TMovingMesh >
   bendEnergy = bEnergy.GetSquaredNorm() / degree;
   stretchEnergy /= pointIdList->GetNumberOfIds();
   bendEnergy /= pointIdList->GetNumberOfIds();
+
 }
 
 
@@ -198,8 +199,8 @@ ThinShellDemonsMetricv4< TFixedMesh, TMovingMesh >
   closestPoint.Fill(0.0);
 
   //TODO: Need to update / write pointlocator to use geomtric features
-  PointIdentifier pointId = this->m_MovingTransformedPointsLocator->FindClosestPoint(point);
-  closestPoint = this->m_MovingTransformedPointSet->GetPoint(pointId);
+  PointIdentifier mPointId = this->m_MovingTransformedPointsLocator->FindClosestPoint(point);
+  closestPoint = this->m_MovingPointSet->GetPoint(mPointId);
 
   value = point.SquaredEuclideanDistanceTo(closestPoint);
   VectorType direction = closestPoint - point;
@@ -208,7 +209,7 @@ ThinShellDemonsMetricv4< TFixedMesh, TMovingMesh >
   double bE = 0;
   VectorType sD;
   VectorType bD;
-  this->ComputeStretchAndBend(pointId, sE, bE, sD, bD);
+  this->ComputeStretchAndBend(point, sE, bE, sD, bD);
   derivative = direction + m_StretchWeight*sD + bD * m_BendWeight;
   value += m_StretchWeight * sE + m_BendWeight * bE;
 }

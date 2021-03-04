@@ -39,6 +39,19 @@ namespace itk
  * between the two meshes. The matching results stay the same during
  * the optimization process.
  *
+ * Note that in ITK the registration by convection computes a transfrom from
+ * the fixed object to the moving object. For image this is natural
+ * since to transform the moving image into the fixed domain the the image is
+ * pulled back thorugh the transform.
+ * For point set registration this can be confusing since certain transforms
+ * such a mesh displacements do not readily allow to pull back the moving point
+ * set and it is easier to transform the "fixed" point set to the moving point set
+ * by tranpsoerting points forward along the transform.
+ *
+ * For the thin shell demons metric here that means that the regularization is
+ * applied to the fixed point set and the transfrom moves the points of the
+ * fixed points set to the moving point set
+ *
  *  Reference:
  *  "Thin Shell Demons"
  *  Zhao Q, Price T, Pizer S, Niethammer M, Alterovitz R, Rosenman J
@@ -128,14 +141,14 @@ private:
 
   vtkSmartPointer<vtkPolyData> movingVTKMesh;
   vtkSmartPointer<vtkPolyData> fixedVTKMesh;
-  vtkSmartPointer<vtkPolyData> fixedCurvature;
+  //vtkSmartPointer<vtkPolyData> fixedCurvature;
 
   double m_ConfidenceSigma;
   double m_StretchWeight;
   double m_BendWeight;
   double m_GeometricFeatureWeight;
 
-  void ComputeStretchAndBend(int identifier,
+  void ComputeStretchAndBend(const PointType &point,
                              double &stretchEnergy,
                              double &bendEnergy,
                              VectorType &stretch,
