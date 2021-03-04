@@ -123,7 +123,9 @@ public:
 
 protected:
   ThinShellDemonsMetric();
-  virtual ~ThinShellDemonsMetric() {}
+  virtual ~ThinShellDemonsMetric() {
+    std::cout << "Metric deallocate" << std::endl;
+  };
 
   void PrintSelf(std::ostream & os, Indent indent) const ITK_OVERRIDE;
 

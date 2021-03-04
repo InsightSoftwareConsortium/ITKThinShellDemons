@@ -20,16 +20,12 @@
 #include "itkVTKPolyDataReader.h"
 #include "itkVTKPolyDataWriter.h"
 
-#include "itkConjugateGradientLineSearchOptimizerv4.h"
 #include "itkCommand.h"
 #include "itkThinShellDemonsMetricv4.h"
-#include "itkGradientDescentOptimizerv4.h"
-#include "itkRegistrationParameterScalesFromPhysicalShift.h"
 #include "itkImageRegistrationMethodv4.h"
-#include "itkAffineTransform.h"
-#include "itkMeshDisplacementTransform.h"
 #include <itkDisplacementFieldTransform.h>
-#include "itkLBFGS2Optimizerv4.h"
+//#include "itkMeshDisplacementTransform.h"
+#include "itkConjugateGradientLineSearchOptimizerv4.h"
 
 template<typename TFilter>
 class CommandIterationUpdate : public itk::Command
@@ -59,22 +55,18 @@ public:
       {
       itkGenericExceptionMacro( "Error dynamic_cast failed" );
       }
-    std::cout << "It: " << optimizer->GetCurrentIteration() << " metric value: " << optimizer->GetCurrentMetricValue();
+    std::cout << "It: " << optimizer->GetCurrentIteration();
+    std::cout << " metric value: " << optimizer->GetCurrentMetricValue();
     std::cout << std::endl;
     }
 };
 
 int itkThinShellDemonsTestv4_Displacement( int args, char **argv)
 {
-  std::cout << argv[1] << std::endl;
-  std::cout << argv[2] << std::endl;
-  std::cout << "Runnng ThinShellDemonsTest" << std::endl;
   const unsigned int Dimension = 3;
   typedef itk::Mesh<double, Dimension>         MeshType;
   using PointsContainerPointer = MeshType::PointsContainerPointer;
   typedef itk::VTKPolyDataReader< MeshType >   ReaderType;
-
-  unsigned int numberOfIterations = 100;
 
   /*
   Initialize fixed mesh polydata reader
@@ -130,16 +122,19 @@ int itkThinShellDemonsTestv4_Displacement( int args, char **argv)
   boundingBox->SetPoints(points);
   boundingBox->ComputeBoundingBox();
   typename BoundingBoxType::PointType minBounds = boundingBox->GetMinimum();
-  typename BoundingBoxType::PointType maxBounds = boundingBox->GetMinimum();
+  typename BoundingBoxType::PointType maxBounds = boundingBox->GetMaximum();
 
-  fixedImageSize[0] = maxBounds[0]-minBounds[0]+200;
-  fixedImageSize[1] = maxBounds[1]-minBounds[1]+200;
-  fixedImageSize[2] = maxBounds[2]-minBounds[2]+200;
-  fixedImageOrigin[0] = minBounds[0]-100;
-  fixedImageOrigin[1] = minBounds[1]-100;
-  fixedImageOrigin[2] = minBounds[2]-100;
+  int imageDiagonal = 100;
+  double spacing = sqrt(boundingBox->GetDiagonalLength2()) / imageDiagonal;
+  auto diff = maxBounds - minBounds;
+  fixedImageSize[0] = ceil( 1.2 * diff[0] / spacing );
+  fixedImageSize[1] = ceil( 1.2 * diff[1] / spacing );
+  fixedImageSize[2] = ceil( 1.2 * diff[2] / spacing );
+  fixedImageOrigin[0] = minBounds[0] - 0.1*diff[0];
+  fixedImageOrigin[1] = minBounds[1] - 0.1*diff[1];
+  fixedImageOrigin[2] = minBounds[2] - 0.1*diff[2];
   fixedImageDirection.SetIdentity();
-  fixedImageSpacing.Fill( 1 );
+  fixedImageSpacing.Fill( spacing );
 
   FixedImageType::Pointer fixedImage = FixedImageType::New();
   fixedImage->SetRegions( fixedImageSize );
@@ -171,30 +166,30 @@ int itkThinShellDemonsTestv4_Displacement( int args, char **argv)
   metric->SetGeometricFeatureWeight(100);
   metric->SetMovingTransform( transform );
   //Reversed due to using points instead of an image
-  //to keep semantics the same
+  //to keep semantics the same as in itkThinShellDemonsTest.cxx
+  //For the ThinShellDemonsMetricv4 the fixed mesh is
+  //regularized
   metric->SetFixedMesh( movingMesh );
   metric->SetMovingMesh( fixedMesh );
   metric->SetVirtualDomainFromImage( fixedImage );
   metric->Initialize();
 
+  // Scales estimator
+  using ScalesType = itk::RegistrationParameterScalesFromPhysicalShift< PointSetMetricType >;
+  ScalesType::Pointer shiftScaleEstimator = ScalesType::New();
+  shiftScaleEstimator->SetMetric( metric );
+  // Needed with pointset metrics
+  shiftScaleEstimator->SetVirtualDomainPointSet( metric->GetVirtualTransformedPointSet() );
+
+
   // optimizer
-  /*
-  using OptimizerType = itk::GradientDescentOptimizerv4;
-  OptimizerType::Pointer  optimizer = OptimizerType::New();
-  optimizer->SetMetric( metric );
-  optimizer->SetNumberOfIterations( numberOfIterations );
+  typedef itk::ConjugateGradientLineSearchOptimizerv4 OptimizerType;
+  OptimizerType::Pointer optimizer = OptimizerType::New();
+  optimizer->SetNumberOfIterations( 50 );
   optimizer->SetScalesEstimator( shiftScaleEstimator );
   optimizer->SetMaximumStepSizeInPhysicalUnits( 3 );
   optimizer->SetMinimumConvergenceValue( 0.0 );
   optimizer->SetConvergenceWindowSize( 10 );
-  */
-  typedef itk::ConjugateGradientLineSearchOptimizerv4 OptimizerType;
-  //typedef itk::LBFGSOptimizer OptimizerType;
-  //typedef itk::GradientDescentOptimizer     OptimizerType;
-  //typedef itk::RegularStepGradientDescentOptimizer OptimizerType;
-  //typedef itk::LBFGS2Optimizerv4 OptimizerType;
-  OptimizerType::Pointer optimizer = OptimizerType::New();
-  optimizer->SetNumberOfIterations( 10 );
 
   using CommandType = CommandIterationUpdate<OptimizerType>;
   CommandType::Pointer observer = CommandType::New();
@@ -220,7 +215,6 @@ int itkThinShellDemonsTestv4_Displacement( int args, char **argv)
     std::cerr << "Exception caught: " << e << std::endl;
     return EXIT_FAILURE;
     }
-
 
   //AffineTransformType::InverseTransformBasePointer affineInverseTransform =
   TransformType::Pointer tx = simple->GetModifiableTransform();

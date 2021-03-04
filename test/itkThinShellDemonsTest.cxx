@@ -20,51 +20,12 @@
 #include "itkVTKPolyDataReader.h"
 #include "itkVTKPolyDataWriter.h"
 #include "itkThinShellDemonsMetric.h"
-#include "itkTranslationTransform.h"
-#include "itkConjugateGradientOptimizer.h"
-#include "itkGradientDescentOptimizer.h"
 #include "itkLBFGSOptimizer.h"
-#include "itkRegularStepGradientDescentOptimizer.h"
 #include "itkMeshToMeshRegistrationMethod.h"
 #include "itkMeshDisplacementTransform.h"
 
-class CommandIterationUpdate : public itk::Command
-{
-public:
-  typedef  CommandIterationUpdate   Self;
-  typedef  itk::Command             Superclass;
-  typedef itk::SmartPointer<Self>   Pointer;
-  itkNewMacro( Self );
-protected:
-  CommandIterationUpdate() {};
-public:
-  typedef itk::ConjugateGradientOptimizer OptimizerType;
-  typedef const OptimizerType *           OptimizerPointer;
-
-  void Execute(itk::Object *caller, const itk::EventObject & event) override
-  {
-    Execute( (const itk::Object *)caller, event);
-  }
-
-  void Execute(const itk::Object * object, const itk::EventObject & event) override
-  {
-    OptimizerPointer optimizer = static_cast< OptimizerPointer >( object );
-    if( ! itk::IterationEvent().CheckEvent( &event ) )
-    {
-      return;
-    }
-    std::cout << "Position = "  << optimizer->GetCachedValue();
-    std::cout << std::endl << std::endl;
-  }
-
-};
-
 int itkThinShellDemonsTest( int args, char **argv)
 {
-
-  std::cout << argv[1] << std::endl;
-  std::cout << argv[2] << std::endl;
-  std::cout << "Runnng ThinShellDemonsTest" << std::endl;
   const unsigned int Dimension = 3;
   typedef itk::Mesh<double, Dimension>       MeshType;
   typedef itk::VTKPolyDataReader< MeshType > ReaderType;
@@ -112,6 +73,16 @@ int itkThinShellDemonsTest( int args, char **argv)
   MeshType::Pointer movingMesh = movingPolyDataReader->GetOutput();
 
   /*
+    Initialize Thin Shell Demons transformation
+    this transformation type needs a mesh as a template
+  */
+  typedef itk::MeshDisplacementTransform<double, Dimension> TransformTestType;
+  TransformTestType::Pointer transform = TransformTestType::New();
+  transform->SetMeshTemplate(movingMesh);
+  transform->Initialize();
+  transform->SetIdentity();
+
+  /*
     Initialize Thin Shell Demons metric
   */
   typedef itk::ThinShellDemonsMetric<MeshType, MeshType> MetricType;
@@ -119,37 +90,20 @@ int itkThinShellDemonsTest( int args, char **argv)
   metric->SetStretchWeight(0.5);
   metric->SetBendWeight(0.5);
   metric->SetGeometricFeatureWeight(100);
+  metric->SetFixedMesh(fixedMesh);
+  metric->SetMovingMesh(movingMesh);
+  metric->SetTransform(transform);
+  metric->Initialize();
 
-  /*
-    Initialize Thin Shell Demons transformation
-  */
-
-  typedef itk::MeshDisplacementTransform<double, Dimension>
-    TransformTestType;
-  TransformTestType::Pointer transform = TransformTestType::New();
-
-  transform->SetMeshTemplate(movingMesh); // this transformation type needs a mesh as a template
-  transform->Initialize();  // With a template mesh, the transformation can allocate
-                              // the parameters based on the number of vertices
-  transform->SetIdentity();
-  std::cout<<transform->GetNumberOfParameters()<<std::endl;
-  std::cout<<movingMesh->GetNumberOfPoints() <<std::endl;
 
   /*
     Initialize Thin Shell Demons optimizer
   */
-  //typedef itk::ConjugateGradientOptimizer     OptimizerType;
   typedef itk::LBFGSOptimizer OptimizerType;
-  //typedef itk::GradientDescentOptimizer     OptimizerType;
-  //typedef itk::RegularStepGradientDescentOptimizer OptimizerType;
   OptimizerType::Pointer optimizer = OptimizerType::New();
-  //optimizer->SetLearningRate(0.0000001);
-  //optimizer->SetMinimumStepLength(0.0000000001);
-  //optimizer->SetMaximumStepLength(0.01);
 
-  typedef itk::MeshToMeshRegistrationMethod<MeshType, MeshType>
-    RegistrationType;
-  RegistrationType::Pointer registration  = RegistrationType::New();
+  typedef itk::MeshToMeshRegistrationMethod<MeshType, MeshType> RegistrationType;
+  RegistrationType::Pointer registration = RegistrationType::New();
 
   registration->SetMetric(metric);
   registration->SetOptimizer(optimizer);
@@ -158,10 +112,8 @@ int itkThinShellDemonsTest( int args, char **argv)
   registration->SetFixedMesh(fixedMesh);
   registration->SetMovingMesh(movingMesh);
 
-  // Connect an observer
-  CommandIterationUpdate::Pointer observer = CommandIterationUpdate::New();
-  optimizer->AddObserver(itk::IterationEvent(), observer);
 
+  std::cout << "Start Value= " << metric->GetValue(transform->GetParameters()) << std::endl;
   try
   {
     registration->Update();
@@ -172,7 +124,7 @@ int itkThinShellDemonsTest( int args, char **argv)
     return EXIT_FAILURE;
   }
 
-  //std::cout << "Solution = " << transform->GetParameters() << std::endl;
+  std::cout << "Solution Value= " << metric->GetValue(transform->GetParameters()) << std::endl;
 
   /*
     output mesh

@@ -32,18 +32,18 @@ namespace itk
 /**
  * \class itkMeshTovtkPolyData
  * \brief
- *   \warning
+ * \warning
  * \sa
  * \ingroup ThinShellDemons
  */
 template<typename T>
-class ITK_TEMPLATE_EXPORT itkMeshTovtkPolyData : public LightObject
+class ITK_TEMPLATE_EXPORT itkMeshTovtkPolyData : public Object
 {
 
  public:
   /** Standard class typedefs. */
   typedef itkMeshTovtkPolyData       Self;
-  typedef LightObject                Superclass;
+  typedef Object                     Superclass;
   typedef SmartPointer< Self >       Pointer;
   typedef SmartPointer< const Self > ConstPointer;
 
@@ -51,7 +51,7 @@ class ITK_TEMPLATE_EXPORT itkMeshTovtkPolyData : public LightObject
   itkNewMacro(Self);
 
   /** Run-time type information (and related methods). */
-  itkTypeMacro(itkMeshTovtkPolyData, LightObject);
+  itkTypeMacro(itkMeshTovtkPolyData, Object);
 
   typedef itk::DefaultDynamicMeshTraits<double, 3, 3,double,double> TriangleMeshTraits;
   typedef itk::Mesh<double,3>                                       TriangleMeshType;
@@ -68,18 +68,13 @@ class ITK_TEMPLATE_EXPORT itkMeshTovtkPolyData : public LightObject
   The SetInput method provides pointer to the vtkPolyData
   */
   void SetInput(TriangleMeshType::ConstPointer mesh);
-  vtkPolyData *GetOutput();
-  void ConvertitkTovtk();
+  vtkSmartPointer<vtkPolyData> GetOutput();
 
 protected:
   itkMeshTovtkPolyData();
-  virtual ~itkMeshTovtkPolyData();
-
+  virtual ~itkMeshTovtkPolyData() override = default;
   TriangleMeshType::ConstPointer m_itkTriangleMesh;
-
-  vtkPoints  * m_Points;
-  vtkPolyData * m_PolyData;
-  vtkCellArray * m_Polys;
+  vtkSmartPointer<vtkPolyData> ConvertitkTovtk();
 
 private:
   ITK_DISALLOW_COPY_AND_ASSIGN(itkMeshTovtkPolyData);

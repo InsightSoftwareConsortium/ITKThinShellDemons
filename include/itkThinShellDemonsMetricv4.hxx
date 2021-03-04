@@ -138,7 +138,7 @@ ThinShellDemonsMetricv4< TFixedMesh, TMovingMesh >
   bend.Fill(0);
 
   //Collect all neighbors
-  const vtkSmartPointer<vtkIdList> &pointIdList = neighborMap.ElementAt(identifier);
+  const vtkSmartPointer<vtkIdList> pointIdList = neighborMap.ElementAt(identifier);
   int degree = pointIdList->GetNumberOfIds();
   VectorType v = GetMovingDirection(identifier);
   VectorType bEnergy;
@@ -198,7 +198,7 @@ ThinShellDemonsMetricv4< TFixedMesh, TMovingMesh >
   PointType closestPoint;
   closestPoint.Fill(0.0);
 
-  //TODO: Need to update / write pointlocator to use geomtric features
+  //TODO: Need to update / write point locator to use geomtric features
   PointIdentifier mPointId = this->m_MovingTransformedPointsLocator->FindClosestPoint(point);
   closestPoint = this->m_MovingPointSet->GetPoint(mPointId);
 

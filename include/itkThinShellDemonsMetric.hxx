@@ -132,8 +132,6 @@ void
 ThinShellDemonsMetric< TFixedMesh, TMovingMesh >
 ::ComputeTargetPosition() const
 {
-  std::cout << "Compute Target Position" << std::endl;
-
   FixedMeshConstPointer fixedMesh = this->GetFixedMesh();
   MovingMeshConstPointer movingMesh = this->GetMovingMesh();
   MovingPointIterator pointItr = movingMesh->GetPoints()->Begin();
@@ -259,7 +257,6 @@ typename ThinShellDemonsMetric< TFixedMesh, TMovingMesh >::MeasureType
 ThinShellDemonsMetric< TFixedMesh, TMovingMesh >
 ::GetValue(const TransformParametersType & parameters) const
 {
-  std::cout << "Get Value" << std::endl;
   static DerivativeType derivative = DerivativeType(0);
   MeasureType value = 0;
   GetValueAndDerivative(parameters, value, derivative);
@@ -272,7 +269,6 @@ ThinShellDemonsMetric< TFixedMesh, TMovingMesh >
 ::GetDerivative( const TransformParametersType &parameters,
                  DerivativeType &derivative ) const
 {
-  std::cout << "Get Derivative" << std::endl;
   MeasureType dummy = 0;
   this->GetValueAndDerivative(parameters, dummy, derivative);
 }
@@ -346,9 +342,11 @@ ThinShellDemonsMetric< TFixedMesh, TMovingMesh >
     identifier++;
   }
 
+  /*
   std::cout << "Dist:    " << functionValue << std::endl;
   std::cout << "Stretch: " << stretchEnergy << std::endl;
   std::cout << "Bend:    " << bendEnergy << std::endl;
+  */
 
   value = functionValue + m_StretchWeight * stretchEnergy + m_BendWeight * bendEnergy;
 }

@@ -28,18 +28,9 @@ itkMeshTovtkPolyData<T>
 ::itkMeshTovtkPolyData()
 {
   m_itkTriangleMesh = TriangleMeshType::New();
-  m_Points = vtkPoints::New();
-  m_PolyData = vtkPolyData::New();
-  m_Polys = vtkCellArray::New();
-}
-
-
-template<typename T>
-itkMeshTovtkPolyData<T>
-::~itkMeshTovtkPolyData()
-{
 
 }
+
 
 template<typename T>
 void
@@ -47,19 +38,18 @@ itkMeshTovtkPolyData<T>
 ::SetInput(typename TriangleMeshType::ConstPointer mesh)
 {
   m_itkTriangleMesh = mesh;
-  this->ConvertitkTovtk();
 }
 
 template<typename T>
-vtkPolyData *
+vtkSmartPointer<vtkPolyData>
 itkMeshTovtkPolyData<T>
 ::GetOutput()
 {
-  return m_PolyData;
+  return this->ConvertitkTovtk();
 }
 
 template<typename T>
-void
+vtkSmartPointer<vtkPolyData>
 itkMeshTovtkPolyData<T>
 ::ConvertitkTovtk()
 {
@@ -69,12 +59,15 @@ itkMeshTovtkPolyData<T>
   InputPointsContainerIterator     points = myPoints->Begin();
   PointType point;
 
+  vtkSmartPointer<vtkPoints> m_Points = vtkSmartPointer<vtkPoints>::New();
+  vtkSmartPointer<vtkPolyData> m_PolyData = vtkSmartPointer<vtkPolyData>::New();
+  vtkSmartPointer<vtkCellArray> m_Polys = vtkSmartPointer<vtkCellArray>::New();
+
   if (numPoints == 0)
     {
       printf( "Aborting: No Points in GRID\n");
-      return;
+      return m_PolyData;
     }
-
   m_Points->SetNumberOfPoints(numPoints);
 
   int idx=0;
@@ -91,14 +84,12 @@ itkMeshTovtkPolyData<T>
 
   m_PolyData->SetPoints(m_Points);
 
-  m_Points->Delete();
-
   CellsContainerPointer cells = m_itkTriangleMesh->GetCells();
   CellsContainerIterator cellIt = cells->Begin();
   vtkIdType pts[3];
   while ( cellIt != cells->End() )
     {
-  CellType *nextCell = cellIt->Value();
+    CellType *nextCell = cellIt->Value();
     CellType::PointIdIterator pointIt = nextCell->PointIdsBegin() ;
     PointType  p;
     int i;
@@ -121,12 +112,10 @@ itkMeshTovtkPolyData<T>
         printf("something \n");
       }
     cellIt++;
-
     }
 
   m_PolyData->SetPolys(m_Polys);
-  m_Polys->Delete();
-
+  return m_PolyData;
 }
 }
 #endif

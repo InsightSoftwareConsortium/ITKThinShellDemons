@@ -25,19 +25,13 @@
 
 namespace itk
 {
-/** \class ThinShellDemonsMetric
- * \brief This Class inherits the base MeshToMeshMetric
+/** \class ThinShellDemonsMetricv4
  *
- * \brief This Class inherits the basic MeshToMeshMetric.
- * It expects a mesh-to-mesh transformaton to be plugged in.
- * This class computes a metric value, which is a combination
- * of geometric feature matching quality and the Thin Shell
- * deformation Energy. This metric computation part
- * (objective function) is the core of the Thin Shell Demons algorithm.
- * When initializing a metric object of this class with two meshes,
- * the metric object first pre-computes geometric feature matching
- * between the two meshes. The matching results stay the same during
- * the optimization process.
+ * \brief
+ * Thin shelll demons metric for use with v4 registration framework.
+ * This metric implements a mesh regularization term that penalizes mesh distortions
+ * while trying to iteratively match closest points. Currently geometric features matching
+ * is not implemented in the closest point computation.
  *
  * Note that in ITK the registration by convection computes a transfrom from
  * the fixed object to the moving object. For image this is natural

@@ -24,7 +24,9 @@ namespace itk
 {
 /** \class MeshToMeshMetricv4
  *
- * \brief
+ * \brief Extension of PointSetToPointSetMetricv4 for use with meshes
+ * provides convenience methods to get and set moving and fixed mesh.
+ *
  * \ingroup ThinShellDemons
  */
 template< typename TFixedMesh,  typename TMovingMesh,

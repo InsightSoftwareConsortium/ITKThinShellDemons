@@ -189,43 +189,7 @@ private:
   MeshConstPointer m_MeshTemplate;
   JacobianType     m_IdentityJacobian;
   ParametersType m_VectorField;
-};                           // class MeshDisplacementTransform
-
-// Back transform a point
-// template<typename TParametersValueType, unsigned int NDimensions>
-// inline
-// typename MeshDisplacementTransform<TParametersValueType, NDimensions>::InputPointType
-// MeshDisplacementTransform<TParametersValueType, NDimensions>::BackTransform(const OutputPointType & point) const
-// {
-//   return point - m_Offset;
-// }
-
-// Back transform a vector
-// template<typename TParametersValueType, unsigned int NDimensions>
-// inline
-// typename MeshDisplacementTransform<TParametersValueType, NDimensions>::InputVectorType
-// MeshDisplacementTransform<TParametersValueType, NDimensions>::BackTransform(const OutputVectorType & vect) const
-// {
-//   return vect;
-// }
-
-// Back transform a vnl_vector
-// template<typename TParametersValueType, unsigned int NDimensions>
-// inline
-// typename MeshDisplacementTransform<TParametersValueType, NDimensions>::InputVnlVectorType
-// MeshDisplacementTransform<TParametersValueType, NDimensions>::BackTransform(const OutputVnlVectorType & vect) const
-// {
-//   return vect;
-// }
-
-// Back Transform a CovariantVector
-// template<typename TParametersValueType, unsigned int NDimensions>
-// inline
-// typename MeshDisplacementTransform<TParametersValueType, NDimensions>::InputCovariantVectorType
-// MeshDisplacementTransform<TParametersValueType, NDimensions>::BackTransform(const OutputCovariantVectorType & vect) const
-// {
-//   return vect;
-// }
+};
 
 }  // namespace itk
 
