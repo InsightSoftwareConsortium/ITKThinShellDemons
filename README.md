@@ -12,9 +12,9 @@ This module implements the Thin Shell Demons regularization proposed in
 
 
 There are two implementations of this approach available:
-1. (TSHDv4) An implementation taking advantage of the pointset to pointset registration
+1. (TSHDv4) An implementation taking advantage of the point set to point set registration
    capabilities of the ITK v4 registration framework.
-2. (TSHD) An implementation started by Qingyu Zhao and updated to fix some remaiing task
+2. (TSHD) An implementation started by Qingyu Zhao and updated to fix some remaining task
    and run with ITK 5
 
 
@@ -26,17 +26,17 @@ transformation can be combined with the thin shell regularization. For examples 
 2. [DisplacementField](./test/itkThinShellDemonsTestv4_Displacement.cxx)
 3. [SyN Diffeomorphism](./test/itkThinShellDemonsTestv4_SyN.cxx)
 
-Please be aware that the regularization is implented on the fixed mesh. This is due to the 
+Please be aware that the regularization is implemented on the fixed mesh. This is due to the 
 nomenclature in of the moving transform being computed from fixed image to moving image. For 
-resampling the moving image is pulled back to the fixed image domain. For point sets
-it's easier to compute the oush forward than the pull back (for some transformation the 
+re-sampling the moving image is pulled back to the fixed image domain. For point sets
+it's easier to compute the push forward than the pull back (for some transformation the 
 inverse might be difficult compute or not available). Hence, the nomenclature matches
-the ITK apprach for images and computes a transform from fixed to moving domain. Howver to
+the ITK approach for images and computes a transform from fixed to moving domain. However to
 register a point set it is the fixed point set that is transformed to the moving point set 
-domain and it is computationally more efficent to regularize on the fixed mesh.
+domain and it is computationally more efficient to regularize on the fixed mesh.
 
 **The implementation currently supports the thin shell regularization. Missing features are a 
-confidence matching weighting and geomtric feature matching (currently only point distances 
+confidence matching weighting and geometric feature matching (currently only point distances 
 are used).**
 
 
@@ -44,11 +44,11 @@ are used).**
 
 This is an implementation that fits within the pre v4 ITK registration workflow.
 The implementation is not very generic at this point and miss details to be able
-to interact with other registration components in teh ITK registration ecosystem.
+to interact with other registration components in the ITK registration ecosystem.
 However, different optimizers can be used within this method.
 
 **The implementation supports the thin shell regularization, geometric feature matching
-(currently updated at each iteration during optimtization). Missing features are a
+(currently updated at each iteration during optimization). Missing features are a
 confidence matching weighting.**
 
 For an example see [ThinShellDemonsTest](./test/itkThinShellDemonsTest.cxx)
@@ -81,7 +81,7 @@ Energy. This metric computation part (objective function) is the core of the Thi
 Demons algorithm. When initializing a metric object of this class with two meshes,
 the metric object first pre-computes geometric feature matching between the two meshes.
 ~~The matching results stay the same during the optimization process~~. *This was changed
-to be updated during optimization and curvature matching was implemnted.*
+to be updated during optimization and curvature matching was implemented.*
 
 3. Optimizer
 
@@ -92,7 +92,7 @@ preferable optimizer.
 
 4. Registration Method (itkMeshToMeshRegistrationMethod)
 
-This class is templated over the pointset-to-pointset registration method. Users
+This class is templated over the point set to pointset registration method. Users
 will create an object of this class to perform Thin Shell Demons. See the test
 example for usage.
 
@@ -103,4 +103,4 @@ Compile against ITK with ITKVtkGlue module built.
 
 ## Authors
 Qingyu Zhao (original version)  
-Samuel Gerber (v4 version and updateds to original)
+Samuel Gerber (v4 version and updates to original)
