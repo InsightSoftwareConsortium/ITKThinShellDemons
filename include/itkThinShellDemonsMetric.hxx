@@ -349,6 +349,7 @@ ThinShellDemonsMetric< TFixedMesh, TMovingMesh >
   */
 
   value = functionValue + m_StretchWeight * stretchEnergy + m_BendWeight * bendEnergy;
+  value /= movingMesh->GetNumberOfPoints();
 }
 
 template< typename TFixedMesh, typename TMovingMesh >
