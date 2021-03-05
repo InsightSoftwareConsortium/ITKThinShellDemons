@@ -12,13 +12,13 @@ This module implements the Thin Shell Demons regularization proposed in
 
 
 There are two implementations of this approach available:
-1. (THDv4 ) An implementation taking advantage of the pointset to pointset registration
+1. (TSHDv4) An implementation taking advantage of the pointset to pointset registration
    capabilities of the ITK v4 registration framework.
-2. (THD) An implementation started by Qingyu Zhao and updated to fix some remaiing task
+2. (TSHD) An implementation started by Qingyu Zhao and updated to fix some remaiing task
    and run with ITK 5
 
 
-## V4 version (THDv4)
+## V4 version (TSHDv4)
 
 The v4 version is implemnted in ThinShellDemonsMetricv4. With this approach different
 transformation can be combined with the thin shell regularization. For examples see:
@@ -40,7 +40,7 @@ confidence matching weighting and geomtric feature matching (currently only poin
 are used).**
 
 
-## Original version (THD)
+## Original version (TSHD)
 
 This is an implementation that fits within the pre v4 ITK registration workflow.
 The implementation is not very generic at this point and miss details to be able
