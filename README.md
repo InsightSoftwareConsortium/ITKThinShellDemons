@@ -6,9 +6,9 @@
 
 This module implements the Thin Shell Demons regularization proposed in
 
-> Thin Shell Demons
-> Zhao Q, Price T, Pizer S, Niethammer M, Alterovitz R, Rosenman J
-> MIUA 2015
+> Thin Shell Demons  
+> Zhao Q, Price T, Pizer S, Niethammer M, Alterovitz R, Rosenman J  
+> MIUA 2015  
 
 
 There is two implementations of this approach available:
