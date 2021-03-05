@@ -21,14 +21,23 @@ There is two implementations of this approach available:
 ## V4 version (THDv4)
 
 The v4 version is implemnted in ThinShellDemonsMetricv4. With this approach different
-transformation can be combined with the thin shell regularization. For examples see
-1. [Affine](./test/ThinShellDemonsv4_Affine.cxx)
-2. [DisplacementField](./test/ThinShellDemonsv4_Displacements.cxx)
-3. [SyN Diffeomorphism](./test/ThinShellDemonsv4_Syn.cxx)
+transformation can be combined with the thin shell regularization. For examples see:
+1. [Affine](./test/ThinShellDemonsTestv4_Affine.cxx)
+2. [DisplacementField](./test/ThinShellDemonsTestv4_Displacements.cxx)
+3. [SyN Diffeomorphism](./test/ThinShellDemonsTestv4_Syn.cxx)
 
+Please be aware that the regularization is implented on the fixed mesh. This is due to the 
+nomenclature in of the moving transform being computed from fixed image to moving image. For 
+resampling the moving image is pulled back to the fixed image domain. For point sets
+it's easier to compute the oush forward than the pull back (for some transformation the 
+inverse might be difficult compute or not available). Hence, the nomenclature matches
+the ITK apprach for images and computes a transform from fixed to moving domain. Howver to
+register a point set it is the fixed point set that is tarnsformed to the moving point set 
+domain and it is computationally more efficent to regularize on the fixed mesh.
 
-The implementation supports the thin shell regularization. Missing features are a confidence
-matching weighting and geomtric feature matching (currently only point distances are used).
+The implementation currently supports the thin shell regularization. Missing features are a 
+confidence matching weighting and geomtric feature matching (currently only point distances 
+are used).
 
 
 ## Original version (THD)
@@ -42,7 +51,7 @@ The implementation supports the thin shell regularization, geometric feature mat
 (currently updated at each iteration during optimtization). Missing features are a
 confidence matching weighting.
 
-For an example see [ThinShellDemons test])./test/ThinShellDemons.cxx)
+For an example see [ThinShellDemonsTest](./test/ThinShellDemonsTest.cxx)
 
 The implementation has the followings components:
 
