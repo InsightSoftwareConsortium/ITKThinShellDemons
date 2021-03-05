@@ -43,7 +43,7 @@ are used).
 ## Original version (THD)
 
 This is an implementation that fits within the pre v4 ITK registration workflow.
-The implementaitons is not very generic at this point and miss details to be able
+The implementation is not very generic at this point and miss details to be able
 to interact with other registration components in teh ITK registration ecosystem.
 However, different optimizers can be used within this method.
 
@@ -102,5 +102,5 @@ example for usage.
 Compile against ITK with ITKVtkGlue module built.
 
 ## Authors
-Qingyu Zhao (original version)
-Samuel Gerber( v4 version and updateds to original )
+Qingyu Zhao (original version)  
+Samuel Gerber( v4 version and updateds to original)
