@@ -22,9 +22,9 @@ There is two implementations of this approach available:
 
 The v4 version is implemnted in ThinShellDemonsMetricv4. With this approach different
 transformation can be combined with the thin shell regularization. For examples see
-1. [Affine](./tests/ThinShellDemonsv4_Affine.cxx)
-2. [DisplacementField[(./tests/ThinShellDemonsv4_Displacements.cxx)
-3. [SyN Difeeomorphism[(./tests/ThinShellDemonsv4_Syn.cxx)
+1. [Affine](./test/ThinShellDemonsv4_Affine.cxx)
+2. [DisplacementField](./test/ThinShellDemonsv4_Displacements.cxx)
+3. [SyN Diffeomorphism](./test/ThinShellDemonsv4_Syn.cxx)
 
 
 The implementation supports the thin shell regularization. Missing features are a confidence
@@ -42,7 +42,7 @@ The implementation supports the thin shell regularization, geometric feature mat
 (currently updated at each iteration during optimtization). Missing features are a
 confidence matching weighting.
 
-For an example see [ThinShellDemons test])./tests/ThinShellDemons.cxx)
+For an example see [ThinShellDemons test])./test/ThinShellDemons.cxx)
 
 The implementation has the followings components:
 
