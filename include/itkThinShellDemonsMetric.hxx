@@ -342,12 +342,6 @@ ThinShellDemonsMetric< TFixedMesh, TMovingMesh >
     identifier++;
   }
 
-  /*
-  std::cout << "Dist:    " << functionValue << std::endl;
-  std::cout << "Stretch: " << stretchEnergy << std::endl;
-  std::cout << "Bend:    " << bendEnergy << std::endl;
-  */
-
   value = functionValue + m_StretchWeight * stretchEnergy + m_BendWeight * bendEnergy;
   value /= movingMesh->GetNumberOfPoints();
 }
