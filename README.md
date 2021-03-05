@@ -23,8 +23,8 @@ There are two implementations of this approach available:
 The v4 version is implemnted in ThinShellDemonsMetricv4. With this approach different
 transformation can be combined with the thin shell regularization. For examples see:
 1. [Affine](./test/itkThinShellDemonsTestv4_Affine.cxx)
-2. [DisplacementField](./test/itkThinShellDemonsTestv4_Displacements.cxx)
-3. [SyN Diffeomorphism](./test/itkThinShellDemonsTestv4_Syn.cxx)
+2. [DisplacementField](./test/itkThinShellDemonsTestv4_Displacement.cxx)
+3. [SyN Diffeomorphism](./test/itkThinShellDemonsTestv4_SyN.cxx)
 
 Please be aware that the regularization is implented on the fixed mesh. This is due to the 
 nomenclature in of the moving transform being computed from fixed image to moving image. For 
