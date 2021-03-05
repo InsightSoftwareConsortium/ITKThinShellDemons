@@ -1,16 +1,6 @@
-
-
-.. image:: https://github.com/InsightSoftwareConsortium/ITKThinShellDemons/workflows/Build,%20test,%20package/badge.svg
-    :alt:    Build Status
-
-.. image:: https://img.shields.io/pypi/v/itk-thinshelldemons.svg
-    :target: https://pypi.python.org/pypi/itk-thinshelldemons
-    :alt: PyPI Version
-
-.. image:: https://img.shields.io/badge/License-Apache%202.0-blue.svg
-    :target: https://github.com/InsightSoftwareConsortium/ITKThinShellDemons/blob/master/LICENSE
-    :alt: License
-
+![Build Status](https://github.com/InsightSoftwareConsortium/ITKThinShellDemons/workflows/Build,%20test,%20package/badge.svg)
+![PyPi Version](https://img.shields.io/pypi/v/itk-thinshelldemons.svg)
+![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)
 
 # ITKThinShellDemons
 
@@ -32,9 +22,9 @@ There is two implementations of this approach available:
 
 The v4 version is implemnted in ThinShellDemonsMetricv4. With this approach different
 transformation can be combined with the thin shell regularization. For examples see
-1. (Affine)[./tests/ThinShellDemonsv4_Affine.cxx]
-2. (DisplacementField)[./tests/ThinShellDemonsv4_Displacements.cxx]
-3. (SyN Difeeomorphism)[./tests/ThinShellDemonsv4_Syn.cxx]
+1. [Affine](./tests/ThinShellDemonsv4_Affine.cxx)
+2. [DisplacementField[(./tests/ThinShellDemonsv4_Displacements.cxx)
+3. [SyN Difeeomorphism[(./tests/ThinShellDemonsv4_Syn.cxx)
 
 
 The implementation supports the thin shell regularization. Missing features are a confidence
@@ -52,7 +42,7 @@ The implementation supports the thin shell regularization, geometric feature mat
 (currently updated at each iteration during optimtization). Missing features are a
 confidence matching weighting.
 
-For an example see (ThinShellDemons test)[./tests/ThinShellDemons.cxx]
+For an example see [ThinShellDemons test])./tests/ThinShellDemons.cxx)
 
 The implementation has the followings components:
 
