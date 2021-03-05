@@ -32,12 +32,12 @@ resampling the moving image is pulled back to the fixed image domain. For point 
 it's easier to compute the oush forward than the pull back (for some transformation the 
 inverse might be difficult compute or not available). Hence, the nomenclature matches
 the ITK apprach for images and computes a transform from fixed to moving domain. Howver to
-register a point set it is the fixed point set that is tarnsformed to the moving point set 
+register a point set it is the fixed point set that is transformed to the moving point set 
 domain and it is computationally more efficent to regularize on the fixed mesh.
 
-The implementation currently supports the thin shell regularization. Missing features are a 
+**The implementation currently supports the thin shell regularization. Missing features are a 
 confidence matching weighting and geomtric feature matching (currently only point distances 
-are used).
+are used).**
 
 
 ## Original version (THD)
@@ -47,9 +47,9 @@ The implementation is not very generic at this point and miss details to be able
 to interact with other registration components in teh ITK registration ecosystem.
 However, different optimizers can be used within this method.
 
-The implementation supports the thin shell regularization, geometric feature matching
+**The implementation supports the thin shell regularization, geometric feature matching
 (currently updated at each iteration during optimtization). Missing features are a
-confidence matching weighting.
+confidence matching weighting.**
 
 For an example see [ThinShellDemonsTest](./test/itkThinShellDemonsTest.cxx)
 
@@ -103,4 +103,4 @@ Compile against ITK with ITKVtkGlue module built.
 
 ## Authors
 Qingyu Zhao (original version)  
-Samuel Gerber( v4 version and updateds to original)
+Samuel Gerber (v4 version and updateds to original)
