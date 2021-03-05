@@ -20,49 +20,19 @@
 #include "itkVTKPolyDataReader.h"
 #include "itkVTKPolyDataWriter.h"
 
-#include "itkCommand.h"
 #include "itkThinShellDemonsMetricv4.h"
-#include "itkImageRegistrationMethodv4.h"
-#include <itkDisplacementFieldTransform.h>
-//#include "itkMeshDisplacementTransform.h"
-#include "itkConjugateGradientLineSearchOptimizerv4.h"
-#include "itkLBFGS2Optimizerv4.h"
+#include "itkAffineTransform.h"
+#include "itkDisplacementFieldTransformParametersAdaptor.h"
+#include "itkSyNImageRegistrationMethod.h"
+#include "itkEuclideanDistancePointSetToPointSetMetricv4.h"
 
-template<typename TFilter>
-class CommandIterationUpdate : public itk::Command
-{
-public:
-  typedef  CommandIterationUpdate   Self;
-  typedef  itk::Command             Superclass;
-  typedef itk::SmartPointer<Self>   Pointer;
-  itkNewMacro( Self );
-protected:
-  CommandIterationUpdate() {};
-public:
-  void Execute(itk::Object *caller, const itk::EventObject & event) override
-    {
-    Execute( (const itk::Object *) caller, event);
-    }
-
-  void Execute(const itk::Object * object, const itk::EventObject & event) override
-    {
-    if( typeid( event ) != typeid( itk::IterationEvent ) )
-      {
-      return;
-      }
-    const auto * optimizer = dynamic_cast< const TFilter * >( object );
-
-    if( !optimizer )
-      {
-      itkGenericExceptionMacro( "Error dynamic_cast failed" );
-      }
-    std::cout << "It: " << optimizer->GetCurrentIteration();
-    std::cout << " metric value: " << optimizer->GetCurrentMetricValue();
-    std::cout << std::endl;
-    }
-};
-
-int itkThinShellDemonsTestv4_Displacement( int args, char **argv)
+/**
+ * The implementation of the thin shell metricin the v4
+ * regsitration framwork permits the option
+ * to comnine the thin shell regularization with for
+ * example the SyN diffeomoprhic transformations.
+ */
+int itkThinShellDemonsTestv4_SyN( int args, char **argv)
 {
   const unsigned int Dimension = 3;
   typedef itk::Mesh<double, Dimension>         MeshType;
@@ -125,7 +95,7 @@ int itkThinShellDemonsTestv4_Displacement( int args, char **argv)
   typename BoundingBoxType::PointType minBounds = boundingBox->GetMinimum();
   typename BoundingBoxType::PointType maxBounds = boundingBox->GetMaximum();
 
-  int imageDiagonal = 200;
+  int imageDiagonal = 100;
   double spacing = sqrt(boundingBox->GetDiagonalLength2()) / imageDiagonal;
   auto diff = maxBounds - minBounds;
   fixedImageSize[0] = ceil( 1.2 * diff[0] / spacing );
@@ -144,79 +114,114 @@ int itkThinShellDemonsTestv4_Displacement( int args, char **argv)
   fixedImage->SetSpacing( fixedImageSpacing );
   fixedImage->Allocate();
 
-  //typedef itk::MeshDisplacementTransform<double, Dimension> TransformType;
-  //TransformType::Pointer transform = TransformType::New();
-  //transform->SetMeshTemplate(movingMesh); // this transformation type needs a mesh as a template
-  //transform->Initialize();
+  using VectorType = itk::Vector<double, Dimension>;
+  VectorType zeroVector(0.0);
+
+  using DisplacementFieldType = itk::Image<VectorType, Dimension>;
+  DisplacementFieldType::Pointer displacementField = DisplacementFieldType::New();
+  displacementField->CopyInformation(fixedImage);
+  displacementField->SetRegions(fixedImage->GetBufferedRegion());
+  displacementField->Allocate();
+  displacementField->FillBuffer(zeroVector);
+
+  DisplacementFieldType::Pointer inverseDisplacementField = DisplacementFieldType::New();
+  inverseDisplacementField->CopyInformation(fixedImage);
+  inverseDisplacementField->SetRegions(fixedImage->GetBufferedRegion());
+  inverseDisplacementField->Allocate();
+  inverseDisplacementField->FillBuffer(zeroVector);
 
   using TransformType = itk::DisplacementFieldTransform<double, Dimension>;
-  auto transform = TransformType::New();
-  using  DisplacementFieldType = TransformType::DisplacementFieldType;
-  DisplacementFieldType::Pointer field = DisplacementFieldType::New();
-  field->SetRegions( fixedImageSize );
-  field->SetOrigin( fixedImageOrigin );
-  field->SetDirection( fixedImageDirection );
-  field->SetSpacing( fixedImageSpacing );
-  field->Allocate();
-  transform->SetDisplacementField(field);
 
+  using DisplacementFieldRegistrationType =
+    itk::SyNImageRegistrationMethod<FixedImageType, MovingImageType,
+                                    TransformType, FixedImageType, MeshType>;
+  DisplacementFieldRegistrationType::Pointer registration =
+    DisplacementFieldRegistrationType::New();
+
+  using OutputTransformType = DisplacementFieldRegistrationType::OutputTransformType;
+  OutputTransformType::Pointer outputTransform = OutputTransformType::New();
+  outputTransform->SetDisplacementField(displacementField);
+  outputTransform->SetInverseDisplacementField(inverseDisplacementField);
+  registration->SetInitialTransform(outputTransform);
+  registration->InPlaceOn();
+
+  using AffineTransformType = itk::AffineTransform<double, MeshType::PointDimension>;
+  AffineTransformType::Pointer transform = AffineTransformType::New();
+  transform->SetIdentity();
+/*
+  using PointSetMetricType = itk::EuclideanDistancePointSetToPointSetMetricv4<MeshType>;
+  PointSetMetricType::Pointer metric = PointSetMetricType::New();
+*/
   using PointSetMetricType = itk::ThinShellDemonsMetricv4<MeshType> ;
   PointSetMetricType::Pointer metric = PointSetMetricType::New();
   metric->SetStretchWeight(1);
   metric->SetBendWeight(1);
   metric->SetGeometricFeatureWeight(100);
+
   metric->SetMovingTransform( transform );
   //Reversed due to using points instead of an image
   //to keep semantics the same as in itkThinShellDemonsTest.cxx
   //For the ThinShellDemonsMetricv4 the fixed mesh is
   //regularized
-  metric->SetFixedMesh( movingMesh );
-  metric->SetMovingMesh( fixedMesh );
+  metric->SetFixedPointSet( movingMesh );
+  metric->SetMovingPointSet( fixedMesh );
   metric->SetVirtualDomainFromImage( fixedImage );
   metric->Initialize();
 
-  // Scales estimator
-  using ScalesType = itk::RegistrationParameterScalesFromPhysicalShift< PointSetMetricType >;
-  ScalesType::Pointer shiftScaleEstimator = ScalesType::New();
-  shiftScaleEstimator->SetMetric( metric );
-  // Needed with pointset metrics
-  shiftScaleEstimator->SetVirtualDomainPointSet( metric->GetVirtualTransformedPointSet() );
-
-
-  // optimizer
-
-  // Does currently not support local transform
-  // but change requeste in:
-  // https://github.com/InsightSoftwareConsortium/ITK/pull/2372
-  /*
-  typedef itk::LBFGS2Optimizerv4 OptimizerType;
-  OptimizerType::Pointer optimizer = OptimizerType::New();
-  optimizer->SetScalesEstimator( shiftScaleEstimator );
-  */
-
-  typedef itk::ConjugateGradientLineSearchOptimizerv4 OptimizerType;
-  OptimizerType::Pointer optimizer = OptimizerType::New();
-  optimizer->SetNumberOfIterations( 50 );
-  optimizer->SetScalesEstimator( shiftScaleEstimator );
-  optimizer->SetMaximumStepSizeInPhysicalUnits( 0.01 );
-  optimizer->SetMinimumConvergenceValue( 0.0 );
-  optimizer->SetConvergenceWindowSize( 10 );
-
-
-  using CommandType = CommandIterationUpdate<OptimizerType>;
-  CommandType::Pointer observer = CommandType::New();
-  optimizer->AddObserver( itk::IterationEvent(), observer );
-
-  using RegistrationType = itk::ImageRegistrationMethodv4<FixedImageType,
-        MovingImageType, TransformType, FixedImageType, MeshType>;
-  RegistrationType::Pointer registration = RegistrationType::New();
-  registration->SetNumberOfLevels(1);
-  registration->SetObjectName("registration");
+  double varianceForUpdateField = spacing*spacing*25;
+  double varianceForTotalField = 0.0;
+  registration->SetGaussianSmoothingVarianceForTheUpdateField(
+      varianceForUpdateField);
+  registration->SetGaussianSmoothingVarianceForTheTotalField(
+      varianceForTotalField);
   registration->SetFixedPointSet(movingMesh);
   registration->SetMovingPointSet(fixedMesh);
-  registration->SetInitialTransform(transform);
+  registration->SetMovingInitialTransform(transform);
   registration->SetMetric(metric);
-  registration->SetOptimizer(optimizer);
+
+  unsigned int numberOfLevels = 3;
+  registration->SetNumberOfLevels(numberOfLevels);
+  DisplacementFieldRegistrationType::NumberOfIterationsArrayType numberOfIterationsPerLevel;
+  numberOfIterationsPerLevel.SetSize(numberOfLevels);
+  numberOfIterationsPerLevel[0] = 5;
+  numberOfIterationsPerLevel[1] = 10;
+  numberOfIterationsPerLevel[2] = 50;
+  registration->SetNumberOfIterationsPerLevel(numberOfIterationsPerLevel);
+
+  DisplacementFieldRegistrationType::ShrinkFactorsArrayType shrinkFactorsPerLevel;
+  shrinkFactorsPerLevel.SetSize(numberOfLevels);
+  shrinkFactorsPerLevel.Fill(1);
+
+  DisplacementFieldRegistrationType::SmoothingSigmasArrayType smoothingSigmasPerLevel;
+  smoothingSigmasPerLevel.SetSize(numberOfLevels);
+  smoothingSigmasPerLevel.Fill(0);
+
+  using DisplacementFieldTransformAdaptorType = itk::DisplacementFieldTransformParametersAdaptor<OutputTransformType>;
+  DisplacementFieldRegistrationType::TransformParametersAdaptorsContainerType adaptors;
+  for (unsigned int level = 0; level < numberOfLevels; level++)
+  {
+    // We use the shrink image filter to calculate the fixed parameters of the virtual
+    // domain at each level.  To speed up calculation and avoid unnecessary memory
+    // usage, we could calculate these fixed parameters directly.
+
+    using ShrinkFilterType = itk::ShrinkImageFilter<DisplacementFieldType, DisplacementFieldType>;
+    ShrinkFilterType::Pointer shrinkFilter = ShrinkFilterType::New();
+    shrinkFilter->SetShrinkFactors(shrinkFactorsPerLevel[level]);
+    shrinkFilter->SetInput(displacementField);
+    shrinkFilter->Update();
+
+    DisplacementFieldTransformAdaptorType::Pointer fieldTransformAdaptor = DisplacementFieldTransformAdaptorType::New();
+    fieldTransformAdaptor->SetRequiredSpacing(shrinkFilter->GetOutput()->GetSpacing());
+    fieldTransformAdaptor->SetRequiredSize(shrinkFilter->GetOutput()->GetBufferedRegion().GetSize());
+    fieldTransformAdaptor->SetRequiredDirection(shrinkFilter->GetOutput()->GetDirection());
+    fieldTransformAdaptor->SetRequiredOrigin(shrinkFilter->GetOutput()->GetOrigin());
+    fieldTransformAdaptor->SetTransform(outputTransform);
+
+    adaptors.push_back(fieldTransformAdaptor);
+  }
+  registration->SetShrinkFactorsPerLevel(shrinkFactorsPerLevel);
+  registration->SetSmoothingSigmasPerLevel(smoothingSigmasPerLevel);
+
 
   std::cout << "Start Value= " << metric->GetValue() << std::endl;
   try
@@ -230,7 +235,7 @@ int itkThinShellDemonsTestv4_Displacement( int args, char **argv)
     }
   std::cout << "Solution Value= " << metric->GetValue() << std::endl;
 
-  TransformType::Pointer tx = registration->GetModifiableTransform();
+  OutputTransformType::Pointer tx = registration->GetModifiableTransform();
   for (unsigned int n = 0; n < movingMesh->GetNumberOfPoints(); n++)
   {
     PointType txMovingPoint = tx->TransformPoint(movingMesh->GetPoint(n));
@@ -240,7 +245,7 @@ int itkThinShellDemonsTestv4_Displacement( int args, char **argv)
   typedef itk::VTKPolyDataWriter<MeshType> WriterType;
   WriterType::Pointer writer = WriterType::New();
   writer->SetInput(movingMesh);
-  writer->SetFileName( "displacedMovingMesh.vtk" );
+  writer->SetFileName( "synMovingMesh.vtk" );
   writer->Write();
   return EXIT_SUCCESS;
 }

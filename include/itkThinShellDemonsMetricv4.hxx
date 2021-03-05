@@ -98,7 +98,7 @@ ThinShellDemonsMetricv4< TFixedMesh, TMovingMesh >
         {
         if(pointIdListTmp->GetId(j) != id)
           {
-          pointIdList->InsertUniqueId (pointIdListTmp->GetId(j) );
+          pointIdList->InsertUniqueId(pointIdListTmp->GetId(j) );
           }
         }
       }
@@ -114,7 +114,7 @@ ThinShellDemonsMetricv4< TFixedMesh, TMovingMesh >
 {
   PointType p1 = this->m_FixedPointSet->GetPoint(identifier);
   PointType p2 = this->m_FixedTransformedPointSet->GetPoint(identifier);
-  return p1 - p2;
+  return p2 - p1;
 }
 
 template< typename TFixedMesh, typename TMovingMesh >
@@ -164,8 +164,8 @@ ThinShellDemonsMetricv4< TFixedMesh, TMovingMesh >
     }
 
   bendEnergy = bEnergy.GetSquaredNorm() / degree;
-  stretchEnergy /= pointIdList->GetNumberOfIds();
-  bendEnergy /= pointIdList->GetNumberOfIds();
+  stretchEnergy /= degree;
+  bendEnergy /= degree;
 
 }
 
@@ -200,7 +200,7 @@ ThinShellDemonsMetricv4< TFixedMesh, TMovingMesh >
 
   //TODO: Need to update / write point locator to use geomtric features
   PointIdentifier mPointId = this->m_MovingTransformedPointsLocator->FindClosestPoint(point);
-  closestPoint = this->m_MovingPointSet->GetPoint(mPointId);
+  closestPoint = this->m_MovingTransformedPointSet->GetPoint(mPointId);
 
   value = point.SquaredEuclideanDistanceTo(closestPoint);
   VectorType direction = closestPoint - point;
@@ -210,7 +210,7 @@ ThinShellDemonsMetricv4< TFixedMesh, TMovingMesh >
   VectorType sD;
   VectorType bD;
   this->ComputeStretchAndBend(point, sE, bE, sD, bD);
-  derivative = direction + m_StretchWeight*sD + bD * m_BendWeight;
+  derivative = direction * 2 - m_StretchWeight*sD - bD * m_BendWeight;
   value += m_StretchWeight * sE + m_BendWeight * bE;
 }
 

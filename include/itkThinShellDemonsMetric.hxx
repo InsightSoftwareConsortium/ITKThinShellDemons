@@ -248,8 +248,8 @@ ThinShellDemonsMetric< TFixedMesh, TMovingMesh >
     }
 
   bendEnergy = bEnergy.GetSquaredNorm() / degree;
-  stretchEnergy /= pointIdList->GetNumberOfIds();
-  bendEnergy /= pointIdList->GetNumberOfIds();
+  stretchEnergy /= degree;
+  bendEnergy /= degree;
 }
 
 template< typename TFixedMesh, typename TMovingMesh >

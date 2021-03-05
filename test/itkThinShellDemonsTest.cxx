@@ -23,6 +23,7 @@
 #include "itkLBFGSOptimizer.h"
 #include "itkMeshToMeshRegistrationMethod.h"
 #include "itkMeshDisplacementTransform.h"
+#include "itkConjugateGradientOptimizer.h"
 
 int itkThinShellDemonsTest( int args, char **argv)
 {
@@ -85,11 +86,11 @@ int itkThinShellDemonsTest( int args, char **argv)
   /*
     Initialize Thin Shell Demons metric
   */
-  typedef itk::ThinShellDemonsMetric<MeshType, MeshType> MetricType;
+  typedef itk::ThinShellDemonsMetric<MeshType> MetricType;
   MetricType::Pointer metric = MetricType::New();
-  metric->SetStretchWeight(0.5);
-  metric->SetBendWeight(0.5);
-  metric->SetGeometricFeatureWeight(100);
+  metric->SetStretchWeight(1);
+  metric->SetBendWeight(1);
+  metric->SetGeometricFeatureWeight(0);
   metric->SetFixedMesh(fixedMesh);
   metric->SetMovingMesh(movingMesh);
   metric->SetTransform(transform);
@@ -99,12 +100,16 @@ int itkThinShellDemonsTest( int args, char **argv)
   /*
     Initialize Thin Shell Demons optimizer
   */
+
   typedef itk::LBFGSOptimizer OptimizerType;
   OptimizerType::Pointer optimizer = OptimizerType::New();
+  /*
+  typedef itk::ConjugateGradientOptimizer OptimizerType;
+  OptimizerType::Pointer optimizer = OptimizerType::New();
+  */
 
   typedef itk::MeshToMeshRegistrationMethod<MeshType, MeshType> RegistrationType;
   RegistrationType::Pointer registration = RegistrationType::New();
-
   registration->SetMetric(metric);
   registration->SetOptimizer(optimizer);
   registration->SetTransform(transform);

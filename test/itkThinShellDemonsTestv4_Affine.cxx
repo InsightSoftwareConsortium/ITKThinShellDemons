@@ -23,6 +23,7 @@
 #include "itkCommand.h"
 #include "itkThinShellDemonsMetricv4.h"
 #include "itkConjugateGradientLineSearchOptimizerv4.h"
+#include "itkLBFGS2Optimizerv4.h"
 #include "itkRegistrationParameterScalesFromPhysicalShift.h"
 #include "itkImageRegistrationMethodv4.h"
 #include "itkAffineTransform.h"
@@ -149,10 +150,10 @@ int itkThinShellDemonsTestv4_Affine( int args, char **argv)
   AffineTransformType::Pointer transform = AffineTransformType::New();
   transform->SetIdentity();
 
-  using PointSetMetricType = itk::ThinShellDemonsMetricv4<MeshType, MeshType> ;
+  using PointSetMetricType = itk::ThinShellDemonsMetricv4<MeshType> ;
   PointSetMetricType::Pointer metric = PointSetMetricType::New();
-  metric->SetStretchWeight(0.5);
-  metric->SetBendWeight(0.5);
+  metric->SetStretchWeight(1);
+  metric->SetBendWeight(1);
   metric->SetGeometricFeatureWeight(100);
   metric->SetMovingTransform( transform );
   //Reversed due to using points instead of an image
@@ -172,40 +173,44 @@ int itkThinShellDemonsTestv4_Affine( int args, char **argv)
   shiftScaleEstimator->SetVirtualDomainPointSet( metric->GetVirtualTransformedPointSet() );
 
   // optimizer
+  typedef itk::LBFGS2Optimizerv4 OptimizerType;
+  OptimizerType::Pointer optimizer = OptimizerType::New();
+  optimizer->SetScalesEstimator( shiftScaleEstimator );
+/*
   typedef itk::ConjugateGradientLineSearchOptimizerv4 OptimizerType;
   OptimizerType::Pointer optimizer = OptimizerType::New();
   optimizer->SetNumberOfIterations( 50 );
   optimizer->SetScalesEstimator( shiftScaleEstimator );
-  optimizer->SetMaximumStepSizeInPhysicalUnits( 3 );
+  optimizer->SetMaximumStepSizeInPhysicalUnits( 0.5 );
   optimizer->SetMinimumConvergenceValue( 0.0 );
   optimizer->SetConvergenceWindowSize( 10 );
-
+*/
   using CommandType = CommandIterationUpdate<OptimizerType>;
   CommandType::Pointer observer = CommandType::New();
   optimizer->AddObserver( itk::IterationEvent(), observer );
 
+
   using AffineRegistrationType = itk::ImageRegistrationMethodv4<FixedImageType,
         MovingImageType, AffineTransformType, FixedImageType, MeshType>;
-  AffineRegistrationType::Pointer affineSimple = AffineRegistrationType::New();
-  affineSimple->SetNumberOfLevels(1);
-  affineSimple->SetObjectName("affineSimple");
-  affineSimple->SetFixedPointSet(fixedMesh);
-  affineSimple->SetMovingPointSet(movingMesh);
-  affineSimple->SetInitialTransform(transform);
-  affineSimple->SetMetric(metric);
-  affineSimple->SetOptimizer(optimizer);
+  AffineRegistrationType::Pointer registration = AffineRegistrationType::New();
+  registration->SetNumberOfLevels(1);
+  registration->SetObjectName("registration");
+  registration->SetFixedPointSet(fixedMesh);
+  registration->SetMovingPointSet(movingMesh);
+  registration->SetInitialTransform(transform);
+  registration->SetMetric(metric);
+  registration->SetOptimizer(optimizer);
 
   std::cout << "Start Value= " << metric->GetValue() << std::endl;
   try
     {
-    affineSimple->Update();
+    registration->Update();
     }
   catch( itk::ExceptionObject &e )
     {
     std::cerr << "Exception caught: " << e << std::endl;
     return EXIT_FAILURE;
     }
-
   std::cout << "Solution Value= " << metric->GetValue() << std::endl;
 
   for (unsigned int n = 0; n < movingMesh->GetNumberOfPoints(); n++)

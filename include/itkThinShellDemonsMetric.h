@@ -47,7 +47,7 @@ namespace itk
  *
  * \ingroup ThinShellDemons
  */
-template< typename TFixedMesh, typename TMovingMesh >
+template< typename TFixedMesh, typename TMovingMesh = TFixedMesh >
 class ITK_TEMPLATE_EXPORT ThinShellDemonsMetric:
   public MeshToMeshMetric< TFixedMesh, TMovingMesh >
 {
