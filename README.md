@@ -11,7 +11,7 @@ This module implements the Thin Shell Demons regularization proposed in
 > MIUA 2015  
 
 
-There is two implementations of this approach available:
+There are two implementations of this approach available:
 1. (THDv4 ) An implementation taking advantage of the pointset to pointset registration
    capabilities of the ITK v4 registration framework.
 2. (THD) An implementation started by Qingyu Zhao and updated to fix some remaiing task
