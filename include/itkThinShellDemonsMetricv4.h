@@ -44,7 +44,7 @@ namespace itk
  *
  * For the thin shell demons metric here that means that the regularization is
  * applied to the fixed point set and the transfrom moves the points of the
- * fixed points set to the moving point set
+ * fixed points set domain to the moving point set domain.
  *
  *  Reference:
  *  "Thin Shell Demons"
