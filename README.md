@@ -35,10 +35,6 @@ the ITK approach for images and computes a transform from fixed to moving domain
 register a point set it is the fixed point set that is transformed to the moving point set 
 domain and it is computationally more efficient to regularize on the fixed mesh.
 
-**The implementation currently supports the thin shell regularization. Missing features are a 
-confidence matching weighting and geometric feature matching (currently only point distances 
-are used).**
-
 
 ## Original version (TSHD)
 
@@ -46,10 +42,6 @@ This is an implementation that fits within the pre v4 ITK registration workflow.
 The implementation is not very generic at this point and miss details to be able
 to interact with other registration components in the ITK registration ecosystem.
 However, different optimizers can be used within this method.
-
-**The implementation supports the thin shell regularization, geometric feature matching
-(currently updated at each iteration during optimization). Missing features are a
-confidence matching weighting.**
 
 For an example see [ThinShellDemonsTest](./test/itkThinShellDemonsTest.cxx)
 

@@ -89,8 +89,7 @@ throw ( ExceptionObject )
   this->ComputeNeighbors();
   // Preprocessing: compute the target position of each vertex in the fixed mesh
   // using Euclidean + Curvature distance
-  vtkSmartPointer<vtkCurvatures> curvaturesFilter =
-  vtkSmartPointer<vtkCurvatures>::New();
+  vtkSmartPointer<vtkCurvatures> curvaturesFilter = vtkSmartPointer<vtkCurvatures>::New();
   curvaturesFilter->SetInputData(fixedVTKMesh);
   curvaturesFilter->SetCurvatureTypeToGaussian();
   curvaturesFilter->Update();

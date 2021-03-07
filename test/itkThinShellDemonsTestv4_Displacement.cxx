@@ -144,10 +144,6 @@ int itkThinShellDemonsTestv4_Displacement( int args, char **argv)
   fixedImage->SetSpacing( fixedImageSpacing );
   fixedImage->Allocate();
 
-  //typedef itk::MeshDisplacementTransform<double, Dimension> TransformType;
-  //TransformType::Pointer transform = TransformType::New();
-  //transform->SetMeshTemplate(movingMesh); // this transformation type needs a mesh as a template
-  //transform->Initialize();
 
   using TransformType = itk::DisplacementFieldTransform<double, Dimension>;
   auto transform = TransformType::New();
