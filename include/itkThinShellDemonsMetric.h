@@ -173,7 +173,6 @@ public:
   itkBooleanMacro(UseMaximalDistanceConfidenceSigma);
 
 
-
 protected:
   ThinShellDemonsMetric();
   virtual ~ThinShellDemonsMetric() override = default;

@@ -86,8 +86,6 @@ throw ( ExceptionObject )
   dataTransfer->SetInput(this->m_FixedMesh);
   this->fixedVTKMesh = dataTransfer->GetOutput();
 
-
-
   this->ComputeNeighbors();
   // Preprocessing: compute the target position of each vertex in the fixed mesh
   // using Euclidean + Curvature distance
@@ -364,15 +362,15 @@ ThinShellDemonsMetric< TFixedMesh, TMovingMesh >
     InputVectorType sD;
     InputVectorType bD;
     this->ComputeStretchAndBend(identifier, parameters, sE, bE, sD, bD);
-    stretchEnergy +=sE ;
+    stretchEnergy +=sE;
     bendEnergy += bE;
 
     double cost = dist + m_StretchWeight *sE + m_BendWeight * bE;
     InputVectorType dParam = -2.0*distVec + m_StretchWeight * sD + m_BendWeight * bD;
-    if( m_UseConfidenceWeighting )
+    if(m_UseConfidenceWeighting)
       {
       dParam *= confidence;
-      if( m_UpdateFeatureMatchingAtEachIteration)
+      if(m_UpdateFeatureMatchingAtEachIteration)
         {
         dParam -= cost * confidenceDerivative;
         }
