@@ -154,7 +154,10 @@ int itkThinShellDemonsTestv4_Affine( int args, char **argv)
   PointSetMetricType::Pointer metric = PointSetMetricType::New();
   metric->SetStretchWeight(1);
   metric->SetBendWeight(1);
-  metric->SetGeometricFeatureWeight(100);
+  metric->SetGeometricFeatureWeight(10);
+  metric->UseConfidenceWeightingOn();
+  metric->UseMaximalDistanceConfidenceSigmaOn();
+  metric->UpdateFeatureMatchingAtEachIterationOn();
   metric->SetMovingTransform( transform );
   //Reversed due to using points instead of an image
   //to keep semantics the same as in itkThinShellDemonsTest.cxx

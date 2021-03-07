@@ -21,6 +21,8 @@
 #include "itkMeshToMeshMetricv4.h"
 #include "itkMesh.h"
 #include "itkMeshTovtkPolyData.h"
+#include <vtkDataArray.h>
+#include <vtkPolyData.h>
 #include "vtkSmartPointer.h"
 
 namespace itk
@@ -104,18 +106,69 @@ public:
 
   void Initialize(void) override;
 
-  /** Set/Get algorithm parameters **/
+  /**
+   * Stretching penalty weight
+   */
   itkSetMacro(StretchWeight, double);
-  itkGetMacro(StretchWeight, double);
+  itkGetConstReferenceMacro(StretchWeight, double);
 
+  /**
+   * Bending penalty weight
+   */
   itkSetMacro(BendWeight, double);
-  itkGetMacro(BendWeight, double);
+  itkGetConstReferenceMacro(BendWeight, double);
 
-  itkSetMacro(ConfidenceSigma, double);
-  itkGetMacro(ConfidenceSigma, double);
-
+  /**
+   * Weight for curvature match term in geomntric feature matching.
+   * Feature distance is:
+   * euclidean distance + GeometricFeatureWeight * curvature distance
+   */
   itkSetMacro(GeometricFeatureWeight, double);
-  itkGetMacro(GeometricFeatureWeight, double);
+  itkGetConstReferenceMacro(GeometricFeatureWeight, double);
+
+   /**
+   * Update feature match at each iteration.
+   *
+   * When used in conjunction with UseConfidenceWeighting and
+   * UpdateFeatureMatchingAtEachIteration this can lead to unexpected results.
+   * If the confidence sigma is smaller than sqrt(2) * the maixmal feature
+   * distance the derivate leads to points being pushed away.
+   */
+  itkSetMacro(ConfidenceSigma, double);
+  itkGetConstReferenceMacro(ConfidenceSigma, double);
+
+  /**
+   * Update feature match at each iteration.
+   *
+   * When used in conjunction with UseConfidenceWeighting
+   * this can lead to unexpected results. If the confidence sigma is smaller
+   * than sqrt(2) * the maixmal feature distance the derivate leads to
+   * points being pushed away.
+   */
+  itkSetMacro(UpdateFeatureMatchingAtEachIteration, bool);
+  itkGetConstReferenceMacro(UpdateFeatureMatchingAtEachIteration, bool);
+  itkBooleanMacro(UpdateFeatureMatchingAtEachIteration);
+
+  /**
+   * Weight cost function by feature distance.
+   *
+   * When used in conjunction with  UpdateFeatureMatchingAtEachIteration
+   * this can lead to unexpected results. If the confidence sigma is smaller
+   * than sqrt(2) * the maixmal feature distance the derivate leads to points being
+   * pushed away.
+   */
+  itkSetMacro(UseConfidenceWeighting, bool);
+  itkGetConstReferenceMacro(UseConfidenceWeighting, bool);
+  itkBooleanMacro(UseConfidenceWeighting);
+
+  /**
+   * Automatically compute confidence sigam at each iteration to ensure that
+   * no points are being pushed away from each other. The confidence sigma is
+   * set to sqrt(2) * the maxmial feature distance
+   */
+  itkSetMacro(UseMaximalDistanceConfidenceSigma, bool);
+  itkGetConstReferenceMacro(UseMaximalDistanceConfidenceSigma, bool);
+  itkBooleanMacro(UseMaximalDistanceConfidenceSigma);
 
 
 protected:
@@ -123,55 +176,73 @@ protected:
   virtual ~ThinShellDemonsMetricv4() override = default;
 
   //Create a points locator for feature matching
-  /*
-  using FeaturePointsContainer = itk::PointSet<double, FixedPointDimension+1>
+  using FeaturePointSetType = PointSet< double, FixedMeshType::PointDimension+1>;
+  using FeaturePointSetPointer = typename FeaturePointSetType::Pointer;
+  using FeaturePointType = typename FeaturePointSetType::PointType;
+  using FeaturePointsContainer = typename FeaturePointSetType::PointsContainer;
+  using FeaturePointsContainerPointer = typename FeaturePointsContainer::Pointer;
   using FeaturePointsLocatorType = PointsLocator<FeaturePointsContainer>;
-  mutable FeaturePointsLocatorType m_FeaturePointsLocator;
-*/
-  /**
-   * Prepare point sets for use.
-   * Override to use geometric features
-   */
-  //virtual void InitializePointSets() const override;
+  using FeaturePointsLocatorPointer = typename FeaturePointsLocatorType::Pointer;
+
+  mutable FeaturePointsLocatorPointer m_MovingTransformedFeaturePointsLocator;
 
   /**
-   * Initialize to prepare for a particular iteration, generally
-   * an iteration of optimization. Distinct from Initialize()
-   * which is a one-time initialization.
+   * Prepare point sets for use.
+   *
    * Override to use geometric features
    */
-  //virtual void InitializeForIteration() const override;
+  virtual void InitializePointSets() const override;
+  void InitializeFeaturePointsLocators() const;
+
+  /**
+   * This class uses it's own Points locators to
+   * accomodate feature matching
+   */
+  bool RequiresMovingPointsLocator() const override
+  {
+    return false;
+  };
+
+  bool RequiresFixedPointsLocator() const override
+  {
+    return true;
+  };
 
   void PrintSelf(std::ostream & os, Indent indent) const ITK_OVERRIDE;
 
 private:
   ITK_DISALLOW_COPY_AND_ASSIGN(ThinShellDemonsMetricv4);
 
-  typedef itk::MapContainer<int, PointType> TargetMapType;
-  TargetMapType targetMap;
-
   typedef itk::MapContainer<int, vtkSmartPointer<vtkIdList>> NeighborhodMapType;
   NeighborhodMapType neighborMap;
 
-  vtkSmartPointer<vtkPolyData> movingVTKMesh;
-  vtkSmartPointer<vtkPolyData> fixedVTKMesh;
-  //vtkSmartPointer<vtkPolyData> fixedCurvature;
+  mutable vtkSmartPointer<vtkPolyData> movingVTKMesh;
+  mutable vtkSmartPointer<vtkPolyData> fixedVTKMesh;
+  mutable vtkSmartPointer<vtkDataArray> fixedCurvature;
 
-  double m_ConfidenceSigma;
   double m_StretchWeight;
   double m_BendWeight;
   double m_GeometricFeatureWeight;
+  mutable double m_ConfidenceSigma;
+  bool m_UseConfidenceWeighting;
+  bool m_UpdateFeatureMatchingAtEachIteration;
+  bool m_UseMaximalDistanceConfidenceSigma;
 
+  void ComputeConfidenceValueAndDerivative(const VectorType &v,
+                                           double &confidence,
+                                           VectorType &derivative) const;
   void ComputeStretchAndBend(const PointType &point,
                              double &stretchEnergy,
                              double &bendEnergy,
                              VectorType &stretch,
                              VectorType &bend) const;
-  void ComputeTargetPosition() const;
-
   void ComputeNeighbors();
-
+  void ComputeMaximalDistanceSigma() const;
+  FeaturePointType GetFeaturePoint(const double *v, const double &c) const;
+  FeaturePointType GetFeaturePoint(const PointType &v, const double &c) const;
   VectorType GetMovingDirection(int identifier) const;
+  FeaturePointSetPointer GenerateFeaturePointSets(bool fixed) const;
+
 };
 
 } // end namespace itk

@@ -125,7 +125,7 @@ int itkThinShellDemonsTestv4_Displacement( int args, char **argv)
   typename BoundingBoxType::PointType minBounds = boundingBox->GetMinimum();
   typename BoundingBoxType::PointType maxBounds = boundingBox->GetMaximum();
 
-  int imageDiagonal = 100;
+  int imageDiagonal = 200;
   double spacing = sqrt(boundingBox->GetDiagonalLength2()) / imageDiagonal;
   auto diff = maxBounds - minBounds;
   fixedImageSize[0] = ceil( 1.2 * diff[0] / spacing );
@@ -164,7 +164,10 @@ int itkThinShellDemonsTestv4_Displacement( int args, char **argv)
   PointSetMetricType::Pointer metric = PointSetMetricType::New();
   metric->SetStretchWeight(1);
   metric->SetBendWeight(1);
-  metric->SetGeometricFeatureWeight(100);
+  metric->SetGeometricFeatureWeight(10);
+  metric->UseConfidenceWeightingOn();
+  metric->UseMaximalDistanceConfidenceSigmaOn();
+  metric->UpdateFeatureMatchingAtEachIterationOn();
   metric->SetMovingTransform( transform );
   //Reversed due to using points instead of an image
   //to keep semantics the same as in itkThinShellDemonsTest.cxx

@@ -92,6 +92,7 @@ int itkThinShellDemonsTest( int args, char **argv)
   metric->SetBendWeight(1);
   metric->SetGeometricFeatureWeight(10);
   metric->UseConfidenceWeightingOn();
+  metric->UseMaximalDistanceConfidenceSigmaOn();
   metric->UpdateFeatureMatchingAtEachIterationOn();
   metric->SetFixedMesh(fixedMesh);
   metric->SetMovingMesh(movingMesh);

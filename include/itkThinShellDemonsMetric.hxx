@@ -180,7 +180,7 @@ ThinShellDemonsMetric< TFixedMesh, TMovingMesh >
       {
       double eDist = pointItr2.Value().SquaredEuclideanDistanceTo(transformedPoint);
       double fDist = m_GeometricFeatureWeight *
-        fixedC->GetTuple1(fixedIdentifier)- movingC->GetTuple1(identifier);
+        fixedC->GetTuple1(fixedIdentifier) - movingC->GetTuple1(identifier);
       fDist *= fDist;
       double dist = eDist + fDist;
       if ( dist < minimumDistance )
@@ -247,18 +247,21 @@ ThinShellDemonsMetric< TFixedMesh, TMovingMesh >
   const vtkSmartPointer<vtkIdList> &pointIdList = neighborMap.ElementAt(identifier);
   int degree = pointIdList->GetNumberOfIds();
   InputVectorType v;
-  v[0] = parameters[identifier*3];
-  v[1] = parameters[identifier*3+1];
-  v[2] = parameters[identifier*3+2];
+  static unsigned int d = InputVectorType::Dimension;
+  for(int i=0; i<d; i++)
+    {
+    v[i] = parameters[identifier*d+i];
+    }
   InputVectorType bEnergy;
   bEnergy.Fill(0);
   for(int i=0; i < pointIdList->GetNumberOfIds(); i++)
     {
     int neighborIdx = pointIdList->GetId(i);
     InputVectorType vn;
-    vn[0] = parameters[neighborIdx*3];
-    vn[1] = parameters[neighborIdx*3+1];
-    vn[2] = parameters[neighborIdx*3+2];
+    for(int i=0; i<d; i++)
+      {
+      vn[0+i] = parameters[neighborIdx*d+i];
+      }
     InputVectorType dx = v - vn;
     stretchEnergy += dx.GetSquaredNorm();
     bEnergy += dx;
@@ -267,12 +270,8 @@ ThinShellDemonsMetric< TFixedMesh, TMovingMesh >
     // and the derivative has another factor of 2 from the squared norm
     // divided by the vertex degrees of current and neighbor vertex
     int nDegree =  neighborMap.ElementAt(neighborIdx)->GetNumberOfIds();
-    stretch[0] += 4 * dx[0] / (degree+nDegree);
-    stretch[1] += 4 * dx[1] / (degree+nDegree);
-    stretch[2] += 4 * dx[2] / (degree+nDegree);
-    bend[0] += 4 * dx[0] / (degree+nDegree);
-    bend[1] += 4 * dx[1] / (degree+nDegree);
-    bend[2] += 4 * dx[2] / (degree+nDegree);
+    stretch += dx * 4 / (degree+nDegree);
+    bend += dx * 4 / (degree+nDegree);
     }
 
   bendEnergy = bEnergy.GetSquaredNorm() / degree;
@@ -362,7 +361,7 @@ ThinShellDemonsMetric< TFixedMesh, TMovingMesh >
     InputVectorType sD;
     InputVectorType bD;
     this->ComputeStretchAndBend(identifier, parameters, sE, bE, sD, bD);
-    stretchEnergy +=sE;
+    stretchEnergy += sE;
     bendEnergy += bE;
 
     double cost = dist + m_StretchWeight *sE + m_BendWeight * bE;
