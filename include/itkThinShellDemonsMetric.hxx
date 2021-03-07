@@ -35,7 +35,11 @@ ThinShellDemonsMetric< TFixedMesh, TMovingMesh >
 {
   m_BendWeight = 1;
   m_StretchWeight = 1;
-  m_GeometricFeatureWeight = 50;
+  m_GeometricFeatureWeight = 10;
+  m_ConfidenceSigma = 3;
+  m_UseMaximalDistanceConfidenceSigma = true;
+  m_UseConfidenceWeighting = true;
+  m_UpdateFeatureMatchingAtEachIteration = false;
 }
 
 /** Initialize the metric */
@@ -82,19 +86,20 @@ throw ( ExceptionObject )
   dataTransfer->SetInput(this->m_FixedMesh);
   this->fixedVTKMesh = dataTransfer->GetOutput();
 
+
+
+  this->ComputeNeighbors();
+  // Preprocessing: compute the target position of each vertex in the fixed mesh
+  // using Euclidean + Curvature distance
   vtkSmartPointer<vtkCurvatures> curvaturesFilter =
-    vtkSmartPointer<vtkCurvatures>::New();
+  vtkSmartPointer<vtkCurvatures>::New();
   curvaturesFilter->SetInputData(fixedVTKMesh);
   curvaturesFilter->SetCurvatureTypeToGaussian();
   curvaturesFilter->Update();
   fixedCurvature = curvaturesFilter->GetOutput();
 
-  // Preprocessing: compute the target position of each vertex in the fixed mesh
-  // using Euclidean + Curvature distance
   this->targetMap.Initialize();
   this->ComputeTargetPosition();
-
-  this->ComputeNeighbors();
 
 }
 
@@ -137,6 +142,7 @@ ThinShellDemonsMetric< TFixedMesh, TMovingMesh >
   MovingPointIterator pointItr = movingMesh->GetPoints()->Begin();
   MovingPointIterator pointEnd = movingMesh->GetPoints()->End();
 
+  double maxDistance = 0;
   vtkPoints *pts = movingVTKMesh->GetPoints();
   int identifier = 0;
   while ( pointItr != pointEnd )
@@ -175,11 +181,10 @@ ThinShellDemonsMetric< TFixedMesh, TMovingMesh >
     while ( pointItr2 != pointEnd2 )
       {
       double eDist = pointItr2.Value().SquaredEuclideanDistanceTo(transformedPoint);
-      double fDist = fixedC->GetTuple1(fixedIdentifier)- movingC->GetTuple1(identifier);
+      double fDist = m_GeometricFeatureWeight *
+        fixedC->GetTuple1(fixedIdentifier)- movingC->GetTuple1(identifier);
       fDist *= fDist;
-      //std::cout << "eDist: " << eDist << std::endl;
-      //std::cout << "fDist: " << fDist << std::endl;
-      double dist = eDist + m_GeometricFeatureWeight * fDist;
+      double dist = eDist + fDist;
       if ( dist < minimumDistance )
         {
         targetPoint.CastFrom( pointItr2.Value() );
@@ -188,10 +193,35 @@ ThinShellDemonsMetric< TFixedMesh, TMovingMesh >
       pointItr2++;
       fixedIdentifier++;
       }
+    if( maxDistance < minimumDistance )
+      {
+      maxDistance = minimumDistance;
+      }
+
     const_cast<TargetMapType*>(&targetMap)->SetElement(identifier, targetPoint);
 
     ++pointItr;
     identifier++;
+    }
+  if( m_UseMaximalDistanceConfidenceSigma )
+    {
+    m_ConfidenceSigma = sqrt( 2*maxDistance  );
+    }
+}
+
+template< typename TFixedMesh, typename TMovingMesh >
+void
+ThinShellDemonsMetric< TFixedMesh, TMovingMesh >
+::ComputeConfidenceValueAndDerivative(const InputVectorType &v,
+    double &confidence,
+    InputVectorType &derivative) const
+{
+  double variance = m_ConfidenceSigma * m_ConfidenceSigma;
+  double dist = v.GetSquaredNorm();
+  confidence = exp( -dist / variance);
+  if( m_UpdateFeatureMatchingAtEachIteration )
+    {
+    derivative = -confidence * 2 / variance * v;
     }
 }
 
@@ -208,7 +238,7 @@ ThinShellDemonsMetric< TFixedMesh, TMovingMesh >
 {
   //enumerate all the neighboring vertices (edges) of a given vertex
   //stretching energy : measure the squared derivative along different edge directions
-  //bending energy : measure the local laplacian around the local patch using
+  //bending energy : measure the local Laplacian around the local patch using
   //the given vertex and all neighboring vertices
   stretchEnergy = 0;
   bendEnergy = 0;
@@ -237,7 +267,7 @@ ThinShellDemonsMetric< TFixedMesh, TMovingMesh >
 
     // times 4 because edge appears two times in the energy function
     // and the derivative has another factor of 2 from the squared norm
-    // divided by the vertex degrees of current and nieghbor vertex
+    // divided by the vertex degrees of current and neighbor vertex
     int nDegree =  neighborMap.ElementAt(neighborIdx)->GetNumberOfIds();
     stretch[0] += 4 * dx[0] / (degree+nDegree);
     stretch[1] += 4 * dx[1] / (degree+nDegree);
@@ -292,12 +322,14 @@ ThinShellDemonsMetric< TFixedMesh, TMovingMesh >
     }
 
   this->SetTransformParameters(parameters);
-  this->ComputeTargetPosition();
+  if( m_UpdateFeatureMatchingAtEachIteration )
+    {
+    this->ComputeTargetPosition();
+    }
 
-  // derivative of data fidelity energy (squared distance to target position)
+  //derivative of data fidelity energy (squared distance to target position)
   MovingPointIterator pointItr = movingMesh->GetPoints()->Begin();
   MovingPointIterator pointEnd = movingMesh->GetPoints()->End();
-
   if( derivative.GetSize() != movingMesh->GetNumberOfPoints() * 3 )
     {
     derivative = DerivativeType(movingMesh->GetNumberOfPoints() * 3);
@@ -320,29 +352,43 @@ ThinShellDemonsMetric< TFixedMesh, TMovingMesh >
 
     InputPointType targetPoint = targetMap.ElementAt(identifier);
     InputVectorType distVec = targetPoint - transformedPoint;
-
-    derivative[identifier*3] = -2 * distVec[0];
-    derivative[identifier*3 + 1] = -2 * distVec[1];
-    derivative[identifier*3 + 2] = -2 * distVec[2];
-
-    functionValue += distVec.GetSquaredNorm();
-
+    double confidence = 1;
+    InputVectorType confidenceDerivative;
+    if( m_UseConfidenceWeighting )
+      {
+      this->ComputeConfidenceValueAndDerivative(distVec, confidence, confidenceDerivative);
+      }
+    double dist = distVec.GetSquaredNorm();
     double sE = 0;
     double bE = 0;
     InputVectorType sD;
     InputVectorType bD;
     this->ComputeStretchAndBend(identifier, parameters, sE, bE, sD, bD);
-    stretchEnergy += sE ;
+    stretchEnergy +=sE ;
     bendEnergy += bE;
-    derivative[identifier*3] += m_StretchWeight * sD[0] + m_BendWeight * bD[0];
-    derivative[identifier*3+1] += m_StretchWeight * sD[1] + m_BendWeight *bD[1];
-    derivative[identifier*3+2] += m_StretchWeight * sD[2] + m_BendWeight * bD[2];
+
+    double cost = dist + m_StretchWeight *sE + m_BendWeight * bE;
+    InputVectorType dParam = -2.0*distVec + m_StretchWeight * sD + m_BendWeight * bD;
+    if( m_UseConfidenceWeighting )
+      {
+      dParam *= confidence;
+      if( m_UpdateFeatureMatchingAtEachIteration)
+        {
+        dParam -= cost * confidenceDerivative;
+        }
+      cost *= confidence;
+      }
+
+    value += cost;
+
+    derivative[identifier*3]   = dParam[0];
+    derivative[identifier*3+1] = dParam[1];
+    derivative[identifier*3+2] = dParam[2];
 
     ++pointItr;
     identifier++;
   }
 
-  value = functionValue + m_StretchWeight * stretchEnergy + m_BendWeight * bendEnergy;
   value /= movingMesh->GetNumberOfPoints();
 }
 

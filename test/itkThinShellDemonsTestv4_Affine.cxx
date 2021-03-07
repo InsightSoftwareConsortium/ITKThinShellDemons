@@ -176,6 +176,7 @@ int itkThinShellDemonsTestv4_Affine( int args, char **argv)
   typedef itk::LBFGS2Optimizerv4 OptimizerType;
   OptimizerType::Pointer optimizer = OptimizerType::New();
   optimizer->SetScalesEstimator( shiftScaleEstimator );
+
 /*
   typedef itk::ConjugateGradientLineSearchOptimizerv4 OptimizerType;
   OptimizerType::Pointer optimizer = OptimizerType::New();

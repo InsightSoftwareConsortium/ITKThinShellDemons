@@ -125,7 +125,7 @@ int itkThinShellDemonsTestv4_Displacement( int args, char **argv)
   typename BoundingBoxType::PointType minBounds = boundingBox->GetMinimum();
   typename BoundingBoxType::PointType maxBounds = boundingBox->GetMaximum();
 
-  int imageDiagonal = 200;
+  int imageDiagonal = 100;
   double spacing = sqrt(boundingBox->GetDiagonalLength2()) / imageDiagonal;
   auto diff = maxBounds - minBounds;
   fixedImageSize[0] = ceil( 1.2 * diff[0] / spacing );

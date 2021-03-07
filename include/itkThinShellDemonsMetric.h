@@ -108,24 +108,75 @@ public:
    * Euclidean + Curvature distance */
   virtual void Initialize(void) throw ( ExceptionObject ) ITK_OVERRIDE;
 
-  /** Set/Get algorithm parameters **/
+  /**
+   * Stretching penalty weight
+   */
   itkSetMacro(StretchWeight, double);
-  itkGetMacro(StretchWeight, double);
+  itkGetConstReferenceMacro(StretchWeight, double);
 
+  /**
+   * Bending penalty weight
+   */
   itkSetMacro(BendWeight, double);
-  itkGetMacro(BendWeight, double);
+  itkGetConstReferenceMacro(BendWeight, double);
 
+  /**
+   * Weight for curvature match term in geomntric feature matching.
+   * Feature distance is:
+   * euclidean distance + GeometricFeatureWeight * curvature distance
+   */
   itkSetMacro(GeometricFeatureWeight, double);
-  itkGetMacro(GeometricFeatureWeight, double);
+  itkGetConstReferenceMacro(GeometricFeatureWeight, double);
 
-  //itkSetMacro(ConfidenceSigma, double);
-  //itkGetMacro(ConfidenceSigma, double);
+   /**
+   * Update feature match at each iteration.
+   *
+   * When used in conjunction with UseConfidenceWeighting and
+   * UpdateFeatureMatchingAtEachIteration this can lead to unexpected results.
+   * If the confidence sigma is smaller than sqrt(2) * the maixmal feature
+   * distance the derivate leads to points being pushed away.
+   */
+  itkSetMacro(ConfidenceSigma, double);
+  itkGetConstReferenceMacro(ConfidenceSigma, double);
+
+  /**
+   * Update feature match at each iteration.
+   *
+   * When used in conjunction with UseConfidenceWeighting
+   * this can lead to unexpected results. If the confidence sigma is smaller
+   * than sqrt(2) * the maixmal feature distance the derivate leads to
+   * points being pushed away.
+   */
+  itkSetMacro(UpdateFeatureMatchingAtEachIteration, bool);
+  itkGetConstReferenceMacro(UpdateFeatureMatchingAtEachIteration, bool);
+  itkBooleanMacro(UpdateFeatureMatchingAtEachIteration);
+
+  /**
+   * Weight cost function by feature distance.
+   *
+   * When used in conjunction with  UpdateFeatureMatchingAtEachIteration
+   * this can lead to unexpected results. If the confidence sigma is smaller
+   * than sqrt(2) * the maixmal feature distance the derivate leads to points being
+   * pushed away.
+   */
+  itkSetMacro(UseConfidenceWeighting, bool);
+  itkGetConstReferenceMacro(UseConfidenceWeighting, bool);
+  itkBooleanMacro(UseConfidenceWeighting);
+
+  /**
+   * Automatically compute confidence sigam at each iteration to ensure that
+   * no points are being pushed away from each other. The confidence sigma is
+   * set to sqrt(2) * the maxmial feature distance
+   */
+  itkSetMacro(UseMaximalDistanceConfidenceSigma, bool);
+  itkGetConstReferenceMacro(UseMaximalDistanceConfidenceSigma, bool);
+  itkBooleanMacro(UseMaximalDistanceConfidenceSigma);
+
+
 
 protected:
   ThinShellDemonsMetric();
-  virtual ~ThinShellDemonsMetric() {
-    std::cout << "Metric deallocate" << std::endl;
-  };
+  virtual ~ThinShellDemonsMetric() override = default;
 
   void PrintSelf(std::ostream & os, Indent indent) const ITK_OVERRIDE;
 
@@ -145,6 +196,14 @@ private:
   double m_StretchWeight;
   double m_BendWeight;
   double m_GeometricFeatureWeight;
+  mutable double m_ConfidenceSigma;
+  bool m_UseConfidenceWeighting;
+  bool m_UpdateFeatureMatchingAtEachIteration;
+  bool m_UseMaximalDistanceConfidenceSigma;
+
+  void ComputeConfidenceValueAndDerivative(const InputVectorType &v,
+                                           double &confidence,
+                                           InputVectorType &derivative) const;
 
   void ComputeStretchAndBend(int identifier,
                              const TransformParametersType &parmaters,
@@ -152,6 +211,7 @@ private:
                              double &bendEnergy,
                              InputVectorType &stretch,
                              InputVectorType &bend) const;
+
   void ComputeTargetPosition() const;
 
   void ComputeNeighbors();

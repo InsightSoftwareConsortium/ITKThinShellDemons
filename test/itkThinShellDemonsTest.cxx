@@ -90,7 +90,9 @@ int itkThinShellDemonsTest( int args, char **argv)
   MetricType::Pointer metric = MetricType::New();
   metric->SetStretchWeight(1);
   metric->SetBendWeight(1);
-  metric->SetGeometricFeatureWeight(0);
+  metric->SetGeometricFeatureWeight(10);
+  metric->UseConfidenceWeightingOn();
+  metric->UpdateFeatureMatchingAtEachIterationOn();
   metric->SetFixedMesh(fixedMesh);
   metric->SetMovingMesh(movingMesh);
   metric->SetTransform(transform);
@@ -100,13 +102,12 @@ int itkThinShellDemonsTest( int args, char **argv)
   /*
     Initialize Thin Shell Demons optimizer
   */
-
   typedef itk::LBFGSOptimizer OptimizerType;
   OptimizerType::Pointer optimizer = OptimizerType::New();
-  /*
+/*
   typedef itk::ConjugateGradientOptimizer OptimizerType;
   OptimizerType::Pointer optimizer = OptimizerType::New();
-  */
+*/
 
   typedef itk::MeshToMeshRegistrationMethod<MeshType, MeshType> RegistrationType;
   RegistrationType::Pointer registration = RegistrationType::New();

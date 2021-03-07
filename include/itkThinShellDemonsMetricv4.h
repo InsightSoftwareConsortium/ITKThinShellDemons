@@ -122,6 +122,26 @@ protected:
   ThinShellDemonsMetricv4();
   virtual ~ThinShellDemonsMetricv4() override = default;
 
+  //Create a points locator for feature matching
+  /*
+  using FeaturePointsContainer = itk::PointSet<double, FixedPointDimension+1>
+  using FeaturePointsLocatorType = PointsLocator<FeaturePointsContainer>;
+  mutable FeaturePointsLocatorType m_FeaturePointsLocator;
+*/
+  /**
+   * Prepare point sets for use.
+   * Override to use geometric features
+   */
+  //virtual void InitializePointSets() const override;
+
+  /**
+   * Initialize to prepare for a particular iteration, generally
+   * an iteration of optimization. Distinct from Initialize()
+   * which is a one-time initialization.
+   * Override to use geometric features
+   */
+  //virtual void InitializeForIteration() const override;
+
   void PrintSelf(std::ostream & os, Indent indent) const ITK_OVERRIDE;
 
 private:
