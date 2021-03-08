@@ -303,8 +303,6 @@ PointSetToPointSetMetricWithIndexv4<TFixedPointSet, TMovingPointSet, TInternalCo
   this->m_Value = valueSum;
 }
 
-
-
 template <typename TFixedPointSet, typename TMovingPointSet, class TInternalComputationValueType>
 typename PointSetToPointSetMetricWithIndexv4<TFixedPointSet, TMovingPointSet, TInternalComputationValueType>::LocalDerivativeType
 PointSetToPointSetMetricWithIndexv4<TFixedPointSet, TMovingPointSet, TInternalComputationValueType>::
@@ -315,8 +313,6 @@ PointSetToPointSetMetricWithIndexv4<TFixedPointSet, TMovingPointSet, TInternalCo
   this->GetLocalNeighborhoodValueAndDerivative(index, point, measure, localDerivative, pixel);
   return localDerivative;
 }
-
-
 
 template <typename TFixedPointSet, typename TMovingPointSet, class TInternalComputationValueType>
 const typename PointSetToPointSetMetricWithIndexv4<TFixedPointSet, TMovingPointSet, TInternalComputationValueType>
