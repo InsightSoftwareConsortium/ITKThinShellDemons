@@ -90,22 +90,16 @@ public:
 
   using VectorType = typename itk::Vector<double, PointType::Dimension>;
 
-  /**
-   * Calculates the local metric value for a single point.
-   */
-  MeasureType
-  GetLocalNeighborhoodValue(const PointType &, const PixelType & pixel = 0) const override;
-
-  /**
-   * Calculates the local value and derivative for a single point.
-   */
-  void
-  GetLocalNeighborhoodValueAndDerivative(const PointType &,
-                                         MeasureType &,
-                                         LocalDerivativeType &,
-                                         const PixelType & pixel = 0) const override;
-
   void Initialize(void) override;
+
+  MeasureType
+  GetLocalNeighborhoodValue(const PointIdentifier , const PointType &,
+                            const PixelType & pixel = 0) const override;
+
+  void
+  GetLocalNeighborhoodValueAndDerivative(const PointIdentifier , const PointType &,
+                                         MeasureType &, LocalDerivativeType &,
+                                         const PixelType & pixel = 0) const override;
 
   /**
    * Stretching penalty weight
@@ -206,15 +200,14 @@ protected:
 
   bool RequiresFixedPointsLocator() const override
   {
-    return true;
+    return false;
   };
 
   void PrintSelf(std::ostream & os, Indent indent) const ITK_OVERRIDE;
 
 private:
-  typedef itk::MapContainer<int, vtkSmartPointer<vtkIdList>> NeighborhoodMapType;
-  using NeighborhoodMapPointer = typename NeighborhoodMapType::Pointer;
-  NeighborhoodMapPointer neighborMap;
+  typedef std::vector<vtkSmartPointer<vtkIdList>> NeighborhoodMap;
+  NeighborhoodMap neighborMap;
 
   mutable vtkSmartPointer<vtkPolyData> movingVTKMesh;
   mutable vtkSmartPointer<vtkPolyData> fixedVTKMesh;
@@ -228,10 +221,9 @@ private:
   bool m_UpdateFeatureMatchingAtEachIteration;
   bool m_UseMaximalDistanceConfidenceSigma;
 
-  void ComputeConfidenceValueAndDerivative(const VectorType &v,
-                                           double &confidence,
-                                           VectorType &derivative) const;
-  void ComputeStretchAndBend(const PointType &point,
+  double ComputeConfidenceValueAndDerivative(const VectorType &v,
+                                             VectorType &derivative) const;
+  void ComputeStretchAndBend(const PointIdentifier &index,
                              double &stretchEnergy,
                              double &bendEnergy,
                              VectorType &stretch,
@@ -240,7 +232,7 @@ private:
   void ComputeMaximalDistanceSigma() const;
   FeaturePointType GetFeaturePoint(const double *v, const double &c) const;
   FeaturePointType GetFeaturePoint(const PointType &v, const double &c) const;
-  VectorType GetMovingDirection(int identifier) const;
+  VectorType GetMovingDirection(const PointIdentifier &identifier) const;
   FeaturePointSetPointer GenerateFeaturePointSets(bool fixed) const;
 
 };

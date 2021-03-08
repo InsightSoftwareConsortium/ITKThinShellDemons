@@ -133,9 +133,9 @@ int itkThinShellDemonsTestv4_Affine( int args, char **argv)
   fixedImageSize[0] = ceil( 1.2 * diff[0] / spacing );
   fixedImageSize[1] = ceil( 1.2 * diff[1] / spacing );
   fixedImageSize[2] = ceil( 1.2 * diff[2] / spacing );
-  fixedImageOrigin[0] = minBounds[0] - 0.1*diff[0];
-  fixedImageOrigin[1] = minBounds[1] - 0.1*diff[1];
-  fixedImageOrigin[2] = minBounds[2] - 0.1*diff[2];
+  fixedImageOrigin[0] = minBounds[0] - 0.1 * diff[0];
+  fixedImageOrigin[1] = minBounds[1] - 0.1 * diff[1];
+  fixedImageOrigin[2] = minBounds[2] - 0.1 * diff[2];
   fixedImageDirection.SetIdentity();
   fixedImageSpacing.Fill( spacing );
 
@@ -158,20 +158,20 @@ int itkThinShellDemonsTestv4_Affine( int args, char **argv)
   metric->UseConfidenceWeightingOn();
   metric->UseMaximalDistanceConfidenceSigmaOn();
   metric->UpdateFeatureMatchingAtEachIterationOn();
-  metric->SetMovingTransform( transform );
+  metric->SetMovingTransform(transform);
   //Reversed due to using points instead of an image
   //to keep semantics the same as in itkThinShellDemonsTest.cxx
   //For the ThinShellDemonsMetricv4 the fixed mesh is
   //regularized
-  metric->SetFixedMesh( movingMesh );
-  metric->SetMovingMesh( fixedMesh );
-  metric->SetVirtualDomainFromImage( fixedImage );
+  metric->SetFixedMesh(movingMesh);
+  metric->SetMovingMesh(fixedMesh);
+  metric->SetVirtualDomainFromImage(fixedImage);
   metric->Initialize();
 
   // Scales estimator
   using ScalesType = itk::RegistrationParameterScalesFromPhysicalShift< PointSetMetricType >;
   ScalesType::Pointer shiftScaleEstimator = ScalesType::New();
-  shiftScaleEstimator->SetMetric( metric );
+  shiftScaleEstimator->SetMetric(metric);
   // Needed with pointset metrics
   shiftScaleEstimator->SetVirtualDomainPointSet( metric->GetVirtualTransformedPointSet() );
 

@@ -182,18 +182,17 @@ protected:
 
 private:
 
-  typedef itk::MapContainer<int, InputPointType> TargetMapType;
-  using TargetMapPointer = typename TargetMapType::Pointer;
-  mutable TargetMapPointer targetMap;
+  typedef std::vector<InputPointType> TargetMap;
+  mutable TargetMap targetMap;
 
-  typedef itk::MapContainer<int, vtkSmartPointer<vtkIdList>> NeighborhodMapType;
-  using NeighborhodMapPointer = typename NeighborhodMapType::Pointer;
-  NeighborhodMapPointer neighborMap;
+  typedef std::vector< vtkSmartPointer<vtkIdList> > NeighborhodMap;
+  NeighborhodMap neighborMap;
 
   vtkSmartPointer<vtkPolyData> movingVTKMesh;
   vtkSmartPointer<vtkPolyData> fixedVTKMesh;
   vtkSmartPointer<vtkPolyData> fixedCurvature;
 
+  mutable bool updateConfidenceSigma;
   double m_StretchWeight;
   double m_BendWeight;
   double m_GeometricFeatureWeight;
@@ -202,9 +201,8 @@ private:
   bool m_UpdateFeatureMatchingAtEachIteration;
   bool m_UseMaximalDistanceConfidenceSigma;
 
-  void ComputeConfidenceValueAndDerivative(const InputVectorType &v,
-                                           double &confidence,
-                                           InputVectorType &derivative) const;
+  double ComputeConfidenceValueAndDerivative(const InputVectorType &v,
+                                             InputVectorType &derivative) const;
 
   void ComputeStretchAndBend(int identifier,
                              const TransformParametersType &parmaters,

@@ -159,7 +159,7 @@ int itkThinShellDemonsTestv4_Displacement( int args, char **argv)
   using PointSetMetricType = itk::ThinShellDemonsMetricv4<MeshType> ;
   PointSetMetricType::Pointer metric = PointSetMetricType::New();
   metric->SetStretchWeight(1);
-  metric->SetBendWeight(1);
+  metric->SetBendWeight(5);
   metric->SetGeometricFeatureWeight(10);
   metric->UseConfidenceWeightingOn();
   metric->UseMaximalDistanceConfidenceSigmaOn();

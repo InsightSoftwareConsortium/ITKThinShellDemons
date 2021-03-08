@@ -18,7 +18,7 @@
 #ifndef itkMeshToMeshMetricv4_h
 #define itkMeshToMeshMetricv4_h
 
-#include "itkPointSetToPointSetMetricv4.h"
+#include "itkPointSetToPointSetMetricWithIndexv4.h"
 
 namespace itk
 {
@@ -32,21 +32,21 @@ namespace itk
 template< typename TFixedMesh,  typename TMovingMesh,
           class TInternalComputationValueType = double >
 class ITK_TEMPLATE_EXPORT MeshToMeshMetricv4:
-  public PointSetToPointSetMetricv4<TFixedMesh, TMovingMesh, TInternalComputationValueType>
+  public PointSetToPointSetMetricWithIndexv4<TFixedMesh, TMovingMesh, TInternalComputationValueType>
 {
 public:
   ITK_DISALLOW_COPY_AND_MOVE(MeshToMeshMetricv4);
 
   /** Standard class typedefs. */
   typedef MeshToMeshMetricv4         Self;
-  typedef PointSetToPointSetMetricv4<TFixedMesh, TMovingMesh, TInternalComputationValueType>
+  typedef PointSetToPointSetMetricWithIndexv4<TFixedMesh, TMovingMesh, TInternalComputationValueType>
                                      Superclass;
   typedef SmartPointer< Self >       Pointer;
   typedef SmartPointer< const Self > ConstPointer;
 
 
   /** Run-time type information (and related methods). */
-  itkTypeMacro(MeshToMeshMetricv4, PointSetToPointSetMetricv4);
+  itkTypeMacro(MeshToMeshMetricv4, PointSetToPointSetMetricWithIndexv4);
 
   /**  Type of the moving Mesh. */
   typedef TMovingMesh                           MovingMeshType;

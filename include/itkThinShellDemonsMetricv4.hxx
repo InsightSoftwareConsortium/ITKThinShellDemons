@@ -43,7 +43,6 @@ ThinShellDemonsMetricv4< TFixedMesh, TMovingMesh >
   fixedVTKMesh = nullptr;
   movingVTKMesh = nullptr;
   fixedCurvature = nullptr;
-  neighborMap = NeighborhoodMapType::New();
 }
 
 /** Initialize the metric */
@@ -52,6 +51,28 @@ void
 ThinShellDemonsMetricv4< TFixedMesh, TMovingMesh >
 ::Initialize()
 {
+
+  if (!this->m_FixedPointSet)
+  {
+    itkExceptionMacro("Fixed point set is not present");
+  }
+
+  if (!this->m_MovingPointSet)
+  {
+    itkExceptionMacro("Moving point set is not present");
+  }
+
+  // If the PointSet is provided by a source, update the source.
+  if (this->m_MovingPointSet->GetSource())
+  {
+    this->m_MovingPointSet->GetSource()->Update();
+  }
+
+  // If the point set is provided by a source, update the source.
+  if (this->m_FixedPointSet->GetSource())
+  {
+    this->m_FixedPointSet->GetSource()->Update();
+  }
 
   //generate a VTK copy of the same mesh
   itkMeshTovtkPolyData<double>::Pointer dataTransfer = itkMeshTovtkPolyData<double>::New();
@@ -62,9 +83,15 @@ ThinShellDemonsMetricv4< TFixedMesh, TMovingMesh >
   dataTransfer->SetInput(this->m_FixedPointSet);
   this->fixedVTKMesh = dataTransfer->GetOutput();
 
+  this->ComputeNeighbors();
+
   Superclass::Initialize();
 
-  this->ComputeNeighbors();
+  //Compute confidence sigma
+  if( this->m_UseMaximalDistanceConfidenceSigma )
+    {
+    this->ComputeMaximalDistanceSigma();
+    }
 }
 
 template< typename TFixedMesh, typename TMovingMesh >
@@ -72,18 +99,18 @@ void
 ThinShellDemonsMetricv4< TFixedMesh, TMovingMesh >
 ::ComputeNeighbors()
 {
-  this->neighborMap->Initialize();
-  for(int id=0; id<fixedVTKMesh->GetNumberOfPoints(); id++)
+  this->neighborMap.resize(fixedVTKMesh->GetNumberOfPoints());
+  for(PointIdentifier id=0; id<fixedVTKMesh->GetNumberOfPoints(); id++)
     {
     //Collect all neighbors
     vtkSmartPointer<vtkIdList> cellIdList = vtkSmartPointer<vtkIdList>::New();
     fixedVTKMesh->GetPointCells(id, cellIdList);
     vtkSmartPointer<vtkIdList> pointIdList = vtkSmartPointer<vtkIdList>::New();
-    for(int i = 0; i < cellIdList->GetNumberOfIds(); i++)
+    for(PointIdentifier i = 0; i < cellIdList->GetNumberOfIds(); i++)
       {
       vtkSmartPointer<vtkIdList> pointIdListTmp = vtkSmartPointer<vtkIdList>::New();
       fixedVTKMesh->GetCellPoints(cellIdList->GetId(i), pointIdListTmp);
-      for(int j=0; j < pointIdListTmp->GetNumberOfIds(); j++)
+      for(PointIdentifier j=0; j < pointIdListTmp->GetNumberOfIds(); j++)
         {
         if(pointIdListTmp->GetId(j) != id)
           {
@@ -91,30 +118,29 @@ ThinShellDemonsMetricv4< TFixedMesh, TMovingMesh >
           }
         }
       }
-    neighborMap->SetElement(id, pointIdList);
+    neighborMap[id] = pointIdList;
     }
 }
 
 template< typename TFixedMesh, typename TMovingMesh >
-void
+double
 ThinShellDemonsMetricv4< TFixedMesh, TMovingMesh >
-::ComputeConfidenceValueAndDerivative(const VectorType &v,
-    double &confidence,
-    VectorType &derivative) const
+::ComputeConfidenceValueAndDerivative(const VectorType &v, VectorType &derivative) const
 {
   double variance = m_ConfidenceSigma * m_ConfidenceSigma;
   double dist = v.GetSquaredNorm();
-  confidence = exp( -dist / variance);
+  double confidence = exp( -dist / variance);
   if( m_UpdateFeatureMatchingAtEachIteration )
     {
     derivative = -confidence * 2 / variance * v;
     }
+  return confidence;
 }
 
 template< typename TFixedMesh, typename TMovingMesh >
 typename ThinShellDemonsMetricv4< TFixedMesh, TMovingMesh >::VectorType
 ThinShellDemonsMetricv4< TFixedMesh, TMovingMesh >
-::GetMovingDirection(int identifier) const
+::GetMovingDirection(const PointIdentifier &identifier) const
 {
   PointType p1 = this->m_FixedPointSet->GetPoint(identifier);
   PointType p2 = this->m_FixedTransformedPointSet->GetPoint(identifier);
@@ -124,32 +150,26 @@ ThinShellDemonsMetricv4< TFixedMesh, TMovingMesh >
 template< typename TFixedMesh, typename TMovingMesh >
 void
 ThinShellDemonsMetricv4< TFixedMesh, TMovingMesh >
-::ComputeStretchAndBend( const PointType &point,
+::ComputeStretchAndBend( const PointIdentifier &identifier,
                          double &stretchEnergy,
                          double &bendEnergy,
                          VectorType &stretch,
                          VectorType &bend) const
 {
-  PointIdentifier identifier = this->m_FixedTransformedPointsLocator->FindClosestPoint(point);
-
-  //enumerate all the neighboring vertices (edges) of a given vertex
-  //stretching energy : measure the squared derivative along different edge directions
-  //bending energy : measure the local laplacian around the local patch using
-  //the given vertex and all neighboring vertices
   stretchEnergy = 0;
   bendEnergy = 0;
   stretch.Fill(0);
   bend.Fill(0);
 
   //Collect all neighbors
-  const vtkSmartPointer<vtkIdList> pointIdList = neighborMap->ElementAt(identifier);
+  const vtkSmartPointer<vtkIdList> &pointIdList = this->neighborMap[identifier];
   int degree = pointIdList->GetNumberOfIds();
-  VectorType v = GetMovingDirection(identifier);
+  VectorType v = this->GetMovingDirection(identifier);
   VectorType bEnergy;
   bEnergy.Fill(0);
-  for(int i=0; i < pointIdList->GetNumberOfIds(); i++)
+  for(PointIdentifier i=0; i < pointIdList->GetNumberOfIds(); i++)
     {
-    int neighborIdx = pointIdList->GetId(i);
+    PointIdentifier neighborIdx = pointIdList->GetId(i);
     VectorType vn = this->GetMovingDirection(neighborIdx);
     VectorType dx = v - vn;
     stretchEnergy += dx.GetSquaredNorm();
@@ -158,83 +178,61 @@ ThinShellDemonsMetricv4< TFixedMesh, TMovingMesh >
     // times 4 because edge appears two times in the energy function
     // and the derivative has another factor of 2 from the squared norm
     // divided by the vertex degrees of current and nieghbor vertex
-    int nDegree =  neighborMap->ElementAt(neighborIdx)->GetNumberOfIds();
-    stretch += dx * 4 / (degree+nDegree);
-    //stretch[1] += 4 * dx[1] / (degree+nDegree);
-    //stretch[2] += 4 * dx[2] / (degree+nDegree);
-    bend += dx * 4 / (degree+nDegree);
-    //bend[1] += 4 * dx[1] / (degree+nDegree);
-    //bend[2] += 4 * dx[2] / (degree+nDegree);
+    int nDegree =  this->neighborMap[neighborIdx]->GetNumberOfIds();
+    stretch += dx * (4 / (degree+nDegree));
+    bend += dx * (degree * 4 / (degree+nDegree));
     }
 
   bendEnergy = bEnergy.GetSquaredNorm() / degree;
   stretchEnergy /= degree;
-  bendEnergy /= degree;
 }
 
-
-/**
- * Calculates the local metric value for a single point.
- */
 template< typename TFixedMesh, typename TMovingMesh >
 typename ThinShellDemonsMetricv4< TFixedMesh, TMovingMesh >::MeasureType
 ThinShellDemonsMetricv4< TFixedMesh, TMovingMesh >
-::GetLocalNeighborhoodValue(const PointType &point, const PixelType &pixel) const
+::GetLocalNeighborhoodValue(const PointIdentifier identifier,
+                            const PointType &point,
+                            const PixelType & pixel) const
 {
+  MeasureType value = 0;
   LocalDerivativeType derivative;
-  MeasureType value;
-  this->GetLocalNeighborhoodValueAndDerivative(point, value, derivative);
+  this->GetLocalNeighborhoodValueAndDerivative(identifier, point, value, derivative, pixel);
   return value;
 }
 
-/**
- * Calculates the local value and derivative for a single point.
- */
 template< typename TFixedMesh, typename TMovingMesh >
 void
 ThinShellDemonsMetricv4< TFixedMesh, TMovingMesh >
-::GetLocalNeighborhoodValueAndDerivative(const PointType &point,
+::GetLocalNeighborhoodValueAndDerivative(const PointIdentifier identifier,
+                                         const PointType &point,
                                          MeasureType &value,
                                          LocalDerivativeType &derivative,
                                          const PixelType & pixel) const
 {
-  PointType closestPoint;
-  closestPoint.Fill(0.0);
+  FeaturePointType fpoint = this->GetFeaturePoint(point, fixedCurvature->GetTuple1(identifier) );
+  PointIdentifier mPointId = this->m_MovingTransformedFeaturePointsLocator->FindClosestPoint(fpoint);
+  PointType closestPoint = this->m_MovingTransformedPointSet->GetPoint(mPointId);
 
-  PointIdentifier identifier =
-    this->m_FixedTransformedPointsLocator->FindClosestPoint(point);
-  FeaturePointType fpoint =
-    this->GetFeaturePoint(point, fixedCurvature->GetTuple1(identifier) );
-  PointIdentifier mPointId =
-    this->m_MovingTransformedFeaturePointsLocator->FindClosestPoint(fpoint);
-  closestPoint = this->m_MovingTransformedPointSet->GetPoint(mPointId);
-
-  value = point.SquaredEuclideanDistanceTo(closestPoint);
   VectorType direction = closestPoint - point;
+  double dist = direction.GetSquaredNorm();
   double confidence = 1;
   VectorType confidenceDerivative;
   if(this->m_UseConfidenceWeighting)
     {
-    this->ComputeConfidenceValueAndDerivative(direction, confidence, confidenceDerivative);
+    confidence = this->ComputeConfidenceValueAndDerivative(direction, confidenceDerivative);
     }
-
   double sE = 0;
   double bE = 0;
   VectorType sD;
   VectorType bD;
-  this->ComputeStretchAndBend(point, sE, bE, sD, bD);
-  VectorType dvalue = direction * 2 - m_StretchWeight*sD - bD * m_BendWeight;
-  value += m_StretchWeight * sE + m_BendWeight * bE;
-  if(this->m_UseConfidenceWeighting)
+  this->ComputeStretchAndBend(identifier, sE, bE, sD, bD);
+  VectorType dx = direction * confidence* 2 - m_StretchWeight*sD - bD * m_BendWeight;
+  value = confidence * dist + m_StretchWeight * sE + m_BendWeight * bE;
+  if(this->m_UseConfidenceWeighting && this->m_UpdateFeatureMatchingAtEachIteration)
     {
-    dvalue *= confidence;
-    if(this->m_UpdateFeatureMatchingAtEachIteration)
-      {
-      dvalue += value * confidenceDerivative;
-      }
-    value *= confidence;
+    dx += dist * confidenceDerivative;
     }
-  derivative =dvalue;
+  derivative = dx;
 }
 
 template< typename TFixedMesh, typename TMovingMesh >
@@ -253,12 +251,12 @@ ThinShellDemonsMetricv4< TFixedMesh, TMovingMesh >
 ::GenerateFeaturePointSets(bool fixed) const
 {
 
-  vtkPolyData *vMesh;
+  vtkSmartPointer<vtkPolyData> vMesh;
   //Update meshes according to current transforms
   if(fixed)
     {
     vtkSmartPointer<vtkPoints> pts = fixedVTKMesh->GetPoints();
-    for(int i=0; i<this->m_FixedTransformedPointSet->GetNumberOfPoints(); i++ )
+    for(PointIdentifier i=0; i<this->m_FixedTransformedPointSet->GetNumberOfPoints(); i++ )
       {
       pts->SetPoint(i, this->m_FixedTransformedPointSet->GetPoint(i).data());
       }
@@ -267,7 +265,7 @@ ThinShellDemonsMetricv4< TFixedMesh, TMovingMesh >
   else
     {
     vtkSmartPointer<vtkPoints> pts = movingVTKMesh->GetPoints();
-    for(int i=0; i<this->m_MovingTransformedPointSet->GetNumberOfPoints(); i++ )
+    for(PointIdentifier i=0; i<this->m_MovingTransformedPointSet->GetNumberOfPoints(); i++ )
       {
       pts->SetPoint(i, this->m_MovingTransformedPointSet->GetPoint(i).data());
       }
@@ -288,7 +286,7 @@ ThinShellDemonsMetricv4< TFixedMesh, TMovingMesh >
   else
     {
     auto fPoints = features->GetPoints();
-    for(int i=0; i<vMesh->GetNumberOfPoints(); i++)
+    for(PointIdentifier i=0; i<vMesh->GetNumberOfPoints(); i++)
       {
       FeaturePointType point =
         this->GetFeaturePoint(vMesh->GetPoint(i), curvature->GetTuple1(i) );
@@ -307,11 +305,11 @@ ThinShellDemonsMetricv4< TFixedMesh, TMovingMesh >
   FeaturePointsContainerPointer mpoints =
     this->m_MovingTransformedFeaturePointsLocator->GetPoints();
   double maximalDistance = 0;
-  for(int i = 0; i < fixedVTKMesh->GetNumberOfPoints(); i++)
+  for(PointIdentifier i = 0; i < fixedVTKMesh->GetNumberOfPoints(); i++)
     {
     FeaturePointType fpoint =
       this->GetFeaturePoint(fixedVTKMesh->GetPoint(i), fixedCurvature->GetTuple1(i));
-    int id = this->m_MovingTransformedFeaturePointsLocator->FindClosestPoint(fpoint);
+    PointIdentifier id = this->m_MovingTransformedFeaturePointsLocator->FindClosestPoint(fpoint);
     FeaturePointType cpoint = mpoints->GetElement(id);
     double dist = cpoint.SquaredEuclideanDistanceTo(fpoint);
     if( dist > maximalDistance )
@@ -319,7 +317,7 @@ ThinShellDemonsMetricv4< TFixedMesh, TMovingMesh >
       maximalDistance = dist;
       }
     }
-  m_ConfidenceSigma = sqrt(maximalDistance*2);
+  this->m_ConfidenceSigma = sqrt(maximalDistance*2);
 }
 
 template< typename TFixedMesh, typename TMovingMesh >
@@ -333,7 +331,7 @@ ThinShellDemonsMetricv4< TFixedMesh, TMovingMesh >
     this->GenerateFeaturePointSets(true);
   }
 
-  //Update movving curvature feature locator
+  //Update moving curvature feature locator
   if( !this->m_MovingTransformedFeaturePointsLocator
       || this->m_UpdateFeatureMatchingAtEachIteration )
   {
@@ -352,11 +350,13 @@ ThinShellDemonsMetricv4< TFixedMesh, TMovingMesh >
   }
 
   //Compute confidence sigma
+  /*
   if( this->m_UpdateFeatureMatchingAtEachIteration &&
       this->m_UseMaximalDistanceConfidenceSigma )
     {
     this->ComputeMaximalDistanceSigma();
     }
+    */
 }
 
 template< typename TFixedMesh, typename TMovingMesh >
@@ -365,11 +365,11 @@ ThinShellDemonsMetricv4< TFixedMesh, TMovingMesh >
 ::GetFeaturePoint(const double *v, const double &c) const
 {
   FeaturePointType fpoint;
-  for(int i=0; i< PointType::Dimension; i++)
+  for(unsigned int i=0; i<PointType::Dimension; i++)
     {
     fpoint[i] = v[i];
     }
-  fpoint[PointType::Dimension+1] = c * m_GeometricFeatureWeight;
+  fpoint[PointType::Dimension] = c * m_GeometricFeatureWeight;
   return fpoint;
 }
 
@@ -379,11 +379,11 @@ ThinShellDemonsMetricv4< TFixedMesh, TMovingMesh >
 ::GetFeaturePoint(const PointType &v, const double &c) const
 {
   FeaturePointType fpoint;
-  for(int i=0; i< PointType::Dimension; i++)
+  for(unsigned int i=0; i<PointType::Dimension; i++)
     {
     fpoint[i] = v[i];
     }
-  fpoint[PointType::Dimension+1] = c * m_GeometricFeatureWeight;
+  fpoint[PointType::Dimension] = c * m_GeometricFeatureWeight;
   return fpoint;
 }
 
