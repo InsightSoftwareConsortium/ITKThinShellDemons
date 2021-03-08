@@ -60,8 +60,8 @@ itkMeshTovtkPolyData<T>
   PointType point;
 
   vtkSmartPointer<vtkPoints> m_Points = vtkSmartPointer<vtkPoints>::New();
-  vtkSmartPointer<vtkPolyData> m_PolyData = vtkSmartPointer<vtkPolyData>::New();
   vtkSmartPointer<vtkCellArray> m_Polys = vtkSmartPointer<vtkCellArray>::New();
+  vtkSmartPointer<vtkPolyData> m_PolyData = vtkSmartPointer<vtkPolyData>::New();
 
   if (numPoints == 0)
     {

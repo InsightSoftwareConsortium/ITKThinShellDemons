@@ -35,6 +35,7 @@ class ITK_TEMPLATE_EXPORT MeshToMeshMetricv4:
   public PointSetToPointSetMetricv4<TFixedMesh, TMovingMesh, TInternalComputationValueType>
 {
 public:
+  ITK_DISALLOW_COPY_AND_MOVE(MeshToMeshMetricv4);
 
   /** Standard class typedefs. */
   typedef MeshToMeshMetricv4         Self;
@@ -84,9 +85,6 @@ protected:
   virtual ~MeshToMeshMetricv4() override = default;
   virtual void PrintSelf(std::ostream &os, Indent indent) const override;
 
-
-private:
-  ITK_DISALLOW_COPY_AND_ASSIGN(MeshToMeshMetricv4);
 };
 } // end namespace itk
 

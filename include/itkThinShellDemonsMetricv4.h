@@ -60,6 +60,7 @@ class ITK_TEMPLATE_EXPORT ThinShellDemonsMetricv4:
   public MeshToMeshMetricv4< TFixedMesh, TMovingMesh >
 {
 public:
+  ITK_DISALLOW_COPY_AND_MOVE(ThinShellDemonsMetricv4);
 
   /** Standard class typedefs. */
   typedef ThinShellDemonsMetricv4                       Self;
@@ -211,10 +212,9 @@ protected:
   void PrintSelf(std::ostream & os, Indent indent) const ITK_OVERRIDE;
 
 private:
-  ITK_DISALLOW_COPY_AND_ASSIGN(ThinShellDemonsMetricv4);
-
-  typedef itk::MapContainer<int, vtkSmartPointer<vtkIdList>> NeighborhodMapType;
-  NeighborhodMapType neighborMap;
+  typedef itk::MapContainer<int, vtkSmartPointer<vtkIdList>> NeighborhoodMapType;
+  using NeighborhoodMapPointer = typename NeighborhoodMapType::Pointer;
+  NeighborhoodMapPointer neighborMap;
 
   mutable vtkSmartPointer<vtkPolyData> movingVTKMesh;
   mutable vtkSmartPointer<vtkPolyData> fixedVTKMesh;

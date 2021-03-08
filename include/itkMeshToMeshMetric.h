@@ -43,6 +43,7 @@ template< typename TFixedMesh,  typename TMovingMesh >
 class ITK_TEMPLATE_EXPORT MeshToMeshMetric:public SingleValuedCostFunction
 {
 public:
+  ITK_DISALLOW_COPY_AND_MOVE(MeshToMeshMetric);
 
   /** Standard class typedefs. */
   typedef MeshToMeshMetric           Self;
@@ -134,8 +135,6 @@ protected:
 
   mutable TransformPointer m_Transform;
 
-private:
-  ITK_DISALLOW_COPY_AND_ASSIGN(MeshToMeshMetric);
 };
 } // end namespace itk
 

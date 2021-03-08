@@ -46,6 +46,8 @@ class ITK_TEMPLATE_EXPORT MeshDisplacementTransform :
   public Transform<TParametersValueType, NDimensions, NDimensions>
 {
 public:
+  ITK_DISALLOW_COPY_AND_MOVE(MeshDisplacementTransform);
+
   /** Standard class typedefs. */
   typedef MeshDisplacementTransform                                      Self;
   typedef Transform<TParametersValueType, NDimensions, NDimensions> Superclass;
@@ -181,7 +183,6 @@ protected:
   virtual void PrintSelf(std::ostream & os, Indent indent) const ITK_OVERRIDE;
 
 private:
-  ITK_DISALLOW_COPY_AND_ASSIGN(MeshDisplacementTransform);
 
   unsigned int SpaceDimension;
   unsigned int ParametersDimension;

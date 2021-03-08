@@ -32,6 +32,8 @@ template< typename TFixedMesh, typename TMovingMesh>
 class ITK_TEMPLATE_EXPORT MeshToMeshRegistrationMethod : public ProcessObject
 {
 public:
+  ITK_DISALLOW_COPY_AND_MOVE(MeshToMeshRegistrationMethod);
+
   /** Standard class typedefs */
   typedef MeshToMeshRegistrationMethod Self;
   typedef ProcessObject                Superclass;

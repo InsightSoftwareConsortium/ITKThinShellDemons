@@ -40,6 +40,11 @@ ThinShellDemonsMetric< TFixedMesh, TMovingMesh >
   m_UseMaximalDistanceConfidenceSigma = true;
   m_UseConfidenceWeighting = true;
   m_UpdateFeatureMatchingAtEachIteration = false;
+  fixedVTKMesh = nullptr;
+  movingVTKMesh = nullptr;
+  fixedCurvature = nullptr;
+  targetMap = TargetMapType::New();
+  neighborMap = NeighborhodMapType::New();
 }
 
 /** Initialize the metric */
@@ -93,9 +98,9 @@ throw ( ExceptionObject )
   curvaturesFilter->SetInputData(fixedVTKMesh);
   curvaturesFilter->SetCurvatureTypeToGaussian();
   curvaturesFilter->Update();
-  fixedCurvature = curvaturesFilter->GetOutput();
+  this->fixedCurvature = curvaturesFilter->GetOutput();
 
-  this->targetMap.Initialize();
+  this->targetMap->Initialize();
   this->ComputeTargetPosition();
 
 }
@@ -105,7 +110,7 @@ void
 ThinShellDemonsMetric< TFixedMesh, TMovingMesh >
 ::ComputeNeighbors()
 {
-  this->neighborMap.Initialize();
+  this->neighborMap->Initialize();
   for(int id=0; id<movingVTKMesh->GetNumberOfPoints(); id++)
     {
     //Collect all neighbors
@@ -124,7 +129,7 @@ ThinShellDemonsMetric< TFixedMesh, TMovingMesh >
           }
         }
       }
-    neighborMap[id] = pointIdList;
+    neighborMap->SetElement(id, pointIdList);
     }
 }
 
@@ -195,7 +200,7 @@ ThinShellDemonsMetric< TFixedMesh, TMovingMesh >
       maxDistance = minimumDistance;
       }
 
-    const_cast<TargetMapType*>(&targetMap)->SetElement(identifier, targetPoint);
+    targetMap->SetElement(identifier, targetPoint);
 
     ++pointItr;
     identifier++;
@@ -243,7 +248,7 @@ ThinShellDemonsMetric< TFixedMesh, TMovingMesh >
   bend.Fill(0);
 
   //Collect all neighbors
-  const vtkSmartPointer<vtkIdList> &pointIdList = neighborMap.ElementAt(identifier);
+  const vtkSmartPointer<vtkIdList> &pointIdList = neighborMap->ElementAt(identifier);
   int degree = pointIdList->GetNumberOfIds();
   InputVectorType v;
   static unsigned int d = InputVectorType::Dimension;
@@ -268,7 +273,7 @@ ThinShellDemonsMetric< TFixedMesh, TMovingMesh >
     // times 4 because edge appears two times in the energy function
     // and the derivative has another factor of 2 from the squared norm
     // divided by the vertex degrees of current and neighbor vertex
-    int nDegree =  neighborMap.ElementAt(neighborIdx)->GetNumberOfIds();
+    int nDegree =  neighborMap->ElementAt(neighborIdx)->GetNumberOfIds();
     stretch += dx * 4 / (degree+nDegree);
     bend += dx * 4 / (degree+nDegree);
     }
@@ -346,7 +351,7 @@ ThinShellDemonsMetric< TFixedMesh, TMovingMesh >
     vec[2] = parameters[identifier*3+2];
     typename Superclass::OutputPointType transformedPoint = inputPoint + vec;
 
-    InputPointType targetPoint = targetMap.ElementAt(identifier);
+    InputPointType targetPoint = targetMap->ElementAt(identifier);
     InputVectorType distVec = targetPoint - transformedPoint;
     double confidence = 1;
     InputVectorType confidenceDerivative;

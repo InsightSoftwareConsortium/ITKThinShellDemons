@@ -52,6 +52,7 @@ class ITK_TEMPLATE_EXPORT ThinShellDemonsMetric:
   public MeshToMeshMetric< TFixedMesh, TMovingMesh >
 {
 public:
+  ITK_DISALLOW_COPY_AND_MOVE(ThinShellDemonsMetric);
 
   /** Standard class typedefs. */
   typedef ThinShellDemonsMetric                       Self;
@@ -64,7 +65,7 @@ public:
   itkNewMacro(Self);
 
   /** Run-time type information (and related methods). */
-  itkTypeMacro(ThinShellDemonsMetric, Object);
+  itkTypeMacro(ThinShellDemonsMetric, MeshToMeshMetric);
 
   /** Types transferred from the base class. */
   typedef typename Superclass::TransformType           TransformType;
@@ -180,13 +181,14 @@ protected:
   void PrintSelf(std::ostream & os, Indent indent) const ITK_OVERRIDE;
 
 private:
-  ITK_DISALLOW_COPY_AND_ASSIGN(ThinShellDemonsMetric);
 
   typedef itk::MapContainer<int, InputPointType> TargetMapType;
-  TargetMapType targetMap;
+  using TargetMapPointer = typename TargetMapType::Pointer;
+  mutable TargetMapPointer targetMap;
 
   typedef itk::MapContainer<int, vtkSmartPointer<vtkIdList>> NeighborhodMapType;
-  NeighborhodMapType neighborMap;
+  using NeighborhodMapPointer = typename NeighborhodMapType::Pointer;
+  NeighborhodMapPointer neighborMap;
 
   vtkSmartPointer<vtkPolyData> movingVTKMesh;
   vtkSmartPointer<vtkPolyData> fixedVTKMesh;

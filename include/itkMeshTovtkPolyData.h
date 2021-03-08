@@ -41,6 +41,8 @@ class ITK_TEMPLATE_EXPORT itkMeshTovtkPolyData : public Object
 {
 
  public:
+  ITK_DISALLOW_COPY_AND_MOVE(itkMeshTovtkPolyData);
+
   /** Standard class typedefs. */
   typedef itkMeshTovtkPolyData       Self;
   typedef Object                     Superclass;
@@ -76,8 +78,6 @@ protected:
   TriangleMeshType::ConstPointer m_itkTriangleMesh;
   vtkSmartPointer<vtkPolyData> ConvertitkTovtk();
 
-private:
-  ITK_DISALLOW_COPY_AND_ASSIGN(itkMeshTovtkPolyData);
 };
 }
 #ifndef ITK_MANUAL_INSTANTIATION

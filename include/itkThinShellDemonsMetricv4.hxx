@@ -43,6 +43,7 @@ ThinShellDemonsMetricv4< TFixedMesh, TMovingMesh >
   fixedVTKMesh = nullptr;
   movingVTKMesh = nullptr;
   fixedCurvature = nullptr;
+  neighborMap = NeighborhoodMapType::New();
 }
 
 /** Initialize the metric */
@@ -53,7 +54,7 @@ ThinShellDemonsMetricv4< TFixedMesh, TMovingMesh >
 {
 
   //generate a VTK copy of the same mesh
-  itkMeshTovtkPolyData<double>::Pointer dataTransfer =itkMeshTovtkPolyData<double>::New();
+  itkMeshTovtkPolyData<double>::Pointer dataTransfer = itkMeshTovtkPolyData<double>::New();
   dataTransfer->SetInput(this->m_MovingPointSet);
   this->movingVTKMesh = dataTransfer->GetOutput();
 
@@ -71,7 +72,7 @@ void
 ThinShellDemonsMetricv4< TFixedMesh, TMovingMesh >
 ::ComputeNeighbors()
 {
-  this->neighborMap.Initialize();
+  this->neighborMap->Initialize();
   for(int id=0; id<fixedVTKMesh->GetNumberOfPoints(); id++)
     {
     //Collect all neighbors
@@ -90,7 +91,7 @@ ThinShellDemonsMetricv4< TFixedMesh, TMovingMesh >
           }
         }
       }
-    neighborMap[id] = pointIdList;
+    neighborMap->SetElement(id, pointIdList);
     }
 }
 
@@ -141,7 +142,7 @@ ThinShellDemonsMetricv4< TFixedMesh, TMovingMesh >
   bend.Fill(0);
 
   //Collect all neighbors
-  const vtkSmartPointer<vtkIdList> pointIdList = neighborMap.ElementAt(identifier);
+  const vtkSmartPointer<vtkIdList> pointIdList = neighborMap->ElementAt(identifier);
   int degree = pointIdList->GetNumberOfIds();
   VectorType v = GetMovingDirection(identifier);
   VectorType bEnergy;
@@ -157,7 +158,7 @@ ThinShellDemonsMetricv4< TFixedMesh, TMovingMesh >
     // times 4 because edge appears two times in the energy function
     // and the derivative has another factor of 2 from the squared norm
     // divided by the vertex degrees of current and nieghbor vertex
-    int nDegree =  neighborMap.ElementAt(neighborIdx)->GetNumberOfIds();
+    int nDegree =  neighborMap->ElementAt(neighborIdx)->GetNumberOfIds();
     stretch += dx * 4 / (degree+nDegree);
     //stretch[1] += 4 * dx[1] / (degree+nDegree);
     //stretch[2] += 4 * dx[2] / (degree+nDegree);
@@ -252,7 +253,7 @@ ThinShellDemonsMetricv4< TFixedMesh, TMovingMesh >
 ::GenerateFeaturePointSets(bool fixed) const
 {
 
-  vtkSmartPointer<vtkPolyData> vMesh;
+  vtkPolyData *vMesh;
   //Update meshes according to current transforms
   if(fixed)
     {
@@ -289,7 +290,8 @@ ThinShellDemonsMetricv4< TFixedMesh, TMovingMesh >
     auto fPoints = features->GetPoints();
     for(int i=0; i<vMesh->GetNumberOfPoints(); i++)
       {
-      FeaturePointType point = this->GetFeaturePoint(vMesh->GetPoint(i), curvature->GetTuple1(i) );
+      FeaturePointType point =
+        this->GetFeaturePoint(vMesh->GetPoint(i), curvature->GetTuple1(i) );
       fPoints->InsertElement(i, point);
       }
     }
@@ -326,13 +328,12 @@ ThinShellDemonsMetricv4< TFixedMesh, TMovingMesh >
 ::InitializeFeaturePointsLocators()
   const
 {
-
-
+  //Update fixed curvature
   if(!fixedCurvature || this->m_UpdateFeatureMatchingAtEachIteration){
-    //Update fixed curvature
     this->GenerateFeaturePointSets(true);
   }
 
+  //Update movving curvature feature locator
   if( !this->m_MovingTransformedFeaturePointsLocator
       || this->m_UpdateFeatureMatchingAtEachIteration )
   {
@@ -349,6 +350,8 @@ ThinShellDemonsMetricv4< TFixedMesh, TMovingMesh >
         features->GetPoints());
     this->m_MovingTransformedFeaturePointsLocator->Initialize();
   }
+
+  //Compute confidence sigma
   if( this->m_UpdateFeatureMatchingAtEachIteration &&
       this->m_UseMaximalDistanceConfidenceSigma )
     {

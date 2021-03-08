@@ -133,6 +133,7 @@ int itkThinShellDemonsTest( int args, char **argv)
 
   std::cout << "Solution Value= " << metric->GetValue(transform->GetParameters()) << std::endl;
 
+
   /*
     output mesh
   */
