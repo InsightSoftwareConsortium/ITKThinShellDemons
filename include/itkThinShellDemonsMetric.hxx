@@ -206,7 +206,7 @@ ThinShellDemonsMetric< TFixedMesh, TMovingMesh >
     }
   if( m_UseMaximalDistanceConfidenceSigma && updateConfidenceSigma)
     {
-    this->m_ConfidenceSigma = sqrt( 2*maxDistance  );
+    this->m_ConfidenceSigma = sqrt( maxDistance  ) / 3;
     updateConfidenceSigma = false;
     }
 
@@ -221,10 +221,10 @@ ThinShellDemonsMetric< TFixedMesh, TMovingMesh >
 {
   double variance = m_ConfidenceSigma * m_ConfidenceSigma;
   double dist = v.GetSquaredNorm();
-  double confidence = exp( -dist / variance);
+  double confidence = exp( -dist / (2*variance));
   if( this->m_UpdateFeatureMatchingAtEachIteration )
     {
-    derivative = -confidence * 2 / variance * v;
+    derivative = (-confidence / variance) * v;
     }
   return confidence;
 }

@@ -129,10 +129,10 @@ ThinShellDemonsMetricv4< TFixedMesh, TMovingMesh >
 {
   double variance = m_ConfidenceSigma * m_ConfidenceSigma;
   double dist = v.GetSquaredNorm();
-  double confidence = exp( -dist / variance);
+  double confidence = exp( -dist / (2*variance) );
   if( m_UpdateFeatureMatchingAtEachIteration )
     {
-    derivative = -confidence * 2 / variance * v;
+    derivative = (-confidence/variance) * v;
     }
   return confidence;
 }
@@ -317,7 +317,7 @@ ThinShellDemonsMetricv4< TFixedMesh, TMovingMesh >
       maximalDistance = dist;
       }
     }
-  this->m_ConfidenceSigma = sqrt(maximalDistance*2);
+  this->m_ConfidenceSigma = sqrt(maximalDistance)/3;
 }
 
 template< typename TFixedMesh, typename TMovingMesh >
