@@ -110,6 +110,7 @@ ThinShellDemonsMetric< TFixedMesh, TMovingMesh >
 ::ComputeNeighbors()
 {
   this->neighborMap.resize(movingVTKMesh->GetNumberOfPoints());
+  this->edgeLengthMap.resize(movingVTKMesh->GetNumberOfPoints());
   for(int id=0; id<movingVTKMesh->GetNumberOfPoints(); id++)
     {
     //Collect all neighbors
@@ -124,8 +125,22 @@ ThinShellDemonsMetric< TFixedMesh, TMovingMesh >
         {
         if(pointIdListTmp->GetId(j) != id)
           {
-          pointIdList->InsertUniqueId (pointIdListTmp->GetId(j) );
+          pointIdList->InsertUniqueId( pointIdListTmp->GetId(j) );
           }
+        }
+      }
+    //Store edge lengths;
+    edgeLengthMap[id].resize(pointIdList->GetNumberOfIds());
+    const InputPointType &p = this->m_MovingMesh->GetPoint(id);
+    for(int j=0; j < pointIdList->GetNumberOfIds(); j++)
+      {
+      const vtkIdType &nid = pointIdList->GetId(j);
+      const InputPointType &pn = this->m_MovingMesh->GetPoint(nid);
+      edgeLengthMap[id][j] = p.EuclideanDistanceTo(pn);
+      //Avoid division by zero
+      if( edgeLengthMap[id][j] < itk::NumericTraits<float>::epsilon())
+        {
+        edgeLengthMap[id][j] = itk::NumericTraits<float>::epsilon();
         }
       }
     neighborMap[id] = pointIdList;
@@ -264,7 +279,8 @@ ThinShellDemonsMetric< TFixedMesh, TMovingMesh >
       {
       vn[0+i] = parameters[neighborIdx*d+i];
       }
-    InputVectorType dx = v - vn;
+    //Normalize by edge length
+    InputVectorType dx = (v - vn)/edgeLengthMap[identifier][i];
     stretchEnergy += dx.GetSquaredNorm();
     bEnergy += dx;
 

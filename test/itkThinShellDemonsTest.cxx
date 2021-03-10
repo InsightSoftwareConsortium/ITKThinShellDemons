@@ -89,7 +89,7 @@ int itkThinShellDemonsTest( int args, char **argv)
   typedef itk::ThinShellDemonsMetric<MeshType> MetricType;
   MetricType::Pointer metric = MetricType::New();
   metric->SetStretchWeight(1);
-  metric->SetBendWeight(5);
+  metric->SetBendWeight(1);
   metric->SetGeometricFeatureWeight(10);
   metric->UseConfidenceWeightingOn();
   metric->UseMaximalDistanceConfidenceSigmaOn();

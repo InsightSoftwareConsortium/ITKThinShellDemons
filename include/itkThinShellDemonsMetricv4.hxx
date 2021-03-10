@@ -34,7 +34,7 @@ ThinShellDemonsMetricv4< TFixedMesh, TMovingMesh, TInternalComputationValueType 
 {
   m_BendWeight = 1;
   m_StretchWeight = 1;
-  m_GeometricFeatureWeight = 10;
+  m_GeometricFeatureWeight = 0;
   m_ConfidenceSigma = 3;
   m_UseMaximalDistanceConfidenceSigma = true;
   m_UseConfidenceWeighting = true;
@@ -100,6 +100,7 @@ ThinShellDemonsMetricv4< TFixedMesh, TMovingMesh, TInternalComputationValueType 
 ::ComputeNeighbors()
 {
   this->neighborMap.resize(fixedVTKMesh->GetNumberOfPoints());
+  this->edgeLengthMap.resize(fixedVTKMesh->GetNumberOfPoints());
   for(PointIdentifier id=0; id<fixedVTKMesh->GetNumberOfPoints(); id++)
     {
     //Collect all neighbors
@@ -118,6 +119,21 @@ ThinShellDemonsMetricv4< TFixedMesh, TMovingMesh, TInternalComputationValueType 
           }
         }
       }
+    //Store edge lengths
+    edgeLengthMap[id].resize(pointIdList->GetNumberOfIds());
+    const PointType &p = this->m_FixedPointSet->GetPoint(id);
+    for(PointIdentifier j=0; j < pointIdList->GetNumberOfIds(); j++)
+      {
+      const vtkIdType &nid = pointIdList->GetId(j);
+      const PointType &pn = this->m_FixedPointSet->GetPoint(nid);
+      edgeLengthMap[id][j] = p.EuclideanDistanceTo(pn);
+      //Avoid division by zero
+      if( edgeLengthMap[id][j] < itk::NumericTraits<float>::epsilon())
+        {
+        edgeLengthMap[id][j] = itk::NumericTraits<float>::epsilon();
+        }
+      }
+
     neighborMap[id] = pointIdList;
     }
 }
@@ -171,8 +187,10 @@ ThinShellDemonsMetricv4< TFixedMesh, TMovingMesh, TInternalComputationValueType 
   for(PointIdentifier i=0; i < pointIdList->GetNumberOfIds(); i++)
     {
     PointIdentifier neighborIdx = pointIdList->GetId(i);
+    const PointType &pn = this->m_FixedPointSet->GetPoint(identifier);
     VectorType vn = this->GetMovingDirection(neighborIdx);
-    VectorType dx = v - vn;
+    //Normalize by edge length
+    VectorType dx = (v - vn)/edgeLengthMap[identifier][i];
     stretchEnergy += dx.GetSquaredNorm();
     bEnergy += dx;
 
@@ -228,7 +246,7 @@ ThinShellDemonsMetricv4< TFixedMesh, TMovingMesh, TInternalComputationValueType 
   VectorType sD;
   VectorType bD;
   this->ComputeStretchAndBend(identifier, sE, bE, sD, bD);
-  VectorType dx = direction * confidence* 2 - m_StretchWeight*sD - bD * m_BendWeight;
+  VectorType dx = direction * confidence * 2 - m_StretchWeight*sD - bD * m_BendWeight;
   value = confidence * dist + m_StretchWeight * sE + m_BendWeight * bE;
   if(this->m_UseConfidenceWeighting && this->m_UpdateFeatureMatchingAtEachIteration)
     {

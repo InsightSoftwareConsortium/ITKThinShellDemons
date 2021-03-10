@@ -159,7 +159,7 @@ int itkThinShellDemonsTestv4_Displacement( int args, char **argv)
   using PointSetMetricType = itk::ThinShellDemonsMetricv4<MeshType> ;
   PointSetMetricType::Pointer metric = PointSetMetricType::New();
   metric->SetStretchWeight(1);
-  metric->SetBendWeight(5);
+  metric->SetBendWeight(1);
   metric->SetGeometricFeatureWeight(10);
   metric->UseConfidenceWeightingOn();
   metric->UseMaximalDistanceConfidenceSigmaOn();
@@ -227,9 +227,10 @@ int itkThinShellDemonsTestv4_Displacement( int args, char **argv)
     std::cerr << "Exception caught: " << e << std::endl;
     return EXIT_FAILURE;
     }
-  std::cout << "Solution Value= " << metric->GetValue() << std::endl;
 
   TransformType::Pointer tx = registration->GetModifiableTransform();
+  metric->SetTransform(tx);
+  std::cout << "Solution Value= " << metric->GetValue() << std::endl;
   for (unsigned int n = 0; n < movingMesh->GetNumberOfPoints(); n++)
   {
     PointType txMovingPoint = tx->TransformPoint(movingMesh->GetPoint(n));

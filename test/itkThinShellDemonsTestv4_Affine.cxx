@@ -24,6 +24,7 @@
 #include "itkThinShellDemonsMetricv4.h"
 #include "itkConjugateGradientLineSearchOptimizerv4.h"
 #include "itkLBFGS2Optimizerv4.h"
+#include <itkRegularStepGradientDescentOptimizerv4.h>
 #include "itkRegistrationParameterScalesFromPhysicalShift.h"
 #include "itkImageRegistrationMethodv4.h"
 #include "itkAffineTransform.h"
@@ -146,18 +147,18 @@ int itkThinShellDemonsTestv4_Affine( int args, char **argv)
   fixedImage->SetSpacing( fixedImageSpacing );
   fixedImage->Allocate();
 
-  using AffineTransformType = itk::AffineTransform<double, Dimension>;
-  AffineTransformType::Pointer transform = AffineTransformType::New();
+  using TransformType = itk::AffineTransform<double, Dimension>;
+  TransformType::Pointer transform = TransformType::New();
   transform->SetIdentity();
 
   using PointSetMetricType = itk::ThinShellDemonsMetricv4<MeshType> ;
   PointSetMetricType::Pointer metric = PointSetMetricType::New();
-  metric->SetStretchWeight(1);
-  metric->SetBendWeight(1);
+  metric->SetStretchWeight(0);
+  metric->SetBendWeight(0);
   metric->SetGeometricFeatureWeight(10);
-  metric->UseConfidenceWeightingOn();
+  metric->UseConfidenceWeightingOff();
   metric->UseMaximalDistanceConfidenceSigmaOn();
-  metric->UpdateFeatureMatchingAtEachIterationOn();
+  metric->UpdateFeatureMatchingAtEachIterationOff();
   metric->SetMovingTransform(transform);
   //Reversed due to using points instead of an image
   //to keep semantics the same as in itkThinShellDemonsTest.cxx
@@ -176,26 +177,35 @@ int itkThinShellDemonsTestv4_Affine( int args, char **argv)
   shiftScaleEstimator->SetVirtualDomainPointSet( metric->GetVirtualTransformedPointSet() );
 
   // optimizer
+  /*
   typedef itk::LBFGS2Optimizerv4 OptimizerType;
   OptimizerType::Pointer optimizer = OptimizerType::New();
   optimizer->SetScalesEstimator( shiftScaleEstimator );
+  */
 
-/*
+  typedef itk::RegularStepGradientDescentOptimizerv4<double> OptimizerType;
+  OptimizerType::Pointer optimizer = OptimizerType::New();
+  optimizer->SetLearningRate(0.001);
+  optimizer->DoEstimateLearningRateOnceOff();
+  optimizer->DoEstimateScalesOff();
+  //optimizer->SetScalesEstimator( shiftScaleEstimator );
+
+  /*
   typedef itk::ConjugateGradientLineSearchOptimizerv4 OptimizerType;
   OptimizerType::Pointer optimizer = OptimizerType::New();
   optimizer->SetNumberOfIterations( 50 );
-  optimizer->SetScalesEstimator( shiftScaleEstimator );
+  //optimizer->SetScalesEstimator( shiftScaleEstimator );
   optimizer->SetMaximumStepSizeInPhysicalUnits( 0.5 );
   optimizer->SetMinimumConvergenceValue( 0.0 );
   optimizer->SetConvergenceWindowSize( 10 );
-*/
+  */
+
   using CommandType = CommandIterationUpdate<OptimizerType>;
   CommandType::Pointer observer = CommandType::New();
   optimizer->AddObserver( itk::IterationEvent(), observer );
 
-
   using AffineRegistrationType = itk::ImageRegistrationMethodv4<FixedImageType,
-        MovingImageType, AffineTransformType, FixedImageType, MeshType>;
+        MovingImageType, TransformType, FixedImageType, MeshType>;
   AffineRegistrationType::Pointer registration = AffineRegistrationType::New();
   registration->SetNumberOfLevels(1);
   registration->SetObjectName("registration");
@@ -215,11 +225,13 @@ int itkThinShellDemonsTestv4_Affine( int args, char **argv)
     std::cerr << "Exception caught: " << e << std::endl;
     return EXIT_FAILURE;
     }
-  std::cout << "Solution Value= " << metric->GetValue() << std::endl;
 
+  TransformType::Pointer tx = registration->GetModifiableTransform();
+  metric->SetTransform(tx);
+  std::cout << "Solution Value= " << metric->GetValue() << std::endl;
   for (unsigned int n = 0; n < movingMesh->GetNumberOfPoints(); n++)
   {
-    PointType txMovingPoint = transform->TransformPoint(movingMesh->GetPoint(n));
+    PointType txMovingPoint = tx->TransformPoint(movingMesh->GetPoint(n));
     movingMesh->SetPoint(n, txMovingPoint);
   }
 

@@ -48,6 +48,11 @@ public:
   /** Run-time type information (and related methods). */
   itkTypeMacro(MeshToMeshMetricv4, PointSetToPointSetMetricWithIndexv4);
 
+  using DimensionType = typename Superclass::DimensionType;
+  static constexpr DimensionType FixedPointDimension = Superclass::FixedPointDimension;
+  static constexpr DimensionType MovingPointDimension = Superclass::MovingPointDimension;
+
+
   /**  Type of the moving Mesh. */
   typedef TMovingMesh                           MovingMeshType;
   typedef typename MovingMeshType::ConstPointer MovingMeshConstPointer;
@@ -57,9 +62,8 @@ public:
   typedef typename FixedMeshType::ConstPointer FixedMeshConstPointer;
 
   /** Constants for the Mesh dimensions */
-  itkStaticConstMacro(MovingMeshDimension, unsigned int, TMovingMesh::PointDimension);
   itkStaticConstMacro(FixedMeshDimension, unsigned int, TFixedMesh::PointDimension);
-
+  itkStaticConstMacro(MovingMeshDimension, unsigned int, TMovingMesh::PointDimension);
 
   /** Get/Set the Fixed Mesh.  */
   void SetFixedMesh(FixedMeshConstPointer fixedMesh){

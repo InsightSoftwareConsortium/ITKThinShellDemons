@@ -235,9 +235,10 @@ int itkThinShellDemonsTestv4_SyN( int args, char **argv)
     std::cerr << "Exception caught: " << e << std::endl;
     return EXIT_FAILURE;
     }
-  std::cout << "Solution Value= " << metric->GetValue() << std::endl;
 
   OutputTransformType::Pointer tx = registration->GetModifiableTransform();
+  metric->SetTransform(tx);
+  std::cout << "Solution Value= " << metric->GetValue() << std::endl;
   for (unsigned int n = 0; n < movingMesh->GetNumberOfPoints(); n++)
   {
     PointType txMovingPoint = tx->TransformPoint(movingMesh->GetPoint(n));

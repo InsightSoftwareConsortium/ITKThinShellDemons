@@ -91,6 +91,30 @@ public:
   using PixelType = typename Superclass::PixelType;
   using PointIdentifier = typename Superclass::PointIdentifier;
 
+  using DimensionType = typename Superclass::DimensionType;
+  static constexpr DimensionType FixedPointDimension = Superclass::FixedPointDimension;
+  static constexpr DimensionType MovingPointDimension = Superclass::MovingPointDimension;
+
+  /** Get/Set the Fixed Mesh.  */
+  void SetFixedMesh(FixedMeshConstPointer fixedMesh){
+    this->SetFixedPointSet(fixedMesh);
+  };
+
+  FixedMeshConstPointer GetFixedMesh() const{
+    return this->GetFixedPointSet();
+  };
+
+  /** Get/Set the Moving Mesh.  */
+  void SetMovingMesh(MovingMeshConstPointer fixedMesh){
+    this->SetMovingPointSet(fixedMesh);
+  };
+
+  MovingMeshConstPointer GetMovingMesh() const{
+    return this->GetMovingPointSet();
+  };
+
+
+
   using VectorType = typename itk::Vector<double, PointType::Dimension>;
 
   void Initialize(void) override;
@@ -174,7 +198,7 @@ protected:
   virtual ~ThinShellDemonsMetricv4() override = default;
 
   //Create a points locator for feature matching
-  using FeaturePointSetType = PointSet< double, FixedMeshType::PointDimension+1>;
+  using FeaturePointSetType = PointSet< double, FixedPointDimension+1>;
   using FeaturePointSetPointer = typename FeaturePointSetType::Pointer;
   using FeaturePointType = typename FeaturePointSetType::PointType;
   using FeaturePointsContainer = typename FeaturePointSetType::PointsContainer;
@@ -211,6 +235,9 @@ protected:
 private:
   typedef std::vector<vtkSmartPointer<vtkIdList>> NeighborhoodMap;
   NeighborhoodMap neighborMap;
+
+  typedef std::vector< std::vector<double> > EdgeLengthMap;
+  EdgeLengthMap edgeLengthMap;
 
   mutable vtkSmartPointer<vtkPolyData> movingVTKMesh;
   mutable vtkSmartPointer<vtkPolyData> fixedVTKMesh;
