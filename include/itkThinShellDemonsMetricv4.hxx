@@ -126,7 +126,7 @@ ThinShellDemonsMetricv4< TFixedMesh, TMovingMesh, TInternalComputationValueType 
       {
       const vtkIdType &nid = pointIdList->GetId(j);
       const PointType &pn = this->m_FixedPointSet->GetPoint(nid);
-      edgeLengthMap[id][j] = p.EuclideanDistanceTo(pn);
+      edgeLengthMap[id][j] =  p.EuclideanDistanceTo(pn);
       //Avoid division by zero
       if( edgeLengthMap[id][j] < itk::NumericTraits<float>::epsilon())
         {
@@ -137,6 +137,7 @@ ThinShellDemonsMetricv4< TFixedMesh, TMovingMesh, TInternalComputationValueType 
     neighborMap[id] = pointIdList;
     }
 }
+
 
 template< typename TFixedMesh, typename TMovingMesh, typename TInternalComputationValueType >
 double

@@ -24,7 +24,6 @@
 #include "itkThinShellDemonsMetricv4.h"
 #include "itkConjugateGradientLineSearchOptimizerv4.h"
 #include "itkLBFGS2Optimizerv4.h"
-#include <itkRegularStepGradientDescentOptimizerv4.h>
 #include "itkRegistrationParameterScalesFromPhysicalShift.h"
 #include "itkImageRegistrationMethodv4.h"
 #include "itkAffineTransform.h"
@@ -150,13 +149,14 @@ int itkThinShellDemonsTestv4_Affine( int args, char **argv)
   using TransformType = itk::AffineTransform<double, Dimension>;
   TransformType::Pointer transform = TransformType::New();
   transform->SetIdentity();
+  transform->SetCenter(minBounds + (maxBounds - minBounds)/2);
 
   using PointSetMetricType = itk::ThinShellDemonsMetricv4<MeshType> ;
   PointSetMetricType::Pointer metric = PointSetMetricType::New();
-  metric->SetStretchWeight(0);
-  metric->SetBendWeight(0);
+  metric->SetStretchWeight(1);
+  metric->SetBendWeight(10);
   metric->SetGeometricFeatureWeight(10);
-  metric->UseConfidenceWeightingOff();
+  metric->UseConfidenceWeightingOn();
   metric->UseMaximalDistanceConfidenceSigmaOn();
   metric->UpdateFeatureMatchingAtEachIterationOff();
   metric->SetMovingTransform(transform);
@@ -177,28 +177,17 @@ int itkThinShellDemonsTestv4_Affine( int args, char **argv)
   shiftScaleEstimator->SetVirtualDomainPointSet( metric->GetVirtualTransformedPointSet() );
 
   // optimizer
-  /*
-  typedef itk::LBFGS2Optimizerv4 OptimizerType;
-  OptimizerType::Pointer optimizer = OptimizerType::New();
-  optimizer->SetScalesEstimator( shiftScaleEstimator );
-  */
-
-  typedef itk::RegularStepGradientDescentOptimizerv4<double> OptimizerType;
-  OptimizerType::Pointer optimizer = OptimizerType::New();
-  optimizer->SetLearningRate(0.001);
-  optimizer->DoEstimateLearningRateOnceOff();
-  optimizer->DoEstimateScalesOff();
+  //typedef itk::LBFGS2Optimizerv4 OptimizerType;
+  //OptimizerType::Pointer optimizer = OptimizerType::New();
   //optimizer->SetScalesEstimator( shiftScaleEstimator );
 
-  /*
   typedef itk::ConjugateGradientLineSearchOptimizerv4 OptimizerType;
   OptimizerType::Pointer optimizer = OptimizerType::New();
   optimizer->SetNumberOfIterations( 50 );
-  //optimizer->SetScalesEstimator( shiftScaleEstimator );
+  optimizer->SetScalesEstimator( shiftScaleEstimator );
   optimizer->SetMaximumStepSizeInPhysicalUnits( 0.5 );
   optimizer->SetMinimumConvergenceValue( 0.0 );
   optimizer->SetConvergenceWindowSize( 10 );
-  */
 
   using CommandType = CommandIterationUpdate<OptimizerType>;
   CommandType::Pointer observer = CommandType::New();
@@ -209,8 +198,8 @@ int itkThinShellDemonsTestv4_Affine( int args, char **argv)
   AffineRegistrationType::Pointer registration = AffineRegistrationType::New();
   registration->SetNumberOfLevels(1);
   registration->SetObjectName("registration");
-  registration->SetFixedPointSet(fixedMesh);
-  registration->SetMovingPointSet(movingMesh);
+  registration->SetFixedPointSet(movingMesh);
+  registration->SetMovingPointSet(fixedMesh);
   registration->SetInitialTransform(transform);
   registration->SetMetric(metric);
   registration->SetOptimizer(optimizer);
