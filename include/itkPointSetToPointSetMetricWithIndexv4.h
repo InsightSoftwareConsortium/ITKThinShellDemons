@@ -212,6 +212,27 @@ public:
                                          LocalDerivativeType &,
                                          const PixelType & pixel) const = 0;
 
+
+protected:
+  PointSetToPointSetMetricWithIndexv4();
+  ~PointSetToPointSetMetricWithIndexv4() override = default;
+
+  void
+  PrintSelf(std::ostream & os, Indent indent) const override;
+
+  /** Helper method allows for code reuse while skipping the metric value
+   * calculation when appropriate */
+  void
+  CalculateValueAndDerivative(MeasureType & calculatedValue, DerivativeType & derivative, bool calculateValue) const;
+
+
+private:
+  // Create ranges over the point set for multithreaded computation of value and derivatives
+  using PointIdentifierPair = std::pair<PointIdentifier, PointIdentifier>;
+  using PointIdentifierRanges = std::vector<PointIdentifierPair>;
+  const PointIdentifierRanges
+  CreateRanges() const;
+
   MeasureType
   GetLocalNeighborhoodValue(const PointType &,
                             const PixelType & pixel) const override
@@ -238,25 +259,9 @@ public:
     itkWarningMacro("Not available use index based methods.");
   };
 
-protected:
-  PointSetToPointSetMetricWithIndexv4();
-  ~PointSetToPointSetMetricWithIndexv4() override = default;
-  void
-  PrintSelf(std::ostream & os, Indent indent) const override;
 
-  /** Helper method allows for code reuse while skipping the metric value
-   * calculation when appropriate */
-  void
-  CalculateValueAndDerivative(MeasureType & calculatedValue, DerivativeType & derivative, bool calculateValue) const;
-
-
-private:
-  // Create ranges over the point set for multithreaded computation of value and derivatives
-  using PointIdentifierPair = std::pair<PointIdentifier, PointIdentifier>;
-  using PointIdentifierRanges = std::vector<PointIdentifierPair>;
-  const PointIdentifierRanges
-  CreateRanges() const;
 };
+
 } // end namespace itk
 
 #ifndef ITK_MANUAL_INSTANTIATION

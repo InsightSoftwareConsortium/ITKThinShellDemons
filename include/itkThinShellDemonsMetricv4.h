@@ -19,11 +19,13 @@
 #define itkThinShellDemonsMetricv4_h
 
 #include "itkMeshToMeshMetricv4.h"
-#include "itkMesh.h"
 #include "itkMeshTovtkPolyData.h"
+
+#include <itkMesh.h>
+
 #include <vtkDataArray.h>
 #include <vtkPolyData.h>
-#include "vtkSmartPointer.h"
+#include <vtkSmartPointer.h>
 
 namespace itk
 {
@@ -55,9 +57,10 @@ namespace itk
  *
  * \ingroup ThinShellDemons
  */
-template< typename TFixedMesh, typename TMovingMesh = TFixedMesh >
+template< typename TFixedMesh, typename TMovingMesh = TFixedMesh,
+          class TInternalComputationValueType = double >
 class ITK_TEMPLATE_EXPORT ThinShellDemonsMetricv4:
-  public MeshToMeshMetricv4< TFixedMesh, TMovingMesh >
+  public MeshToMeshMetricv4< TFixedMesh, TMovingMesh, TInternalComputationValueType>
 {
 public:
   ITK_DISALLOW_COPY_AND_MOVE(ThinShellDemonsMetricv4);

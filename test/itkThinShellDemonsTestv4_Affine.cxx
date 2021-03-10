@@ -163,8 +163,8 @@ int itkThinShellDemonsTestv4_Affine( int args, char **argv)
   //to keep semantics the same as in itkThinShellDemonsTest.cxx
   //For the ThinShellDemonsMetricv4 the fixed mesh is
   //regularized
-  metric->SetFixedMesh(movingMesh);
-  metric->SetMovingMesh(fixedMesh);
+  metric->SetFixedPointSet(movingMesh);
+  metric->SetMovingPointSet(fixedMesh);
   metric->SetVirtualDomainFromImage(fixedImage);
   metric->Initialize();
 

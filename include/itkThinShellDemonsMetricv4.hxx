@@ -28,8 +28,8 @@
 namespace itk
 {
 
-template< typename TFixedMesh, typename TMovingMesh >
-ThinShellDemonsMetricv4< TFixedMesh, TMovingMesh >
+template< typename TFixedMesh, typename TMovingMesh, typename TInternalComputationValueType >
+ThinShellDemonsMetricv4< TFixedMesh, TMovingMesh, TInternalComputationValueType >
 ::ThinShellDemonsMetricv4()
 {
   m_BendWeight = 1;
@@ -46,9 +46,9 @@ ThinShellDemonsMetricv4< TFixedMesh, TMovingMesh >
 }
 
 /** Initialize the metric */
-template< typename TFixedMesh, typename TMovingMesh >
+template< typename TFixedMesh, typename TMovingMesh, typename TInternalComputationValueType >
 void
-ThinShellDemonsMetricv4< TFixedMesh, TMovingMesh >
+ThinShellDemonsMetricv4< TFixedMesh, TMovingMesh, TInternalComputationValueType >
 ::Initialize()
 {
 
@@ -94,9 +94,9 @@ ThinShellDemonsMetricv4< TFixedMesh, TMovingMesh >
     }
 }
 
-template< typename TFixedMesh, typename TMovingMesh >
+template< typename TFixedMesh, typename TMovingMesh, typename TInternalComputationValueType >
 void
-ThinShellDemonsMetricv4< TFixedMesh, TMovingMesh >
+ThinShellDemonsMetricv4< TFixedMesh, TMovingMesh, TInternalComputationValueType >
 ::ComputeNeighbors()
 {
   this->neighborMap.resize(fixedVTKMesh->GetNumberOfPoints());
@@ -122,9 +122,9 @@ ThinShellDemonsMetricv4< TFixedMesh, TMovingMesh >
     }
 }
 
-template< typename TFixedMesh, typename TMovingMesh >
+template< typename TFixedMesh, typename TMovingMesh, typename TInternalComputationValueType >
 double
-ThinShellDemonsMetricv4< TFixedMesh, TMovingMesh >
+ThinShellDemonsMetricv4< TFixedMesh, TMovingMesh, TInternalComputationValueType >
 ::ComputeConfidenceValueAndDerivative(const VectorType &v, VectorType &derivative) const
 {
   double variance = m_ConfidenceSigma * m_ConfidenceSigma;
@@ -137,9 +137,10 @@ ThinShellDemonsMetricv4< TFixedMesh, TMovingMesh >
   return confidence;
 }
 
-template< typename TFixedMesh, typename TMovingMesh >
-typename ThinShellDemonsMetricv4< TFixedMesh, TMovingMesh >::VectorType
-ThinShellDemonsMetricv4< TFixedMesh, TMovingMesh >
+template< typename TFixedMesh, typename TMovingMesh, typename TInternalComputationValueType >
+typename ThinShellDemonsMetricv4< TFixedMesh, TMovingMesh, TInternalComputationValueType >
+::VectorType
+ThinShellDemonsMetricv4< TFixedMesh, TMovingMesh, TInternalComputationValueType >
 ::GetMovingDirection(const PointIdentifier &identifier) const
 {
   PointType p1 = this->m_FixedPointSet->GetPoint(identifier);
@@ -147,9 +148,9 @@ ThinShellDemonsMetricv4< TFixedMesh, TMovingMesh >
   return p2 - p1;
 }
 
-template< typename TFixedMesh, typename TMovingMesh >
+template< typename TFixedMesh, typename TMovingMesh, typename TInternalComputationValueType >
 void
-ThinShellDemonsMetricv4< TFixedMesh, TMovingMesh >
+ThinShellDemonsMetricv4< TFixedMesh, TMovingMesh, TInternalComputationValueType >
 ::ComputeStretchAndBend( const PointIdentifier &identifier,
                          double &stretchEnergy,
                          double &bendEnergy,
@@ -187,9 +188,10 @@ ThinShellDemonsMetricv4< TFixedMesh, TMovingMesh >
   stretchEnergy /= degree;
 }
 
-template< typename TFixedMesh, typename TMovingMesh >
-typename ThinShellDemonsMetricv4< TFixedMesh, TMovingMesh >::MeasureType
-ThinShellDemonsMetricv4< TFixedMesh, TMovingMesh >
+template< typename TFixedMesh, typename TMovingMesh, typename TInternalComputationValueType >
+typename ThinShellDemonsMetricv4< TFixedMesh, TMovingMesh, TInternalComputationValueType >
+::MeasureType
+ThinShellDemonsMetricv4< TFixedMesh, TMovingMesh, TInternalComputationValueType >
 ::GetLocalNeighborhoodValue(const PointIdentifier identifier,
                             const PointType &point,
                             const PixelType & pixel) const
@@ -200,9 +202,9 @@ ThinShellDemonsMetricv4< TFixedMesh, TMovingMesh >
   return value;
 }
 
-template< typename TFixedMesh, typename TMovingMesh >
+template< typename TFixedMesh, typename TMovingMesh, typename TInternalComputationValueType >
 void
-ThinShellDemonsMetricv4< TFixedMesh, TMovingMesh >
+ThinShellDemonsMetricv4< TFixedMesh, TMovingMesh, TInternalComputationValueType >
 ::GetLocalNeighborhoodValueAndDerivative(const PointIdentifier identifier,
                                          const PointType &point,
                                          MeasureType &value,
@@ -235,9 +237,9 @@ ThinShellDemonsMetricv4< TFixedMesh, TMovingMesh >
   derivative = dx;
 }
 
-template< typename TFixedMesh, typename TMovingMesh >
+template< typename TFixedMesh, typename TMovingMesh, typename TInternalComputationValueType >
 void
-ThinShellDemonsMetricv4< TFixedMesh, TMovingMesh >
+ThinShellDemonsMetricv4< TFixedMesh, TMovingMesh, TInternalComputationValueType >
 ::InitializePointSets() const
 {
   Superclass::InitializePointSets();
@@ -245,9 +247,9 @@ ThinShellDemonsMetricv4< TFixedMesh, TMovingMesh >
 }
 
 
-template< typename TFixedMesh, typename TMovingMesh >
-typename ThinShellDemonsMetricv4< TFixedMesh, TMovingMesh >::FeaturePointSetPointer
-ThinShellDemonsMetricv4< TFixedMesh, TMovingMesh >
+template< typename TFixedMesh, typename TMovingMesh, typename TInternalComputationValueType >
+typename ThinShellDemonsMetricv4< TFixedMesh, TMovingMesh, TInternalComputationValueType >::FeaturePointSetPointer
+ThinShellDemonsMetricv4< TFixedMesh, TMovingMesh, TInternalComputationValueType >
 ::GenerateFeaturePointSets(bool fixed) const
 {
 
@@ -296,9 +298,9 @@ ThinShellDemonsMetricv4< TFixedMesh, TMovingMesh >
   return features;
 }
 
-template< typename TFixedMesh, typename TMovingMesh >
+template< typename TFixedMesh, typename TMovingMesh, typename TInternalComputationValueType >
 void
-ThinShellDemonsMetricv4< TFixedMesh, TMovingMesh >
+ThinShellDemonsMetricv4< TFixedMesh, TMovingMesh, TInternalComputationValueType >
 ::ComputeMaximalDistanceSigma()
   const
 {
@@ -320,9 +322,9 @@ ThinShellDemonsMetricv4< TFixedMesh, TMovingMesh >
   this->m_ConfidenceSigma = sqrt(maximalDistance)/3;
 }
 
-template< typename TFixedMesh, typename TMovingMesh >
+template< typename TFixedMesh, typename TMovingMesh, typename TInternalComputationValueType >
 void
-ThinShellDemonsMetricv4< TFixedMesh, TMovingMesh >
+ThinShellDemonsMetricv4< TFixedMesh, TMovingMesh, TInternalComputationValueType >
 ::InitializeFeaturePointsLocators()
   const
 {
@@ -359,9 +361,10 @@ ThinShellDemonsMetricv4< TFixedMesh, TMovingMesh >
     */
 }
 
-template< typename TFixedMesh, typename TMovingMesh >
-typename ThinShellDemonsMetricv4< TFixedMesh, TMovingMesh >::FeaturePointType
-ThinShellDemonsMetricv4< TFixedMesh, TMovingMesh >
+template< typename TFixedMesh, typename TMovingMesh, typename TInternalComputationValueType >
+typename ThinShellDemonsMetricv4< TFixedMesh, TMovingMesh, TInternalComputationValueType >
+::FeaturePointType
+ThinShellDemonsMetricv4< TFixedMesh, TMovingMesh, TInternalComputationValueType >
 ::GetFeaturePoint(const double *v, const double &c) const
 {
   FeaturePointType fpoint;
@@ -373,9 +376,10 @@ ThinShellDemonsMetricv4< TFixedMesh, TMovingMesh >
   return fpoint;
 }
 
-template< typename TFixedMesh, typename TMovingMesh >
-typename ThinShellDemonsMetricv4< TFixedMesh, TMovingMesh >::FeaturePointType
-ThinShellDemonsMetricv4< TFixedMesh, TMovingMesh >
+template< typename TFixedMesh, typename TMovingMesh, typename TInternalComputationValueType >
+typename ThinShellDemonsMetricv4< TFixedMesh, TMovingMesh, TInternalComputationValueType >
+::FeaturePointType
+ThinShellDemonsMetricv4< TFixedMesh, TMovingMesh, TInternalComputationValueType >
 ::GetFeaturePoint(const PointType &v, const double &c) const
 {
   FeaturePointType fpoint;
@@ -388,13 +392,14 @@ ThinShellDemonsMetricv4< TFixedMesh, TMovingMesh >
 }
 
 
-template< typename TFixedMesh, typename TMovingMesh >
+template< typename TFixedMesh, typename TMovingMesh, typename TInternalComputationValueType >
 void
-ThinShellDemonsMetricv4< TFixedMesh, TMovingMesh >
+ThinShellDemonsMetricv4< TFixedMesh, TMovingMesh, TInternalComputationValueType >
 ::PrintSelf(std::ostream & os, Indent indent) const
 {
   Superclass::PrintSelf(os, indent);
 }
+
 } // end namespace itk
 
 #endif
