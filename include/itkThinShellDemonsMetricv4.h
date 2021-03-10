@@ -113,8 +113,6 @@ public:
     return this->GetMovingPointSet();
   };
 
-
-
   using VectorType = typename itk::Vector<double, PointType::Dimension>;
 
   void Initialize(void) override;

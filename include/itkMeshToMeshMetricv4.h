@@ -83,7 +83,6 @@ public:
     return this->GetMovingPointSet();
   };
 
-
 protected:
   MeshToMeshMetricv4() = default;
   virtual ~MeshToMeshMetricv4() override = default;
