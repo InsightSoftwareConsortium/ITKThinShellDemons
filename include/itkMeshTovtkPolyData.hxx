@@ -78,7 +78,7 @@ itkMeshTovtkPolyData<TMeshType>
       pts[i++] = *pointIt++;
     }
     m_Polys->InsertNextCell(nextCell->GetNumberOfPoints(), pts);
-    delete pts;
+    delete[] pts;
     cellIt++;
   }
 
