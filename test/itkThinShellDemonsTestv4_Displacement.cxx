@@ -159,7 +159,7 @@ int itkThinShellDemonsTestv4_Displacement( int args, char **argv)
   using PointSetMetricType = itk::ThinShellDemonsMetricv4<MeshType> ;
   PointSetMetricType::Pointer metric = PointSetMetricType::New();
   metric->SetStretchWeight(1);
-  metric->SetBendWeight(1);
+  metric->SetBendWeight(5);
   metric->SetGeometricFeatureWeight(10);
   metric->UseConfidenceWeightingOn();
   metric->UseMaximalDistanceConfidenceSigmaOn();
@@ -185,22 +185,21 @@ int itkThinShellDemonsTestv4_Displacement( int args, char **argv)
   // optimizer
 
   // Does currently not support local transform
-  // but change requeste in:
+  // but change requested in:
   // https://github.com/InsightSoftwareConsortium/ITK/pull/2372
-  /*
+/*
   typedef itk::LBFGS2Optimizerv4 OptimizerType;
   OptimizerType::Pointer optimizer = OptimizerType::New();
   optimizer->SetScalesEstimator( shiftScaleEstimator );
-  */
+*/
 
   typedef itk::ConjugateGradientLineSearchOptimizerv4 OptimizerType;
   OptimizerType::Pointer optimizer = OptimizerType::New();
   optimizer->SetNumberOfIterations( 50 );
   optimizer->SetScalesEstimator( shiftScaleEstimator );
-  optimizer->SetMaximumStepSizeInPhysicalUnits( 0.01 );
+  optimizer->SetMaximumStepSizeInPhysicalUnits( 0.5 );
   optimizer->SetMinimumConvergenceValue( 0.0 );
   optimizer->SetConvergenceWindowSize( 10 );
-
 
   using CommandType = CommandIterationUpdate<OptimizerType>;
   CommandType::Pointer observer = CommandType::New();

@@ -36,7 +36,7 @@ namespace itk
  * \sa
  * \ingroup ThinShellDemons
  */
-template<typename T>
+template<typename TMeshType>
 class ITK_TEMPLATE_EXPORT itkMeshTovtkPolyData : public Object
 {
 
@@ -55,28 +55,22 @@ class ITK_TEMPLATE_EXPORT itkMeshTovtkPolyData : public Object
   /** Run-time type information (and related methods). */
   itkTypeMacro(itkMeshTovtkPolyData, Object);
 
-  typedef itk::DefaultDynamicMeshTraits<double, 3, 3,double,double> TriangleMeshTraits;
-  typedef itk::Mesh<double,3>                                       TriangleMeshType;
+  typedef TMeshType MeshType;
 
-  typedef TriangleMeshType::PointType         PointType;
-  typedef TriangleMeshType::PointsContainer   InputPointsContainer;
-  typedef InputPointsContainer::ConstPointer  InputPointsContainerPointer;
-  typedef InputPointsContainer::ConstIterator InputPointsContainerIterator;
-  typedef TriangleMeshType::CellType          CellType;
+  typedef typename MeshType::PointType                PointType;
+  typedef typename MeshType::PointsContainer          PointsContainer;
+  typedef typename PointsContainer::ConstPointer      PointsContainerPointer;
+  typedef typename PointsContainer::ConstIterator     PointsContainerIterator;
+  typedef typename MeshType::CellType                 CellType;
 
-  typedef TriangleMeshType::CellsContainerConstPointer  CellsContainerPointer;
-  typedef TriangleMeshType::CellsContainerConstIterator CellsContainerIterator;
-  /**
-  The SetInput method provides pointer to the vtkPolyData
-  */
-  void SetInput(TriangleMeshType::ConstPointer mesh);
-  vtkSmartPointer<vtkPolyData> GetOutput();
+  typedef typename MeshType::CellsContainerConstPointer  CellsContainerPointer;
+  typedef typename MeshType::CellsContainerConstIterator CellsContainerIterator;
+
+  static vtkSmartPointer<vtkPolyData> Convert(typename MeshType::ConstPointer mesh);
 
 protected:
-  itkMeshTovtkPolyData();
+  itkMeshTovtkPolyData() = default;
   virtual ~itkMeshTovtkPolyData() override = default;
-  TriangleMeshType::ConstPointer m_itkTriangleMesh;
-  vtkSmartPointer<vtkPolyData> ConvertitkTovtk();
 
 };
 }

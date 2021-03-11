@@ -74,14 +74,11 @@ ThinShellDemonsMetricv4< TFixedMesh, TMovingMesh, TInternalComputationValueType 
     this->m_FixedPointSet->GetSource()->Update();
   }
 
-  //generate a VTK copy of the same mesh
-  itkMeshTovtkPolyData<double>::Pointer dataTransfer = itkMeshTovtkPolyData<double>::New();
-  dataTransfer->SetInput(this->m_MovingPointSet);
-  this->movingVTKMesh = dataTransfer->GetOutput();
-
-  dataTransfer = itkMeshTovtkPolyData<double>::New();
-  dataTransfer->SetInput(this->m_FixedPointSet);
-  this->fixedVTKMesh = dataTransfer->GetOutput();
+    //generate a VTK copy of the same mesh
+  this->movingVTKMesh =
+    itkMeshTovtkPolyData<MovingMeshType>::Convert(this->m_MovingPointSet);
+  this->fixedVTKMesh =
+    itkMeshTovtkPolyData<FixedMeshType>::Convert(this->m_FixedPointSet);
 
   this->ComputeNeighbors();
 
@@ -188,18 +185,20 @@ ThinShellDemonsMetricv4< TFixedMesh, TMovingMesh, TInternalComputationValueType 
   for(PointIdentifier i=0; i < pointIdList->GetNumberOfIds(); i++)
     {
     PointIdentifier neighborIdx = pointIdList->GetId(i);
-    const PointType &pn = this->m_FixedPointSet->GetPoint(identifier);
+    int nDegree =  this->neighborMap[neighborIdx]->GetNumberOfIds();
+
     VectorType vn = this->GetMovingDirection(neighborIdx);
-    //Normalize by edge length
-    VectorType dx = (v - vn)/edgeLengthMap[identifier][i];
-    stretchEnergy += dx.GetSquaredNorm();
-    bEnergy += dx;
+    VectorType dx = (v - vn);
 
     // times 4 because edge appears two times in the energy function
     // and the derivative has another factor of 2 from the squared norm
     // divided by the vertex degrees of current and nieghbor vertex
-    int nDegree =  this->neighborMap[neighborIdx]->GetNumberOfIds();
     stretch += dx * (4 / (degree+nDegree));
+    stretchEnergy += dx.GetSquaredNorm();
+
+    //Normalize bending by edge length
+    dx /= edgeLengthMap[identifier][i];
+    bEnergy += dx;
     bend += dx * (degree * 4 / (degree+nDegree));
     }
 

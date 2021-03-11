@@ -81,14 +81,10 @@ throw ( ExceptionObject )
     }
 
   //generate a VTK copy of the same mesh
-  itkMeshTovtkPolyData<double>::Pointer dataTransfer =
-    itkMeshTovtkPolyData<double>::New();
-  dataTransfer->SetInput(this->m_MovingMesh);
-  this->movingVTKMesh = dataTransfer->GetOutput();
-
-  dataTransfer = itkMeshTovtkPolyData<double>::New();
-  dataTransfer->SetInput(this->m_FixedMesh);
-  this->fixedVTKMesh = dataTransfer->GetOutput();
+  this->movingVTKMesh =
+    itkMeshTovtkPolyData<MovingMeshType>::Convert(this->m_MovingMesh);
+  this->fixedVTKMesh =
+    itkMeshTovtkPolyData<FixedMeshType>::Convert(this->m_FixedMesh);
 
   this->ComputeNeighbors();
   // Preprocessing: compute the target position of each vertex in the fixed mesh
@@ -279,16 +275,18 @@ ThinShellDemonsMetric< TFixedMesh, TMovingMesh >
       {
       vn[0+i] = parameters[neighborIdx*d+i];
       }
-    //Normalize by edge length
-    InputVectorType dx = (v - vn)/edgeLengthMap[identifier][i];
-    stretchEnergy += dx.GetSquaredNorm();
-    bEnergy += dx;
+    int nDegree = neighborMap[neighborIdx]->GetNumberOfIds();
+    InputVectorType dx = (v - vn);
 
+    stretchEnergy += dx.GetSquaredNorm();
     // times 4 because edge appears two times in the energy function
     // and the derivative has another factor of 2 from the squared norm
     // divided by the vertex degrees of current and neighbor vertex
-    int nDegree = neighborMap[neighborIdx]->GetNumberOfIds();
     stretch += dx * (4 / (degree+nDegree));
+
+    //Normalize bending by edge length
+    dx /= edgeLengthMap[identifier][i];
+    bEnergy += dx;
     bend += dx * (degree * 4 / (degree+nDegree));
     }
 

@@ -154,7 +154,7 @@ int itkThinShellDemonsTestv4_Affine( int args, char **argv)
   using PointSetMetricType = itk::ThinShellDemonsMetricv4<MeshType> ;
   PointSetMetricType::Pointer metric = PointSetMetricType::New();
   metric->SetStretchWeight(1);
-  metric->SetBendWeight(10);
+  metric->SetBendWeight(5);
   metric->SetGeometricFeatureWeight(10);
   metric->UseConfidenceWeightingOn();
   metric->UseMaximalDistanceConfidenceSigmaOn();
@@ -177,10 +177,15 @@ int itkThinShellDemonsTestv4_Affine( int args, char **argv)
   shiftScaleEstimator->SetVirtualDomainPointSet( metric->GetVirtualTransformedPointSet() );
 
   // optimizer
-  //typedef itk::LBFGS2Optimizerv4 OptimizerType;
-  //OptimizerType::Pointer optimizer = OptimizerType::New();
-  //optimizer->SetScalesEstimator( shiftScaleEstimator );
 
+  // Does currently not support scaling
+  // but change requested in:
+  // https://github.com/InsightSoftwareConsortium/ITK/pull/2372
+  /*
+  typedef itk::LBFGS2Optimizerv4 OptimizerType;
+  OptimizerType::Pointer optimizer = OptimizerType::New();
+  optimizer->SetScalesEstimator( shiftScaleEstimator );
+*/
   typedef itk::ConjugateGradientLineSearchOptimizerv4 OptimizerType;
   OptimizerType::Pointer optimizer = OptimizerType::New();
   optimizer->SetNumberOfIterations( 50 );

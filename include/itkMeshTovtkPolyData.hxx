@@ -23,96 +23,64 @@
 
 namespace itk{
 
-template<typename T>
-itkMeshTovtkPolyData<T>
-::itkMeshTovtkPolyData()
-{
-  m_itkTriangleMesh = TriangleMeshType::New();
-
-}
-
-
-template<typename T>
-void
-itkMeshTovtkPolyData<T>
-::SetInput(typename TriangleMeshType::ConstPointer mesh)
-{
-  m_itkTriangleMesh = mesh;
-}
-
-template<typename T>
+template<typename TMeshType>
 vtkSmartPointer<vtkPolyData>
-itkMeshTovtkPolyData<T>
-::GetOutput()
+itkMeshTovtkPolyData<TMeshType>
+::Convert(typename MeshType::ConstPointer mesh )
 {
-  return this->ConvertitkTovtk();
-}
+  int numPoints = mesh->GetNumberOfPoints();
 
-template<typename T>
-vtkSmartPointer<vtkPolyData>
-itkMeshTovtkPolyData<T>
-::ConvertitkTovtk()
-{
-  int numPoints =  m_itkTriangleMesh->GetNumberOfPoints();
-
-  InputPointsContainerPointer      myPoints = m_itkTriangleMesh->GetPoints();
-  InputPointsContainerIterator     points = myPoints->Begin();
+  PointsContainerPointer  myPoints = mesh->GetPoints();
+  PointsContainerIterator points = myPoints->Begin();
   PointType point;
 
-  vtkSmartPointer<vtkPoints> m_Points = vtkSmartPointer<vtkPoints>::New();
+  vtkSmartPointer<vtkPoints>    m_Points = vtkSmartPointer<vtkPoints>::New();
   vtkSmartPointer<vtkCellArray> m_Polys = vtkSmartPointer<vtkCellArray>::New();
-  vtkSmartPointer<vtkPolyData> m_PolyData = vtkSmartPointer<vtkPolyData>::New();
+  vtkSmartPointer<vtkPolyData>  m_PolyData = vtkSmartPointer<vtkPolyData>::New();
 
+  if( PointType::Dimension > 3)
+  {
+    return m_PolyData;
+  }
   if (numPoints == 0)
-    {
-      printf( "Aborting: No Points in GRID\n");
-      return m_PolyData;
-    }
+  {
+    return m_PolyData;
+  }
   m_Points->SetNumberOfPoints(numPoints);
 
   int idx=0;
-  double vpoint[3];
+  double vpoint[3] = {0};
+  unsigned int three = 3;
   while( points != myPoints->End() )
-    {
+  {
     point = points.Value();
-    vpoint[0]= point[0];
-    vpoint[1]= point[1];
-    vpoint[2]= point[2];
+    for(unsigned int i =0; i<std::min(PointType::Dimension, three); i++)
+    {
+      vpoint[i]= point[i];
+    }
     m_Points->SetPoint(idx++,vpoint);
     points++;
-    }
+  }
 
   m_PolyData->SetPoints(m_Points);
 
-  CellsContainerPointer cells = m_itkTriangleMesh->GetCells();
+  CellsContainerPointer cells = mesh->GetCells();
   CellsContainerIterator cellIt = cells->Begin();
-  vtkIdType pts[3];
   while ( cellIt != cells->End() )
-    {
+  {
     CellType *nextCell = cellIt->Value();
-    CellType::PointIdIterator pointIt = nextCell->PointIdsBegin() ;
-    PointType  p;
-    int i;
 
-    switch (nextCell->GetType())
-      {
-      case CellType::VERTEX_CELL:
-      case CellType::LINE_CELL:
-      case CellType::POLYGON_CELL:
-        break;
-      case CellType::TRIANGLE_CELL:
-        i=0;
-        while (pointIt != nextCell->PointIdsEnd() )
-        {
-        pts[i++] = *pointIt++;
-        }
-        m_Polys->InsertNextCell(3,pts);
-        break;
-      default:
-        printf("something \n");
-      }
-    cellIt++;
+    vtkIdType *pts = new vtkIdType[nextCell->GetNumberOfPoints()];
+    typename CellType::PointIdIterator pointIt = nextCell->PointIdsBegin();
+    int i=0;
+    while (pointIt != nextCell->PointIdsEnd() )
+    {
+      pts[i++] = *pointIt++;
     }
+    m_Polys->InsertNextCell(nextCell->GetNumberOfPoints(), pts);
+    delete pts;
+    cellIt++;
+  }
 
   m_PolyData->SetPolys(m_Polys);
   return m_PolyData;
