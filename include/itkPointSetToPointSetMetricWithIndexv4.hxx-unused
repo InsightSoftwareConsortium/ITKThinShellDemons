@@ -306,7 +306,7 @@ PointSetToPointSetMetricWithIndexv4<TFixedPointSet, TMovingPointSet, TInternalCo
 template <typename TFixedPointSet, typename TMovingPointSet, class TInternalComputationValueType>
 typename PointSetToPointSetMetricWithIndexv4<TFixedPointSet, TMovingPointSet, TInternalComputationValueType>::LocalDerivativeType
 PointSetToPointSetMetricWithIndexv4<TFixedPointSet, TMovingPointSet, TInternalComputationValueType>::
-  GetLocalNeighborhoodDerivativeWithIndex(const PointIdentifier index, const PointType &point, const PixelType & pixel) const
+  GetLocalNeighborhoodDerivativeWithIndex(const PointIdentifier &index, const PointType &point, const PixelType & pixel) const
 {
   MeasureType measure;
   LocalDerivativeType localDerivative;
