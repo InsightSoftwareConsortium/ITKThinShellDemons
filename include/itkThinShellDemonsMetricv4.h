@@ -18,7 +18,7 @@
 #ifndef itkThinShellDemonsMetricv4_h
 #define itkThinShellDemonsMetricv4_h
 
-#include "itkMeshToMeshMetricv4.h"
+#include "itkPointSetToPointSetMetricWithIndexv4.h"
 #include "itkMeshTovtkPolyData.h"
 
 #include <itkMesh.h>
@@ -60,14 +60,14 @@ namespace itk
 template< typename TFixedMesh, typename TMovingMesh = TFixedMesh,
           class TInternalComputationValueType = double >
 class ITK_TEMPLATE_EXPORT ThinShellDemonsMetricv4:
-  public MeshToMeshMetricv4< TFixedMesh, TMovingMesh, TInternalComputationValueType>
+  public PointSetToPointSetMetricWithIndexv4< TFixedMesh, TMovingMesh, TInternalComputationValueType>
 {
 public:
   ITK_DISALLOW_COPY_AND_MOVE(ThinShellDemonsMetricv4);
 
   /** Standard class typedefs. */
-  typedef ThinShellDemonsMetricv4                       Self;
-  typedef MeshToMeshMetricv4< TFixedMesh, TMovingMesh > Superclass;
+  typedef ThinShellDemonsMetricv4                                        Self;
+  typedef PointSetToPointSetMetricWithIndexv4< TFixedMesh, TMovingMesh > Superclass;
 
   typedef SmartPointer< Self >       Pointer;
   typedef SmartPointer< const Self > ConstPointer;
@@ -76,13 +76,11 @@ public:
   itkNewMacro(Self);
 
   /** Run-time type information (and related methods). */
-  itkTypeMacro(ThinShellDemonsMetricv4, MeshToMeshMetricv4);
+  itkTypeMacro(ThinShellDemonsMetricv4, PointSetToPointSetMetricWithIndexv4);
 
   /** Types transferred from the base class. */
-  typedef typename Superclass::FixedMeshType          FixedMeshType;
-  typedef typename Superclass::MovingMeshType         MovingMeshType;
-  typedef typename Superclass::FixedMeshConstPointer  FixedMeshConstPointer;
-  typedef typename Superclass::MovingMeshConstPointer MovingMeshConstPointer;
+  typedef typename Superclass::FixedPointSetType      FixedPointSetType;
+  typedef typename Superclass::MovingPointSetType     MovingPointSetType;
 
   /** Types transferred from the base class */
   using MeasureType = typename Superclass::MeasureType;
@@ -95,34 +93,16 @@ public:
   static constexpr DimensionType FixedPointDimension = Superclass::FixedPointDimension;
   static constexpr DimensionType MovingPointDimension = Superclass::MovingPointDimension;
 
-  /** Get/Set the Fixed Mesh.  */
-  void SetFixedMesh(FixedMeshConstPointer fixedMesh){
-    this->SetFixedPointSet(fixedMesh);
-  };
-
-  FixedMeshConstPointer GetFixedMesh() const{
-    return this->GetFixedPointSet();
-  };
-
-  /** Get/Set the Moving Mesh.  */
-  void SetMovingMesh(MovingMeshConstPointer fixedMesh){
-    this->SetMovingPointSet(fixedMesh);
-  };
-
-  MovingMeshConstPointer GetMovingMesh() const{
-    return this->GetMovingPointSet();
-  };
-
   using VectorType = typename itk::Vector<double, PointType::Dimension>;
 
   void Initialize(void) override;
 
   MeasureType
-  GetLocalNeighborhoodValue(const PointIdentifier , const PointType &,
+  GetLocalNeighborhoodValueWithIndex(const PointIdentifier &, const PointType &,
                             const PixelType & pixel = 0) const override;
 
   void
-  GetLocalNeighborhoodValueAndDerivative(const PointIdentifier , const PointType &,
+  GetLocalNeighborhoodValueAndDerivativeWithIndex(const PointIdentifier &, const PointType &,
                                          MeasureType &, LocalDerivativeType &,
                                          const PixelType & pixel = 0) const override;
 

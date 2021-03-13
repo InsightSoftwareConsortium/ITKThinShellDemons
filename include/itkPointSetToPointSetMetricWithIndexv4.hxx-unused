@@ -81,7 +81,7 @@ PointSetToPointSetMetricWithIndexv4<TFixedPointSet, TMovingPointSet, TInternalCo
               itkExceptionMacro("The corresponding data for point (pointId = " << index << ") does not exist.");
             }
           }
-          threadValue += this->GetLocalNeighborhoodValue(index, fixedTransformedPointSet[index], pixel);
+          threadValue += this->GetLocalNeighborhoodValueWithIndex(index, fixedTransformedPointSet[index], pixel);
         }
       }
       threadValues[rangeIndex] = threadValue;
@@ -208,14 +208,14 @@ PointSetToPointSetMetricWithIndexv4<TFixedPointSet, TMovingPointSet, TInternalCo
 
         if (calculateValue)
         {
-          this->GetLocalNeighborhoodValueAndDerivative(index, fixedTransformedPointSet[index],
+          this->GetLocalNeighborhoodValueAndDerivativeWithIndex(index, fixedTransformedPointSet[index],
                                                        pointValue, pointDerivative, pixel);
           threadValue += pointValue;
         }
         else
         {
           pointDerivative =
-            this->GetLocalNeighborhoodDerivative(index, fixedTransformedPointSet[index], pixel);
+            this->GetLocalNeighborhoodDerivativeWithIndex(index, fixedTransformedPointSet[index], pixel);
         }
 
         // Map into parameter space
@@ -306,11 +306,11 @@ PointSetToPointSetMetricWithIndexv4<TFixedPointSet, TMovingPointSet, TInternalCo
 template <typename TFixedPointSet, typename TMovingPointSet, class TInternalComputationValueType>
 typename PointSetToPointSetMetricWithIndexv4<TFixedPointSet, TMovingPointSet, TInternalComputationValueType>::LocalDerivativeType
 PointSetToPointSetMetricWithIndexv4<TFixedPointSet, TMovingPointSet, TInternalComputationValueType>::
-  GetLocalNeighborhoodDerivative(const PointIdentifier index, const PointType &point, const PixelType & pixel) const
+  GetLocalNeighborhoodDerivativeWithIndex(const PointIdentifier index, const PointType &point, const PixelType & pixel) const
 {
   MeasureType measure;
   LocalDerivativeType localDerivative;
-  this->GetLocalNeighborhoodValueAndDerivative(index, point, measure, localDerivative, pixel);
+  this->GetLocalNeighborhoodValueAndDerivativeWithIndex(index, point, measure, localDerivative, pixel);
   return localDerivative;
 }
 

@@ -188,7 +188,7 @@ public:
    * may not be used.  See class description for further explanation.
    */
   virtual MeasureType
-  GetLocalNeighborhoodValue(const PointIdentifier,
+  GetLocalNeighborhoodValueWithIndex(const PointIdentifier &,
                             const PointType &,
                             const PixelType & pixel) const = 0;
 
@@ -197,7 +197,7 @@ public:
    * may not be used.  See class description for further explanation.
    */
   virtual LocalDerivativeType
-  GetLocalNeighborhoodDerivative(const PointIdentifier,
+  GetLocalNeighborhoodDerivativeWithIndex(const PointIdentifier &,
                                  const PointType &,
                                  const PixelType & pixel) const;
 
@@ -206,7 +206,7 @@ public:
    * may not be used.  See class description for further explanation.
    */
   virtual void
-  GetLocalNeighborhoodValueAndDerivative(const PointIdentifier,
+  GetLocalNeighborhoodValueAndDerivativeWithIndex(const PointIdentifier &,
                                          const PointType &,
                                          MeasureType &,
                                          LocalDerivativeType &,

@@ -76,9 +76,9 @@ ThinShellDemonsMetricv4< TFixedMesh, TMovingMesh, TInternalComputationValueType 
 
     //generate a VTK copy of the same mesh
   this->movingVTKMesh =
-    itkMeshTovtkPolyData<MovingMeshType>::Convert(this->m_MovingPointSet);
+    itkMeshTovtkPolyData<MovingPointSetType>::Convert(this->m_MovingPointSet);
   this->fixedVTKMesh =
-    itkMeshTovtkPolyData<FixedMeshType>::Convert(this->m_FixedPointSet);
+    itkMeshTovtkPolyData<FixedPointSetType>::Convert(this->m_FixedPointSet);
 
   this->ComputeNeighbors();
 
@@ -210,20 +210,20 @@ template< typename TFixedMesh, typename TMovingMesh, typename TInternalComputati
 typename ThinShellDemonsMetricv4< TFixedMesh, TMovingMesh, TInternalComputationValueType >
 ::MeasureType
 ThinShellDemonsMetricv4< TFixedMesh, TMovingMesh, TInternalComputationValueType >
-::GetLocalNeighborhoodValue(const PointIdentifier identifier,
+::GetLocalNeighborhoodValueWithIndex(const PointIdentifier &identifier,
                             const PointType &point,
                             const PixelType & pixel) const
 {
   MeasureType value = 0;
   LocalDerivativeType derivative;
-  this->GetLocalNeighborhoodValueAndDerivative(identifier, point, value, derivative, pixel);
+  this->GetLocalNeighborhoodValueAndDerivativeWithIndex(identifier, point, value, derivative, pixel);
   return value;
 }
 
 template< typename TFixedMesh, typename TMovingMesh, typename TInternalComputationValueType >
 void
 ThinShellDemonsMetricv4< TFixedMesh, TMovingMesh, TInternalComputationValueType >
-::GetLocalNeighborhoodValueAndDerivative(const PointIdentifier identifier,
+::GetLocalNeighborhoodValueAndDerivativeWithIndex(const PointIdentifier &identifier,
                                          const PointType &point,
                                          MeasureType &value,
                                          LocalDerivativeType &derivative,
