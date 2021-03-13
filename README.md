@@ -17,12 +17,10 @@ There are two implementations of this approach available:
 2. (TSHD) An implementation started by Qingyu Zhao and updated to fix some remaining task
    and run with ITK 5
 
-**Important** 
-This version requires to be compiled against an ITK version with  
-[PointSetToPointSetMetricWithIndexv4](https://github.com/InsightSoftwareConsortium/ITK/pull/2385)  
-If you are compiling aginast an older version  use the ones inlcuded in this repositor marked with h/hxx-unused (remove the -unused).
-**Important**
-
+> :warning: **This module requires to be compiled against an ITK version with**  
+> - [PointSetToPointSetMetricWithIndexv4](https://github.com/InsightSoftwareConsortium/ITK/pull/2385)   
+> 
+> If you are compiling aginast an older version  use the ones inlcuded in this repositor marked with h/hxx-unused (remove the -unused).
 
 ## V4 version (TSHDv4)
 
