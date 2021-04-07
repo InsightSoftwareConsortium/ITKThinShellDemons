@@ -20,11 +20,11 @@ There are two implementations of this approach available:
 > :warning: **This module requires to be compiled against an ITK version with**  
 > - [PointSetToPointSetMetricWithIndexv4](https://github.com/InsightSoftwareConsortium/ITK/pull/2385)   
 > 
-> If you are compiling aginast an older version  use the ones inlcuded in this repositor marked with h/hxx-unused (remove the -unused).
+> If you are compiling against an older version  use the ones inlcuded in this repository marked with h/hxx-unused (remove the -unused).
 
 ## V4 version (TSHDv4)
 
-The v4 version is implemnted in ThinShellDemonsMetricv4. With this approach different
+The v4 version is implemented in ThinShellDemonsMetricv4. With this approach different
 transformation can be combined with the thin shell regularization. For examples see:
 1. [Affine](./test/itkThinShellDemonsTestv4_Affine.cxx)
 2. [DisplacementField](./test/itkThinShellDemonsTestv4_Displacement.cxx)
