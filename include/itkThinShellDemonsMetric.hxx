@@ -51,7 +51,6 @@ template< typename TFixedMesh, typename TMovingMesh >
 void
 ThinShellDemonsMetric< TFixedMesh, TMovingMesh >
 ::Initialize(void)
-throw ( ExceptionObject )
 {
   if ( !this->m_Transform )
     {

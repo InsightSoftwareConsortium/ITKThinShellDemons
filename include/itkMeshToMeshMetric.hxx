@@ -50,7 +50,6 @@ template< typename TFixedMesh, typename TMovingMesh >
 void
 MeshToMeshMetric< TFixedMesh, TMovingMesh >
 ::Initialize(void)
-throw ( ExceptionObject )
 {
   if ( !m_Transform )
     {
