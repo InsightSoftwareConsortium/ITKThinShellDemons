@@ -53,7 +53,6 @@ template< typename TFixedMesh, typename TMovingMesh >
 void
   MeshToMeshRegistrationMethod< TFixedMesh, TMovingMesh >
   ::Initialize()
-  throw ( ExceptionObject )
 {
   if ( !m_FixedMesh )
   {
