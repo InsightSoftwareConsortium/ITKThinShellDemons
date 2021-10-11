@@ -1,0 +1,3 @@
+repository='external project URL'
+module='https://data.kitware.com/api/v1/file/hashsum/sha512/b14de32036c48f6c62998e2ebab509e71a0ae71464acb4616484e3a6eb941e1d9fac38559f5d27ea0cbbb512d590279ffb3015fae17779229e1090c2763ebcf3/download'
+tag='SHA512=b14de32036c48f6c62998e2ebab509e71a0ae71464acb4616484e3a6eb941e1d9fac38559f5d27ea0cbbb512d590279ffb3015fae17779229e1090c2763ebcf3'

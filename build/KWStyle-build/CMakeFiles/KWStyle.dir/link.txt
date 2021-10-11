@@ -1,0 +1,1 @@
+/usr/bin/c++    -msse2 -O3 -DNDEBUG   CMakeFiles/KWStyle.dir/kwsStyle.cxx.o  -o bin/KWStyle  bin/libKWStyleLib.a bin/libkwssys.a -ldl 

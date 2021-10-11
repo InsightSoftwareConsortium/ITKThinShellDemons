@@ -28,60 +28,72 @@
 #include "itkImageRegistrationMethodv4.h"
 #include "itkAffineTransform.h"
 
-template<typename TFilter>
+// Pranjal added these
+#include <itkMesh.h>
+//#include <itkMeshFileWriter.h>
+
+template <typename TFilter>
 class CommandIterationUpdate : public itk::Command
 {
 public:
-  typedef  CommandIterationUpdate   Self;
-  typedef  itk::Command             Superclass;
-  typedef itk::SmartPointer<Self>   Pointer;
-  itkNewMacro( Self );
+  typedef CommandIterationUpdate  Self;
+  typedef itk::Command            Superclass;
+  typedef itk::SmartPointer<Self> Pointer;
+  itkNewMacro(Self);
+
 protected:
-  CommandIterationUpdate() {};
+  CommandIterationUpdate(){};
+
 public:
-  void Execute(itk::Object *caller, const itk::EventObject & event) override
-    {
-    Execute( (const itk::Object *) caller, event);
-    }
+  void
+  Execute(itk::Object * caller, const itk::EventObject & event) override
+  {
+    Execute((const itk::Object *)caller, event);
+  }
 
-  void Execute(const itk::Object * object, const itk::EventObject & event) override
+  void
+  Execute(const itk::Object * object, const itk::EventObject & event) override
+  {
+    if (typeid(event) != typeid(itk::IterationEvent))
     {
-    if( typeid( event ) != typeid( itk::IterationEvent ) )
-      {
       return;
-      }
-    const auto * optimizer = dynamic_cast< const TFilter * >( object );
+    }
+    const auto * optimizer = dynamic_cast<const TFilter *>(object);
 
-    if( !optimizer )
-      {
-      itkGenericExceptionMacro( "Error dynamic_cast failed" );
-      }
+    if (!optimizer)
+    {
+      itkGenericExceptionMacro("Error dynamic_cast failed");
+    }
     std::cout << "It: " << optimizer->GetCurrentIteration();
     std::cout << " metric value: " << optimizer->GetCurrentMetricValue();
     std::cout << std::endl;
-    }
+  }
 };
 
-int itkThinShellDemonsTestv4_Affine( int args, char **argv)
+int
+itkThinShellDemonsTestv4_Affine(int args, char ** argv)
 {
   const unsigned int Dimension = 3;
-  typedef itk::Mesh<double, Dimension>         MeshType;
+  using MeshType = itk::Mesh<float, 3>;
   using PointsContainerPointer = MeshType::PointsContainerPointer;
-  typedef itk::VTKPolyDataReader< MeshType >   ReaderType;
+  using ReaderType = itk::VTKPolyDataReader<MeshType>;
+  using WriterType = itk::VTKPolyDataWriter<MeshType>;
 
+  //#itk::Regu
   unsigned int numberOfIterations = 100;
 
   /*
   Initialize fixed mesh polydata reader
   */
-  ReaderType::Pointer fixedPolyDataReader = ReaderType::New();
+  ReaderType::Pointer           fixedPolyDataReader = ReaderType::New();
   typedef ReaderType::PointType PointType;
-  fixedPolyDataReader->SetFileName(argv[1]);
+  // fixedPolyDataReader->SetFileName(argv[1]);
+  fixedPolyDataReader->SetFileName("/home/pranjal.sahu/ITKThinShellDemons/test/Baseline/fixedMesh.vtk");
   try
   {
     fixedPolyDataReader->Update();
   }
-  catch( itk::ExceptionObject & excp )
+  catch (itk::ExceptionObject & excp)
   {
     std::cerr << "Error during Fixed Mesh Update() " << std::endl;
     std::cerr << excp << std::endl;
@@ -89,69 +101,80 @@ int itkThinShellDemonsTestv4_Affine( int args, char **argv)
   }
   MeshType::Pointer fixedMesh = fixedPolyDataReader->GetOutput();
 
+  printf("Pranjal fixedMesh Reading Done Testting Change done\n");
   /*
   Initialize moving mesh polydata reader
   */
-  ReaderType::Pointer  movingPolyDataReader = ReaderType::New();
+  ReaderType::Pointer           movingPolyDataReader = ReaderType::New();
   typedef ReaderType::PointType PointType;
-  movingPolyDataReader->SetFileName(argv[2]);
-  try
-  {
+  // movingPolyDataReader->SetFileName(argv[2]);
+  movingPolyDataReader->SetFileName("/home/pranjal.sahu/ITKThinShellDemons/test/Baseline/movingMesh.vtk");
+
+  try{
     movingPolyDataReader->Update();
   }
-  catch( itk::ExceptionObject & excp )
-  {
+  catch (itk::ExceptionObject & excp){
     std::cerr << "Error during Moving Mesh Update() " << std::endl;
     std::cerr << excp << std::endl;
     return EXIT_FAILURE;
   }
+
   MeshType::Pointer movingMesh = movingPolyDataReader->GetOutput();
 
+  /*
+  WriterType::Pointer  PolyDataWriter = WriterType::New();
+
+  PolyDataWriter->SetFileName("./mesh.vtk");
+  PolyDataWriter->SetInput(movingPolyDataReader->GetOutput());
+  PolyDataWriter->Update();
+ */
 
   using PixelType = double;
   using FixedImageType = itk::Image<PixelType, Dimension>;
   using MovingImageType = itk::Image<PixelType, Dimension>;
 
-
-  FixedImageType::SizeType fixedImageSize;
-  FixedImageType::PointType fixedImageOrigin;
+  FixedImageType::SizeType      fixedImageSize;
+  FixedImageType::PointType     fixedImageOrigin;
   FixedImageType::DirectionType fixedImageDirection;
-  FixedImageType::SpacingType fixedImageSpacing;
+  FixedImageType::SpacingType   fixedImageSpacing;
 
   using PointIdentifier = MeshType::PointIdentifier;
   using BoundingBoxType = itk::BoundingBox<PointIdentifier, Dimension>;
   BoundingBoxType::Pointer boundingBox = BoundingBoxType::New();
-  PointsContainerPointer points = movingMesh->GetPoints();
+  PointsContainerPointer   points = movingMesh->GetPoints();
   boundingBox->SetPoints(points);
   boundingBox->ComputeBoundingBox();
+
   typename BoundingBoxType::PointType minBounds = boundingBox->GetMinimum();
   typename BoundingBoxType::PointType maxBounds = boundingBox->GetMaximum();
 
-  int imageDiagonal = 5;
+  int    imageDiagonal = 5;
   double spacing = sqrt(boundingBox->GetDiagonalLength2()) / imageDiagonal;
-  auto diff = maxBounds - minBounds;
-  fixedImageSize[0] = ceil( 1.2 * diff[0] / spacing );
-  fixedImageSize[1] = ceil( 1.2 * diff[1] / spacing );
-  fixedImageSize[2] = ceil( 1.2 * diff[2] / spacing );
+  auto   diff = maxBounds - minBounds;
+  fixedImageSize[0] = ceil(1.2 * diff[0] / spacing);
+  fixedImageSize[1] = ceil(1.2 * diff[1] / spacing);
+  fixedImageSize[2] = ceil(1.2 * diff[2] / spacing);
   fixedImageOrigin[0] = minBounds[0] - 0.1 * diff[0];
   fixedImageOrigin[1] = minBounds[1] - 0.1 * diff[1];
   fixedImageOrigin[2] = minBounds[2] - 0.1 * diff[2];
   fixedImageDirection.SetIdentity();
-  fixedImageSpacing.Fill( spacing );
+  fixedImageSpacing.Fill(spacing);
 
   FixedImageType::Pointer fixedImage = FixedImageType::New();
-  fixedImage->SetRegions( fixedImageSize );
-  fixedImage->SetOrigin( fixedImageOrigin );
-  fixedImage->SetDirection( fixedImageDirection );
-  fixedImage->SetSpacing( fixedImageSpacing );
+  fixedImage->SetRegions(fixedImageSize);
+  fixedImage->SetOrigin(fixedImageOrigin);
+  fixedImage->SetDirection(fixedImageDirection);
+  fixedImage->SetSpacing(fixedImageSpacing);
   fixedImage->Allocate();
 
   using TransformType = itk::AffineTransform<double, Dimension>;
   TransformType::Pointer transform = TransformType::New();
   transform->SetIdentity();
-  transform->SetCenter(minBounds + (maxBounds - minBounds)/2);
+  transform->SetCenter(minBounds + (maxBounds - minBounds) / 2);
 
-  using PointSetMetricType = itk::ThinShellDemonsMetricv4<MeshType> ;
+  std::cout << "Before creating the ThinShellDemonsMetricv4 " << std::endl;
+
+  using PointSetMetricType = itk::ThinShellDemonsMetricv4<MeshType>;
   PointSetMetricType::Pointer metric = PointSetMetricType::New();
   metric->SetStretchWeight(1);
   metric->SetBendWeight(5);
@@ -160,21 +183,26 @@ int itkThinShellDemonsTestv4_Affine( int args, char **argv)
   metric->UseMaximalDistanceConfidenceSigmaOn();
   metric->UpdateFeatureMatchingAtEachIterationOff();
   metric->SetMovingTransform(transform);
-  //Reversed due to using points instead of an image
-  //to keep semantics the same as in itkThinShellDemonsTest.cxx
-  //For the ThinShellDemonsMetricv4 the fixed mesh is
-  //regularized
+  // Reversed due to using points instead of an image
+  // to keep semantics the same as in itkThinShellDemonsTest.cxx
+  // For the ThinShellDemonsMetricv4 the fixed mesh is
+  // regularized
   metric->SetFixedPointSet(movingMesh);
   metric->SetMovingPointSet(fixedMesh);
   metric->SetVirtualDomainFromImage(fixedImage);
   metric->Initialize();
 
+  // movingMesh->GetAssignedCellBoundaryIfOneExists
+  std::cout << "Transform parameters are " << transform << std::endl;
+
+  std::cout << "After creating the ThinShellDemonsMetricv4 " << std::endl;
+
   // Scales estimator
-  using ScalesType = itk::RegistrationParameterScalesFromPhysicalShift< PointSetMetricType >;
+  using ScalesType = itk::RegistrationParameterScalesFromPhysicalShift<PointSetMetricType>;
   ScalesType::Pointer shiftScaleEstimator = ScalesType::New();
   shiftScaleEstimator->SetMetric(metric);
   // Needed with pointset metrics
-  shiftScaleEstimator->SetVirtualDomainPointSet( metric->GetVirtualTransformedPointSet() );
+  shiftScaleEstimator->SetVirtualDomainPointSet(metric->GetVirtualTransformedPointSet());
 
   // optimizer
 
@@ -187,19 +215,19 @@ int itkThinShellDemonsTestv4_Affine( int args, char **argv)
   optimizer->SetScalesEstimator( shiftScaleEstimator );
 */
   typedef itk::ConjugateGradientLineSearchOptimizerv4 OptimizerType;
-  OptimizerType::Pointer optimizer = OptimizerType::New();
-  optimizer->SetNumberOfIterations( 50 );
-  optimizer->SetScalesEstimator( shiftScaleEstimator );
-  optimizer->SetMaximumStepSizeInPhysicalUnits( 0.5 );
-  optimizer->SetMinimumConvergenceValue( 0.0 );
-  optimizer->SetConvergenceWindowSize( 10 );
+  OptimizerType::Pointer                              optimizer = OptimizerType::New();
+  optimizer->SetNumberOfIterations(50);
+  optimizer->SetScalesEstimator(shiftScaleEstimator);
+  optimizer->SetMaximumStepSizeInPhysicalUnits(0.5);
+  optimizer->SetMinimumConvergenceValue(0.0);
+  optimizer->SetConvergenceWindowSize(10);
 
   using CommandType = CommandIterationUpdate<OptimizerType>;
   CommandType::Pointer observer = CommandType::New();
-  optimizer->AddObserver( itk::IterationEvent(), observer );
+  optimizer->AddObserver(itk::IterationEvent(), observer);
 
-  using AffineRegistrationType = itk::ImageRegistrationMethodv4<FixedImageType,
-        MovingImageType, TransformType, FixedImageType, MeshType>;
+  using AffineRegistrationType =
+    itk::ImageRegistrationMethodv4<FixedImageType, MovingImageType, TransformType, FixedImageType, MeshType>;
   AffineRegistrationType::Pointer registration = AffineRegistrationType::New();
   registration->SetNumberOfLevels(1);
   registration->SetObjectName("registration");
@@ -210,19 +238,19 @@ int itkThinShellDemonsTestv4_Affine( int args, char **argv)
   registration->SetOptimizer(optimizer);
 
   std::cout << "Start Value= " << metric->GetValue() << std::endl;
-  try
-    {
+  try{
     registration->Update();
-    }
-  catch( itk::ExceptionObject &e )
-    {
+  }
+  catch (itk::ExceptionObject & e){
     std::cerr << "Exception caught: " << e << std::endl;
     return EXIT_FAILURE;
-    }
+  }
 
   TransformType::Pointer tx = registration->GetModifiableTransform();
   metric->SetTransform(tx);
   std::cout << "Solution Value= " << metric->GetValue() << std::endl;
+
+
   for (unsigned int n = 0; n < movingMesh->GetNumberOfPoints(); n++)
   {
     PointType txMovingPoint = tx->TransformPoint(movingMesh->GetPoint(n));
@@ -230,9 +258,9 @@ int itkThinShellDemonsTestv4_Affine( int args, char **argv)
   }
 
   typedef itk::VTKPolyDataWriter<MeshType> WriterType;
-  WriterType::Pointer writer = WriterType::New();
+  WriterType::Pointer                      writer = WriterType::New();
   writer->SetInput(movingMesh);
-  writer->SetFileName( "affineMovingMesh.vtk" );
+  writer->SetFileName("affineMovingMesh.vtk");
   writer->Write();
   return EXIT_SUCCESS;
 }

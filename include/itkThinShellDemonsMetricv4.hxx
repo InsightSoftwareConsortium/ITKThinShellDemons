@@ -18,40 +18,46 @@
 #ifndef itkThinShellDemonsMetricv4_hxx
 #define itkThinShellDemonsMetricv4_hxx
 
-#include "itkThinShellDemonsMetricv4.h"
 
+#include "itkThinShellDemonsMetricv4.h"
+#include "itkPointSet.h"
+
+
+// Remove these
 #include <vtkCurvatures.h>
 #include <vtkPointData.h>
-
+#include <typeinfo>
 #include <math.h>
 
 namespace itk
 {
 
-template< typename TFixedMesh, typename TMovingMesh, typename TInternalComputationValueType >
-ThinShellDemonsMetricv4< TFixedMesh, TMovingMesh, TInternalComputationValueType >
-::ThinShellDemonsMetricv4()
+template <typename TFixedMesh, typename TMovingMesh, typename TInternalComputationValueType>
+ThinShellDemonsMetricv4<TFixedMesh, TMovingMesh, TInternalComputationValueType>::ThinShellDemonsMetricv4()
 {
   m_BendWeight = 1;
   m_StretchWeight = 1;
   m_GeometricFeatureWeight = 0;
+
   m_ConfidenceSigma = 3;
   m_UseMaximalDistanceConfidenceSigma = true;
   m_UseConfidenceWeighting = true;
   m_UpdateFeatureMatchingAtEachIteration = false;
   m_MovingTransformedFeaturePointsLocator = nullptr;
+  
   fixedVTKMesh = nullptr;
   movingVTKMesh = nullptr;
   fixedCurvature = nullptr;
 }
 
 /** Initialize the metric */
-template< typename TFixedMesh, typename TMovingMesh, typename TInternalComputationValueType >
+template <typename TFixedMesh, typename TMovingMesh, typename TInternalComputationValueType>
 void
-ThinShellDemonsMetricv4< TFixedMesh, TMovingMesh, TInternalComputationValueType >
-::Initialize()
+ThinShellDemonsMetricv4<TFixedMesh, TMovingMesh, TInternalComputationValueType>::Initialize()
 {
 
+  /* m_FixedPointSet and m_MovingPointSet are defined in the itkPointSetToPointSetMetricWithIndexv4.h */
+  /* m_FixedTransformedPointSet and m_MovingTransformedPointSet are defined in the itkPointSetToPointSetMetricWithIndexv4.h */
   if (!this->m_FixedPointSet)
   {
     itkExceptionMacro("Fixed point set is not present");
@@ -74,118 +80,130 @@ ThinShellDemonsMetricv4< TFixedMesh, TMovingMesh, TInternalComputationValueType 
     this->m_FixedPointSet->GetSource()->Update();
   }
 
-    //generate a VTK copy of the same mesh
-  this->movingVTKMesh =
-    itkMeshTovtkPolyData<MovingPointSetType>::Convert(this->m_MovingPointSet);
-  this->fixedVTKMesh =
-    itkMeshTovtkPolyData<FixedPointSetType>::Convert(this->m_FixedPointSet);
+  std::cout << "Number of points are m_MovingPointSet  " <<  this->m_MovingPointSet->GetNumberOfPoints() << std::endl;
+  std::cout << "Class of m_FixedPointSet " <<  typeid(this->m_FixedPointSet).name() << std::endl;
+  std::cout << "Number of points are m_FixedPointSet " <<  this->m_FixedPointSet->GetNumberOfPoints() << std::endl;
 
+  // generate a VTK copy of the same mesh
+  this->movingVTKMesh = itkMeshTovtkPolyData<MovingPointSetType>::Convert(this->m_MovingPointSet);
+  this->fixedVTKMesh = itkMeshTovtkPolyData<FixedPointSetType>::Convert(this->m_FixedPointSet);
+
+  std::cout << "Pranjal Obtained vtk mesh from the itkmesh using the filter " << std::endl;
+
+  /* Compute Neighbors which will be used to calculate the stretch and bend energy*/
   this->ComputeNeighbors();
 
   Superclass::Initialize();
 
-  //Compute confidence sigma
-  if( this->m_UseMaximalDistanceConfidenceSigma )
-    {
+  std::cout << "Pranjal After the Initialize Method Call " << std::endl;
+
+  // Compute confidence sigma
+  if (this->m_UseMaximalDistanceConfidenceSigma)
+  {
     this->ComputeMaximalDistanceSigma();
-    }
+  }
 }
 
-template< typename TFixedMesh, typename TMovingMesh, typename TInternalComputationValueType >
+template <typename TFixedMesh, typename TMovingMesh, typename TInternalComputationValueType>
 void
-ThinShellDemonsMetricv4< TFixedMesh, TMovingMesh, TInternalComputationValueType >
-::ComputeNeighbors()
+ThinShellDemonsMetricv4<TFixedMesh, TMovingMesh, TInternalComputationValueType>::ComputeNeighbors()
 {
   this->neighborMap.resize(fixedVTKMesh->GetNumberOfPoints());
   this->edgeLengthMap.resize(fixedVTKMesh->GetNumberOfPoints());
-  for(PointIdentifier id=0; id<fixedVTKMesh->GetNumberOfPoints(); id++)
-    {
-    //Collect all neighbors
+
+  for (PointIdentifier id = 0; id < fixedVTKMesh->GetNumberOfPoints(); id++)
+  {
+    // Collect all neighbors
     vtkSmartPointer<vtkIdList> cellIdList = vtkSmartPointer<vtkIdList>::New();
     fixedVTKMesh->GetPointCells(id, cellIdList);
     vtkSmartPointer<vtkIdList> pointIdList = vtkSmartPointer<vtkIdList>::New();
-    for(PointIdentifier i = 0; i < cellIdList->GetNumberOfIds(); i++)
-      {
+    for (PointIdentifier i = 0; i < cellIdList->GetNumberOfIds(); i++)
+    {
       vtkSmartPointer<vtkIdList> pointIdListTmp = vtkSmartPointer<vtkIdList>::New();
       fixedVTKMesh->GetCellPoints(cellIdList->GetId(i), pointIdListTmp);
-      for(PointIdentifier j=0; j < pointIdListTmp->GetNumberOfIds(); j++)
-        {
-        if(pointIdListTmp->GetId(j) != id)
-          {
-          pointIdList->InsertUniqueId(pointIdListTmp->GetId(j) );
-          }
-        }
-      }
-    //Store edge lengths
-    edgeLengthMap[id].resize(pointIdList->GetNumberOfIds());
-    const PointType &p = this->m_FixedPointSet->GetPoint(id);
-    for(PointIdentifier j=0; j < pointIdList->GetNumberOfIds(); j++)
+      for (PointIdentifier j = 0; j < pointIdListTmp->GetNumberOfIds(); j++)
       {
-      const vtkIdType &nid = pointIdList->GetId(j);
-      const PointType &pn = this->m_FixedPointSet->GetPoint(nid);
-      edgeLengthMap[id][j] =  p.EuclideanDistanceTo(pn);
-      //Avoid division by zero
-      if( edgeLengthMap[id][j] < itk::NumericTraits<float>::epsilon())
+        if (pointIdListTmp->GetId(j) != id)
         {
-        edgeLengthMap[id][j] = itk::NumericTraits<float>::epsilon();
+          pointIdList->InsertUniqueId(pointIdListTmp->GetId(j));
         }
       }
+    }
+
+    // Store edge lengths
+    edgeLengthMap[id].resize(pointIdList->GetNumberOfIds());
+    const PointType & p = this->m_FixedPointSet->GetPoint(id);
+    for (PointIdentifier j = 0; j < pointIdList->GetNumberOfIds(); j++)
+    {
+      const vtkIdType & nid = pointIdList->GetId(j);
+      const PointType & pn = this->m_FixedPointSet->GetPoint(nid);
+      edgeLengthMap[id][j] = p.EuclideanDistanceTo(pn);
+      // Avoid division by zero
+      if (edgeLengthMap[id][j] < itk::NumericTraits<float>::epsilon())
+      {
+        edgeLengthMap[id][j] = itk::NumericTraits<float>::epsilon();
+      }
+    }
 
     neighborMap[id] = pointIdList;
-    }
+  }
+
+  std::cout << "Pranjal ComputeNeighbors done " << std::endl;
 }
 
 
-template< typename TFixedMesh, typename TMovingMesh, typename TInternalComputationValueType >
+template <typename TFixedMesh, typename TMovingMesh, typename TInternalComputationValueType>
 double
-ThinShellDemonsMetricv4< TFixedMesh, TMovingMesh, TInternalComputationValueType >
-::ComputeConfidenceValueAndDerivative(const VectorType &v, VectorType &derivative) const
+ThinShellDemonsMetricv4<TFixedMesh, TMovingMesh, TInternalComputationValueType>::ComputeConfidenceValueAndDerivative(
+  const VectorType & v,
+  VectorType &       derivative) const
 {
   double variance = m_ConfidenceSigma * m_ConfidenceSigma;
   double dist = v.GetSquaredNorm();
-  double confidence = exp( -dist / (2*variance) );
-  if( m_UpdateFeatureMatchingAtEachIteration )
-    {
-    derivative = (-confidence/variance) * v;
-    }
+  double confidence = exp(-dist / (2 * variance));
+  if (m_UpdateFeatureMatchingAtEachIteration)
+  {
+    derivative = (-confidence / variance) * v;
+  }
   return confidence;
 }
 
-template< typename TFixedMesh, typename TMovingMesh, typename TInternalComputationValueType >
-typename ThinShellDemonsMetricv4< TFixedMesh, TMovingMesh, TInternalComputationValueType >
-::VectorType
-ThinShellDemonsMetricv4< TFixedMesh, TMovingMesh, TInternalComputationValueType >
-::GetMovingDirection(const PointIdentifier &identifier) const
+/* Used for calculating the Stretch and Bend cost */
+template <typename TFixedMesh, typename TMovingMesh, typename TInternalComputationValueType>
+typename ThinShellDemonsMetricv4<TFixedMesh, TMovingMesh, TInternalComputationValueType>::VectorType
+ThinShellDemonsMetricv4<TFixedMesh, TMovingMesh, TInternalComputationValueType>::GetMovingDirection(
+  const PointIdentifier & identifier) const
 {
   PointType p1 = this->m_FixedPointSet->GetPoint(identifier);
   PointType p2 = this->m_FixedTransformedPointSet->GetPoint(identifier);
   return p2 - p1;
 }
 
-template< typename TFixedMesh, typename TMovingMesh, typename TInternalComputationValueType >
+template <typename TFixedMesh, typename TMovingMesh, typename TInternalComputationValueType>
 void
-ThinShellDemonsMetricv4< TFixedMesh, TMovingMesh, TInternalComputationValueType >
-::ComputeStretchAndBend( const PointIdentifier &identifier,
-                         double &stretchEnergy,
-                         double &bendEnergy,
-                         VectorType &stretch,
-                         VectorType &bend) const
+ThinShellDemonsMetricv4<TFixedMesh, TMovingMesh, TInternalComputationValueType>::ComputeStretchAndBend(
+  const PointIdentifier & identifier,
+  double &                stretchEnergy,
+  double &                bendEnergy,
+  VectorType &            stretch,
+  VectorType &            bend) const
 {
   stretchEnergy = 0;
   bendEnergy = 0;
   stretch.Fill(0);
   bend.Fill(0);
 
-  //Collect all neighbors
-  const vtkSmartPointer<vtkIdList> &pointIdList = this->neighborMap[identifier];
-  int degree = pointIdList->GetNumberOfIds();
-  VectorType v = this->GetMovingDirection(identifier);
-  VectorType bEnergy;
+  // Collect all neighbors
+  const vtkSmartPointer<vtkIdList> & pointIdList = this->neighborMap[identifier];
+  int                                degree = pointIdList->GetNumberOfIds();
+  VectorType                         v = this->GetMovingDirection(identifier);
+  VectorType                         bEnergy;
   bEnergy.Fill(0);
-  for(PointIdentifier i=0; i < pointIdList->GetNumberOfIds(); i++)
-    {
+
+  for (PointIdentifier i = 0; i < pointIdList->GetNumberOfIds(); i++)
+  {
     PointIdentifier neighborIdx = pointIdList->GetId(i);
-    int nDegree =  this->neighborMap[neighborIdx]->GetNumberOfIds();
+    int             nDegree = this->neighborMap[neighborIdx]->GetNumberOfIds();
 
     VectorType vn = this->GetMovingDirection(neighborIdx);
     VectorType dx = (v - vn);
@@ -193,167 +211,203 @@ ThinShellDemonsMetricv4< TFixedMesh, TMovingMesh, TInternalComputationValueType 
     // times 4 because edge appears two times in the energy function
     // and the derivative has another factor of 2 from the squared norm
     // divided by the vertex degrees of current and nieghbor vertex
-    stretch += dx * (4 / (degree+nDegree));
+    stretch += dx * (4 / (degree + nDegree));
     stretchEnergy += dx.GetSquaredNorm();
 
-    //Normalize bending by edge length
+    // Normalize bending by edge length
     dx /= edgeLengthMap[identifier][i];
     bEnergy += dx;
-    bend += dx * (degree * 4 / (degree+nDegree));
-    }
+    bend += dx * (degree * 4 / (degree + nDegree));
+  }
 
   bendEnergy = bEnergy.GetSquaredNorm() / degree;
   stretchEnergy /= degree;
 }
 
-template< typename TFixedMesh, typename TMovingMesh, typename TInternalComputationValueType >
-typename ThinShellDemonsMetricv4< TFixedMesh, TMovingMesh, TInternalComputationValueType >
-::MeasureType
-ThinShellDemonsMetricv4< TFixedMesh, TMovingMesh, TInternalComputationValueType >
-::GetLocalNeighborhoodValueWithIndex(const PointIdentifier &identifier,
-                            const PointType &point,
-                            const PixelType & pixel) const
+/* Function definition of the original method definition in itkPointSetToPointSetMetric*/
+/* Performs the computation in a multi-threaded manner */
+template <typename TFixedMesh, typename TMovingMesh, typename TInternalComputationValueType>
+typename ThinShellDemonsMetricv4<TFixedMesh, TMovingMesh, TInternalComputationValueType>::MeasureType
+ThinShellDemonsMetricv4<TFixedMesh, TMovingMesh, TInternalComputationValueType>::GetLocalNeighborhoodValueWithIndex(
+  const PointIdentifier & identifier,
+  const PointType &       point,
+  const PixelType &       pixel) const
 {
-  MeasureType value = 0;
+  MeasureType         value = 0;
   LocalDerivativeType derivative;
   this->GetLocalNeighborhoodValueAndDerivativeWithIndex(identifier, point, value, derivative, pixel);
   return value;
 }
 
-template< typename TFixedMesh, typename TMovingMesh, typename TInternalComputationValueType >
+/* Function definition of the original method definition in itkPointSetToPointSetMetric*/
+/* Performs the computation in a multi-threaded manner */
+/* This method is called inside the CalculateValueAndDerivative in itkPointSetToPointSetMetricWithIndexv4.hxx */
+template <typename TFixedMesh, typename TMovingMesh, typename TInternalComputationValueType>
 void
-ThinShellDemonsMetricv4< TFixedMesh, TMovingMesh, TInternalComputationValueType >
-::GetLocalNeighborhoodValueAndDerivativeWithIndex(const PointIdentifier &identifier,
-                                         const PointType &point,
-                                         MeasureType &value,
-                                         LocalDerivativeType &derivative,
-                                         const PixelType & pixel) const
+ThinShellDemonsMetricv4<TFixedMesh, TMovingMesh, TInternalComputationValueType>::
+  GetLocalNeighborhoodValueAndDerivativeWithIndex(const PointIdentifier & identifier,
+                                                  const PointType &       point,
+                                                  MeasureType &           value,
+                                                  LocalDerivativeType &   derivative,
+                                                  const PixelType &       pixel) const
 {
-  FeaturePointType fpoint = this->GetFeaturePoint(point, fixedCurvature->GetTuple1(identifier) );
-  PointIdentifier mPointId = this->m_MovingTransformedFeaturePointsLocator->FindClosestPoint(fpoint);
-  PointType closestPoint = this->m_MovingTransformedPointSet->GetPoint(mPointId);
+  
+  FeaturePointType fpoint = this->GetFeaturePoint(point, fixedCurvature->GetTuple1(identifier));
+
+  // fpoint = [641.261, -15.2199, 471.961, -0.000875806]
+  // point = [641.261, -15.2199, 471.961]
+  // identifier = 300
+  // fixedCurvature->GetTuple1(identifier) = 0.000665184
+  
+  PointIdentifier  mPointId = this->m_MovingTransformedFeaturePointsLocator->FindClosestPoint(fpoint);
+  PointType        closestPoint = this->m_MovingTransformedPointSet->GetPoint(mPointId);
 
   VectorType direction = closestPoint - point;
-  double dist = direction.GetSquaredNorm();
-  double confidence = 1;
+  double     dist = direction.GetSquaredNorm();
+  double     confidence = 1;
   VectorType confidenceDerivative;
-  if(this->m_UseConfidenceWeighting)
-    {
+
+  if (this->m_UseConfidenceWeighting)
+  {
     confidence = this->ComputeConfidenceValueAndDerivative(direction, confidenceDerivative);
-    }
-  double sE = 0;
-  double bE = 0;
+  }
+  
+  double     sE = 0;
+  double     bE = 0;
   VectorType sD;
   VectorType bD;
   this->ComputeStretchAndBend(identifier, sE, bE, sD, bD);
-  VectorType dx = direction * confidence * 2 - m_StretchWeight*sD - bD * m_BendWeight;
+  
+  VectorType dx = direction * confidence * 2 - m_StretchWeight * sD - bD * m_BendWeight;
+
+  /* Refer to Equation 2 in the MIUA2015 paper */
   value = confidence * dist + m_StretchWeight * sE + m_BendWeight * bE;
-  if(this->m_UseConfidenceWeighting && this->m_UpdateFeatureMatchingAtEachIteration)
-    {
+  
+  if (this->m_UseConfidenceWeighting && this->m_UpdateFeatureMatchingAtEachIteration)
+  {
     dx += dist * confidenceDerivative;
-    }
+  }
   derivative = dx;
 }
 
-template< typename TFixedMesh, typename TMovingMesh, typename TInternalComputationValueType >
+template <typename TFixedMesh, typename TMovingMesh, typename TInternalComputationValueType>
 void
-ThinShellDemonsMetricv4< TFixedMesh, TMovingMesh, TInternalComputationValueType >
-::InitializePointSets() const
+ThinShellDemonsMetricv4<TFixedMesh, TMovingMesh, TInternalComputationValueType>::InitializePointSets() const
 {
+  /* The call to Superclass initializes the m_MovingTransformedPointSet */
   Superclass::InitializePointSets();
+
+  //std::cout << "Number of points are m_MovingTransformedPointSet  " <<  this->m_MovingTransformedPointSet->GetNumberOfPoints() << std::endl;
+
+  //std::cout << "Pranjal InitializePointSets ThinShell " << std::endl;
   this->InitializeFeaturePointsLocators();
 }
 
-
-template< typename TFixedMesh, typename TMovingMesh, typename TInternalComputationValueType >
-typename ThinShellDemonsMetricv4< TFixedMesh, TMovingMesh, TInternalComputationValueType >::FeaturePointSetPointer
-ThinShellDemonsMetricv4< TFixedMesh, TMovingMesh, TInternalComputationValueType >
-::GenerateFeaturePointSets(bool fixed) const
+/* It is called in the beginning once to obtain the feature points using the curvature information */
+template <typename TFixedMesh, typename TMovingMesh, typename TInternalComputationValueType>
+typename ThinShellDemonsMetricv4<TFixedMesh, TMovingMesh, TInternalComputationValueType>::FeaturePointSetPointer
+ThinShellDemonsMetricv4<TFixedMesh, TMovingMesh, TInternalComputationValueType>::GenerateFeaturePointSets(
+  bool fixed) const
 {
+  std::cout << "Pranjal GenerateFeaturePointSets " << std::endl;
 
   vtkSmartPointer<vtkPolyData> vMesh;
-  //Update meshes according to current transforms
-  if(fixed)
-    {
+  // Update meshes according to current transforms
+  if (fixed)
+  {
     vtkSmartPointer<vtkPoints> pts = fixedVTKMesh->GetPoints();
-    for(PointIdentifier i=0; i<this->m_FixedTransformedPointSet->GetNumberOfPoints(); i++ )
-      {
-      pts->SetPoint(i, this->m_FixedTransformedPointSet->GetPoint(i).data());
-      }
-    vMesh = fixedVTKMesh;
-    }
-  else
+    for (PointIdentifier i = 0; i < this->m_FixedTransformedPointSet->GetNumberOfPoints(); i++)
     {
-    vtkSmartPointer<vtkPoints> pts = movingVTKMesh->GetPoints();
-    for(PointIdentifier i=0; i<this->m_MovingTransformedPointSet->GetNumberOfPoints(); i++ )
-      {
-      pts->SetPoint(i, this->m_MovingTransformedPointSet->GetPoint(i).data());
-      }
-    vMesh = movingVTKMesh;
+      pts->SetPoint(i, this->m_FixedTransformedPointSet->GetPoint(i).data());
     }
+    vMesh = fixedVTKMesh;
+  }
+  else
+  {
+    vtkSmartPointer<vtkPoints> pts = movingVTKMesh->GetPoints();
+    for (PointIdentifier i = 0; i < this->m_MovingTransformedPointSet->GetNumberOfPoints(); i++)
+    {
+      pts->SetPoint(i, this->m_MovingTransformedPointSet->GetPoint(i).data());
+    }
+    vMesh = movingVTKMesh;
+  }
 
+  
+  using CoordType = float;
+  using Traits = itk::QuadEdgeMeshExtendedTraits<CoordType, PointType::Dimension, 2, PixelType, PixelType, PixelType, bool, bool>;
+  using MeshType = itk::QuadEdgeMesh<PixelType, PointType::Dimension, Traits>;
+  using CurvatureFilterType = itk::DiscreteGaussianCurvatureQuadEdgeMeshFilter<MeshType, MeshType>;
+  
+
+  std::cout << "Pranjal QuadEdge Mesh Filter init is done" << std::endl;
+  
+  //std::cout << "Pranjal PixelType is " << PixelType <<  std::endl;
+  
+  /* Obtain curvature information at each point */
   vtkSmartPointer<vtkCurvatures> curvaturesFilter = vtkSmartPointer<vtkCurvatures>::New();
   curvaturesFilter->SetInputData(vMesh);
   curvaturesFilter->SetCurvatureTypeToGaussian();
   curvaturesFilter->Update();
-  vtkSmartPointer<vtkPolyData> curvaturesOutput = curvaturesFilter->GetOutput();
+
+  std::cout << "Number of points in the mesh" << std::endl;
+  std::cout << vMesh->GetNumberOfPoints() << std::endl;
+
+  vtkSmartPointer<vtkPolyData>  curvaturesOutput = curvaturesFilter->GetOutput();
   vtkSmartPointer<vtkDataArray> curvature = curvaturesOutput->GetPointData()->GetScalars();
-  FeaturePointSetPointer features = FeaturePointSetType::New();
-  if( fixed )
-    {
+  FeaturePointSetPointer        features = FeaturePointSetType::New();
+
+  if (fixed){
     fixedCurvature = curvature;
-    }
-  else
-    {
+  }
+  else{
     auto fPoints = features->GetPoints();
-    for(PointIdentifier i=0; i<vMesh->GetNumberOfPoints(); i++)
-      {
-      FeaturePointType point =
-        this->GetFeaturePoint(vMesh->GetPoint(i), curvature->GetTuple1(i) );
+    for (PointIdentifier i = 0; i < vMesh->GetNumberOfPoints(); i++)
+    {
+      //std::string name("curvature");
+      //std::cout << name << std::endl;
+      //std::cout << curvature->GetTuple1(i) << std::endl;
+
+      FeaturePointType point = this->GetFeaturePoint(vMesh->GetPoint(i), curvature->GetTuple1(i));
       fPoints->InsertElement(i, point);
-      }
     }
+  }
   return features;
 }
 
-template< typename TFixedMesh, typename TMovingMesh, typename TInternalComputationValueType >
+template <typename TFixedMesh, typename TMovingMesh, typename TInternalComputationValueType>
 void
-ThinShellDemonsMetricv4< TFixedMesh, TMovingMesh, TInternalComputationValueType >
-::ComputeMaximalDistanceSigma()
-  const
+ThinShellDemonsMetricv4<TFixedMesh, TMovingMesh, TInternalComputationValueType>::ComputeMaximalDistanceSigma() const
 {
-  FeaturePointsContainerPointer mpoints =
-    this->m_MovingTransformedFeaturePointsLocator->GetPoints();
-  double maximalDistance = 0;
-  for(PointIdentifier i = 0; i < fixedVTKMesh->GetNumberOfPoints(); i++)
-    {
-    FeaturePointType fpoint =
-      this->GetFeaturePoint(fixedVTKMesh->GetPoint(i), fixedCurvature->GetTuple1(i));
-    PointIdentifier id = this->m_MovingTransformedFeaturePointsLocator->FindClosestPoint(fpoint);
+  FeaturePointsContainerPointer mpoints = this->m_MovingTransformedFeaturePointsLocator->GetPoints();
+  double                        maximalDistance = 0;
+  for (PointIdentifier i = 0; i < fixedVTKMesh->GetNumberOfPoints(); i++)
+  {
+    FeaturePointType fpoint = this->GetFeaturePoint(fixedVTKMesh->GetPoint(i), fixedCurvature->GetTuple1(i));
+    PointIdentifier  id = this->m_MovingTransformedFeaturePointsLocator->FindClosestPoint(fpoint);
     FeaturePointType cpoint = mpoints->GetElement(id);
-    double dist = cpoint.SquaredEuclideanDistanceTo(fpoint);
-    if( dist > maximalDistance )
+    double           dist = cpoint.SquaredEuclideanDistanceTo(fpoint);
+    if (dist > maximalDistance)
     {
       maximalDistance = dist;
-      }
     }
-  this->m_ConfidenceSigma = sqrt(maximalDistance)/3;
+  }
+  this->m_ConfidenceSigma = sqrt(maximalDistance) / 3;
 }
 
-template< typename TFixedMesh, typename TMovingMesh, typename TInternalComputationValueType >
+template <typename TFixedMesh, typename TMovingMesh, typename TInternalComputationValueType>
 void
-ThinShellDemonsMetricv4< TFixedMesh, TMovingMesh, TInternalComputationValueType >
-::InitializeFeaturePointsLocators()
-  const
+ThinShellDemonsMetricv4<TFixedMesh, TMovingMesh, TInternalComputationValueType>::InitializeFeaturePointsLocators() const
 {
-  //Update fixed curvature
-  if(!fixedCurvature || this->m_UpdateFeatureMatchingAtEachIteration){
+
+  // Update fixed curvature
+  if (!fixedCurvature || this->m_UpdateFeatureMatchingAtEachIteration)
+  {
     this->GenerateFeaturePointSets(true);
+    std::cout << "Pranjal InitializeFeaturePointsLocators 1 " << std::endl;
   }
 
-  //Update moving curvature feature locator
-  if( !this->m_MovingTransformedFeaturePointsLocator
-      || this->m_UpdateFeatureMatchingAtEachIteration )
+  // Update moving curvature feature locator
+  if (!this->m_MovingTransformedFeaturePointsLocator || this->m_UpdateFeatureMatchingAtEachIteration)
   {
     if (!this->m_MovingTransformedPointSet)
     {
@@ -361,15 +415,19 @@ ThinShellDemonsMetricv4< TFixedMesh, TMovingMesh, TInternalComputationValueType 
     }
     if (!this->m_MovingTransformedFeaturePointsLocator)
     {
+      std::cout << "Pranjal InitializeFeaturePointsLocators 3 " << std::endl;
       this->m_MovingTransformedFeaturePointsLocator = FeaturePointsLocatorType::New();
     }
+
+    std::cout << "Pranjal InitializeFeaturePointsLocators 2 " << std::endl;
+
+    // Only for the moving mesh, pass false to the GenerateFeaturePointSets
     FeaturePointSetPointer features = this->GenerateFeaturePointSets(false);
-    this->m_MovingTransformedFeaturePointsLocator->SetPoints(
-        features->GetPoints());
+    this->m_MovingTransformedFeaturePointsLocator->SetPoints(features->GetPoints());
     this->m_MovingTransformedFeaturePointsLocator->Initialize();
   }
 
-  //Compute confidence sigma
+  // Compute confidence sigma
   /*
   if( this->m_UpdateFeatureMatchingAtEachIteration &&
       this->m_UseMaximalDistanceConfidenceSigma )
@@ -379,41 +437,41 @@ ThinShellDemonsMetricv4< TFixedMesh, TMovingMesh, TInternalComputationValueType 
     */
 }
 
-template< typename TFixedMesh, typename TMovingMesh, typename TInternalComputationValueType >
-typename ThinShellDemonsMetricv4< TFixedMesh, TMovingMesh, TInternalComputationValueType >
-::FeaturePointType
-ThinShellDemonsMetricv4< TFixedMesh, TMovingMesh, TInternalComputationValueType >
-::GetFeaturePoint(const double *v, const double &c) const
+/* returns point with values [x, y, z, feature] */
+template <typename TFixedMesh, typename TMovingMesh, typename TInternalComputationValueType>
+typename ThinShellDemonsMetricv4<TFixedMesh, TMovingMesh, TInternalComputationValueType>::FeaturePointType
+ThinShellDemonsMetricv4<TFixedMesh, TMovingMesh, TInternalComputationValueType>::GetFeaturePoint(const double * v,
+                                                                                                 const double & c) const
 {
   FeaturePointType fpoint;
-  for(unsigned int i=0; i<PointType::Dimension; i++)
-    {
+  for (unsigned int i = 0; i < PointType::Dimension; i++)
+  {
     fpoint[i] = v[i];
-    }
+  }
   fpoint[PointType::Dimension] = c * m_GeometricFeatureWeight;
   return fpoint;
 }
 
-template< typename TFixedMesh, typename TMovingMesh, typename TInternalComputationValueType >
-typename ThinShellDemonsMetricv4< TFixedMesh, TMovingMesh, TInternalComputationValueType >
-::FeaturePointType
-ThinShellDemonsMetricv4< TFixedMesh, TMovingMesh, TInternalComputationValueType >
-::GetFeaturePoint(const PointType &v, const double &c) const
+/* returns point with values [x, y, z, feature] */
+template <typename TFixedMesh, typename TMovingMesh, typename TInternalComputationValueType>
+typename ThinShellDemonsMetricv4<TFixedMesh, TMovingMesh, TInternalComputationValueType>::FeaturePointType
+ThinShellDemonsMetricv4<TFixedMesh, TMovingMesh, TInternalComputationValueType>::GetFeaturePoint(const PointType & v,
+                                                                                                 const double & c) const
 {
   FeaturePointType fpoint;
-  for(unsigned int i=0; i<PointType::Dimension; i++)
-    {
+  for (unsigned int i = 0; i < PointType::Dimension; i++)
+  {
     fpoint[i] = v[i];
-    }
+  }
   fpoint[PointType::Dimension] = c * m_GeometricFeatureWeight;
   return fpoint;
 }
 
 
-template< typename TFixedMesh, typename TMovingMesh, typename TInternalComputationValueType >
+template <typename TFixedMesh, typename TMovingMesh, typename TInternalComputationValueType>
 void
-ThinShellDemonsMetricv4< TFixedMesh, TMovingMesh, TInternalComputationValueType >
-::PrintSelf(std::ostream & os, Indent indent) const
+ThinShellDemonsMetricv4<TFixedMesh, TMovingMesh, TInternalComputationValueType>::PrintSelf(std::ostream & os,
+                                                                                           Indent         indent) const
 {
   Superclass::PrintSelf(os, indent);
 }

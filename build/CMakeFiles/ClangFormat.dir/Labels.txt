@@ -1,0 +1,13 @@
+# Target labels
+ ClangFormat
+# Source files and their labels
+/home/pranjal.sahu/ITK/Modules/External/ITKThinShellDemons/build/CMakeFiles/ClangFormat
+/home/pranjal.sahu/ITK/Modules/External/ITKThinShellDemons/build/CMakeFiles/ClangFormat.rule
+/home/pranjal.sahu/ITK/Modules/External/ITKThinShellDemons/build/CMakeFiles/ClangFormat-complete.rule
+/home/pranjal.sahu/ITK/Modules/External/ITKThinShellDemons/build/ClangFormat-prefix/src/ClangFormat-stamp/ClangFormat-install.rule
+/home/pranjal.sahu/ITK/Modules/External/ITKThinShellDemons/build/ClangFormat-prefix/src/ClangFormat-stamp/ClangFormat-mkdir.rule
+/home/pranjal.sahu/ITK/Modules/External/ITKThinShellDemons/build/ClangFormat-prefix/src/ClangFormat-stamp/ClangFormat-download.rule
+/home/pranjal.sahu/ITK/Modules/External/ITKThinShellDemons/build/ClangFormat-prefix/src/ClangFormat-stamp/ClangFormat-update.rule
+/home/pranjal.sahu/ITK/Modules/External/ITKThinShellDemons/build/ClangFormat-prefix/src/ClangFormat-stamp/ClangFormat-patch.rule
+/home/pranjal.sahu/ITK/Modules/External/ITKThinShellDemons/build/ClangFormat-prefix/src/ClangFormat-stamp/ClangFormat-configure.rule
+/home/pranjal.sahu/ITK/Modules/External/ITKThinShellDemons/build/ClangFormat-prefix/src/ClangFormat-stamp/ClangFormat-build.rule

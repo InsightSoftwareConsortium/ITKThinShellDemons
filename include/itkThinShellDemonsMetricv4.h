@@ -22,6 +22,10 @@
 #include "itkMeshTovtkPolyData.h"
 
 #include <itkMesh.h>
+#include <itkQuadEdge.h>
+#include <itkQuadEdgeMesh.h>
+#include <itkQuadEdgeMeshExtendedTraits.h>
+#include <itkDiscreteGaussianCurvatureQuadEdgeMeshFilter.h>
 
 #include <vtkDataArray.h>
 #include <vtkPolyData.h>
@@ -175,12 +179,16 @@ protected:
   ThinShellDemonsMetricv4();
   virtual ~ThinShellDemonsMetricv4() override = default;
 
-  //Create a points locator for feature matching
+  // Create a points locator for feature matching
+  // it has dimension 1 greater than the point's dimension
   using FeaturePointSetType = PointSet< double, FixedPointDimension+1>;
+  
   using FeaturePointSetPointer = typename FeaturePointSetType::Pointer;
   using FeaturePointType = typename FeaturePointSetType::PointType;
+
   using FeaturePointsContainer = typename FeaturePointSetType::PointsContainer;
   using FeaturePointsContainerPointer = typename FeaturePointsContainer::Pointer;
+  
   using FeaturePointsLocatorType = PointsLocator<FeaturePointsContainer>;
   using FeaturePointsLocatorPointer = typename FeaturePointsLocatorType::Pointer;
 

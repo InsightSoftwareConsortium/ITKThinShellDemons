@@ -17,6 +17,8 @@ itk_module(ThinShellDemons
     ITKCommon
 	  ITKMesh
 	  ITKRegistrationCommon
+	  ITKQuadEdgeMesh
+	  ITKQuadEdgeMeshFiltering
   	ITKVtkGlue
     ITKMetricsv4
     ITKRegistrationMethodsv4

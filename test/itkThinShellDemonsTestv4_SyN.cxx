@@ -27,9 +27,9 @@
 #include "itkEuclideanDistancePointSetToPointSetMetricv4.h"
 
 /**
- * The implementation of the thin shell metricin the v4
+ * The implementation of the thin shell metric in the v4
  * regsitration framwork permits the option
- * to comnine the thin shell regularization with for
+ * to combine the thin shell regularization with for
  * example the SyN diffeomoprhic transformations.
  */
 int itkThinShellDemonsTestv4_SyN( int args, char **argv)

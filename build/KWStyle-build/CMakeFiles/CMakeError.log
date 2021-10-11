@@ -1,0 +1,42 @@
+Checking whether CXX compiler has environ in stdlib.h failed to compile with the following output:
+Change Dir: /home/pranjal.sahu/ITK/Modules/External/ITKThinShellDemons/build/KWStyle-build/Utilities/KWSys/CMakeFiles/CMakeTmp
+
+Run Build Command(s):/usr/bin/make cmTC_4465c/fast && make[3]: Entering directory '/home/pranjal.sahu/ITK/Modules/External/ITKThinShellDemons/build/KWStyle-build/Utilities/KWSys/CMakeFiles/CMakeTmp'
+/usr/bin/make -f CMakeFiles/cmTC_4465c.dir/build.make CMakeFiles/cmTC_4465c.dir/build
+make[4]: Entering directory '/home/pranjal.sahu/ITK/Modules/External/ITKThinShellDemons/build/KWStyle-build/Utilities/KWSys/CMakeFiles/CMakeTmp'
+Building CXX object CMakeFiles/cmTC_4465c.dir/kwsysPlatformTestsCXX.cxx.o
+/usr/bin/c++  -DTEST_KWSYS_CXX_HAS_ENVIRON_IN_STDLIB_H  -msse2    -std=c++11 -o CMakeFiles/cmTC_4465c.dir/kwsysPlatformTestsCXX.cxx.o -c /home/pranjal.sahu/ITK/Modules/External/ITKThinShellDemons/build/KWStyle/Utilities/KWSys/kwsysPlatformTestsCXX.cxx
+/home/pranjal.sahu/ITK/Modules/External/ITKThinShellDemons/build/KWStyle/Utilities/KWSys/kwsysPlatformTestsCXX.cxx: In function ‘int main()’:
+/home/pranjal.sahu/ITK/Modules/External/ITKThinShellDemons/build/KWStyle/Utilities/KWSys/kwsysPlatformTestsCXX.cxx:53:13: error: ‘environ’ was not declared in this scope; did you mean ‘union’?
+   53 |   char* e = environ[0];
+      |             ^~~~~~~
+      |             union
+make[4]: *** [CMakeFiles/cmTC_4465c.dir/build.make:66: CMakeFiles/cmTC_4465c.dir/kwsysPlatformTestsCXX.cxx.o] Error 1
+make[4]: Leaving directory '/home/pranjal.sahu/ITK/Modules/External/ITKThinShellDemons/build/KWStyle-build/Utilities/KWSys/CMakeFiles/CMakeTmp'
+make[3]: *** [Makefile:121: cmTC_4465c/fast] Error 2
+make[3]: Leaving directory '/home/pranjal.sahu/ITK/Modules/External/ITKThinShellDemons/build/KWStyle-build/Utilities/KWSys/CMakeFiles/CMakeTmp'
+
+
+
+Checking whether CXX compiler struct stat has st_mtimespec member failed to compile with the following output:
+Change Dir: /home/pranjal.sahu/ITK/Modules/External/ITKThinShellDemons/build/KWStyle-build/Utilities/KWSys/CMakeFiles/CMakeTmp
+
+Run Build Command(s):/usr/bin/make cmTC_7357e/fast && make[3]: Entering directory '/home/pranjal.sahu/ITK/Modules/External/ITKThinShellDemons/build/KWStyle-build/Utilities/KWSys/CMakeFiles/CMakeTmp'
+/usr/bin/make -f CMakeFiles/cmTC_7357e.dir/build.make CMakeFiles/cmTC_7357e.dir/build
+make[4]: Entering directory '/home/pranjal.sahu/ITK/Modules/External/ITKThinShellDemons/build/KWStyle-build/Utilities/KWSys/CMakeFiles/CMakeTmp'
+Building CXX object CMakeFiles/cmTC_7357e.dir/kwsysPlatformTestsCXX.cxx.o
+/usr/bin/c++  -DTEST_KWSYS_CXX_STAT_HAS_ST_MTIMESPEC  -msse2    -std=c++11 -o CMakeFiles/cmTC_7357e.dir/kwsysPlatformTestsCXX.cxx.o -c /home/pranjal.sahu/ITK/Modules/External/ITKThinShellDemons/build/KWStyle/Utilities/KWSys/kwsysPlatformTestsCXX.cxx
+/home/pranjal.sahu/ITK/Modules/External/ITKThinShellDemons/build/KWStyle/Utilities/KWSys/kwsysPlatformTestsCXX.cxx: In function ‘int main()’:
+/home/pranjal.sahu/ITK/Modules/External/ITKThinShellDemons/build/KWStyle/Utilities/KWSys/kwsysPlatformTestsCXX.cxx:26:15: error: ‘struct stat’ has no member named ‘st_mtimespec’
+   26 |   (void)stat1.st_mtimespec.tv_sec;
+      |               ^~~~~~~~~~~~
+/home/pranjal.sahu/ITK/Modules/External/ITKThinShellDemons/build/KWStyle/Utilities/KWSys/kwsysPlatformTestsCXX.cxx:27:15: error: ‘struct stat’ has no member named ‘st_mtimespec’
+   27 |   (void)stat1.st_mtimespec.tv_nsec;
+      |               ^~~~~~~~~~~~
+make[4]: *** [CMakeFiles/cmTC_7357e.dir/build.make:66: CMakeFiles/cmTC_7357e.dir/kwsysPlatformTestsCXX.cxx.o] Error 1
+make[4]: Leaving directory '/home/pranjal.sahu/ITK/Modules/External/ITKThinShellDemons/build/KWStyle-build/Utilities/KWSys/CMakeFiles/CMakeTmp'
+make[3]: *** [Makefile:121: cmTC_7357e/fast] Error 2
+make[3]: Leaving directory '/home/pranjal.sahu/ITK/Modules/External/ITKThinShellDemons/build/KWStyle-build/Utilities/KWSys/CMakeFiles/CMakeTmp'
+
+
+

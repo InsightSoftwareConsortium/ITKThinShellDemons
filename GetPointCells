@@ -1,0 +1,8 @@
+./include/itkThinShellDemonsMetric.hxx:  this->targetMap.resize(movingVTKMesh->GetNumberOfPoints());
+./include/itkThinShellDemonsMetric.hxx:  this->neighborMap.resize(movingVTKMesh->GetNumberOfPoints());
+./include/itkThinShellDemonsMetric.hxx:  this->edgeLengthMap.resize(movingVTKMesh->GetNumberOfPoints());
+./include/itkThinShellDemonsMetric.hxx:  for(int id=0; id<movingVTKMesh->GetNumberOfPoints(); id++)
+./include/itkThinShellDemonsMetric.hxx:    movingVTKMesh->GetPointCells(id, cellIdList);
+./include/itkThinShellDemonsMetric.hxx:      movingVTKMesh->GetCellPoints(cellIdList->GetId(i), pointIdListTmp);
+./include/itkThinShellDemonsMetric.hxx:  vtkPoints *pts = movingVTKMesh->GetPoints();
+./include/itkThinShellDemonsMetricv4.hxx:    vtkSmartPointer<vtkPoints> pts = movingVTKMesh->GetPoints();

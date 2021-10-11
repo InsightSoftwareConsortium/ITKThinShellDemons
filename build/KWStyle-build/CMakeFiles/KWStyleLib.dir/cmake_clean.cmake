@@ -1,0 +1,43 @@
+file(REMOVE_RECURSE
+  "CMakeFiles/KWStyleLib.dir/kwsCheckBadCharacters.cxx.o"
+  "CMakeFiles/KWStyleLib.dir/kwsCheckBlackList.cxx.o"
+  "CMakeFiles/KWStyleLib.dir/kwsCheckComma.cxx.o"
+  "CMakeFiles/KWStyleLib.dir/kwsCheckComments.cxx.o"
+  "CMakeFiles/KWStyleLib.dir/kwsCheckDeclarationOrder.cxx.o"
+  "CMakeFiles/KWStyleLib.dir/kwsCheckEmptyLines.cxx.o"
+  "CMakeFiles/KWStyleLib.dir/kwsCheckEndOfFileNewLine.cxx.o"
+  "CMakeFiles/KWStyleLib.dir/kwsCheckExtraSpaces.cxx.o"
+  "CMakeFiles/KWStyleLib.dir/kwsCheckFunctions.cxx.o"
+  "CMakeFiles/KWStyleLib.dir/kwsCheckHeader.cxx.o"
+  "CMakeFiles/KWStyleLib.dir/kwsCheckIfNDefDefine.cxx.o"
+  "CMakeFiles/KWStyleLib.dir/kwsCheckIfWhileForUntil.cxx.o"
+  "CMakeFiles/KWStyleLib.dir/kwsCheckIndent.cxx.o"
+  "CMakeFiles/KWStyleLib.dir/kwsCheckInternalVariables.cxx.o"
+  "CMakeFiles/KWStyleLib.dir/kwsCheckLineLength.cxx.o"
+  "CMakeFiles/KWStyleLib.dir/kwsCheckMemberFunctions.cxx.o"
+  "CMakeFiles/KWStyleLib.dir/kwsCheckNameOfClass.cxx.o"
+  "CMakeFiles/KWStyleLib.dir/kwsCheckNamespace.cxx.o"
+  "CMakeFiles/KWStyleLib.dir/kwsCheckOperator.cxx.o"
+  "CMakeFiles/KWStyleLib.dir/kwsCheckParenthesis.cxx.o"
+  "CMakeFiles/KWStyleLib.dir/kwsCheckRelativePathInInclude.cxx.o"
+  "CMakeFiles/KWStyleLib.dir/kwsCheckSemicolonSpace.cxx.o"
+  "CMakeFiles/KWStyleLib.dir/kwsCheckStatementPerLine.cxx.o"
+  "CMakeFiles/KWStyleLib.dir/kwsCheckStruct.cxx.o"
+  "CMakeFiles/KWStyleLib.dir/kwsCheckTabs.cxx.o"
+  "CMakeFiles/KWStyleLib.dir/kwsCheckTemplate.cxx.o"
+  "CMakeFiles/KWStyleLib.dir/kwsCheckTypedefs.cxx.o"
+  "CMakeFiles/KWStyleLib.dir/kwsCheckUsingDirectives.cxx.o"
+  "CMakeFiles/KWStyleLib.dir/kwsCheckVariablePerLine.cxx.o"
+  "CMakeFiles/KWStyleLib.dir/kwsCheckVariables.cxx.o"
+  "CMakeFiles/KWStyleLib.dir/kwsGenerator.cxx.o"
+  "CMakeFiles/KWStyleLib.dir/kwsParser.cxx.o"
+  "CMakeFiles/KWStyleLib.dir/kwsXMLReader.cxx.o"
+  "CMakeFiles/KWStyleLib.dir/metaCommand.cxx.o"
+  "bin/libKWStyleLib.a"
+  "bin/libKWStyleLib.pdb"
+)
+
+# Per-language clean rules from dependency scanning.
+foreach(lang CXX)
+  include(CMakeFiles/KWStyleLib.dir/cmake_clean_${lang}.cmake OPTIONAL)
+endforeach()
