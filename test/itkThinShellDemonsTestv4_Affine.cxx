@@ -35,6 +35,9 @@
 #include "itkMeshFileReader.h"
 #include "itkMeshFileWriter.h"
 
+#include <itkSimplexMesh.h>
+#include <itkTriangleMeshToSimplexMeshFilter.h>
+
 template <typename TFilter>
 class CommandIterationUpdate : public itk::Command
 {
@@ -78,15 +81,25 @@ itkThinShellDemonsTestv4_Affine(int args, char ** argv)
 {
   const unsigned int Dimension = 3;
   using PointType = float;
+  using CoordType = float;
 
   using MeshType = itk::Mesh<PointType, 3>;
 
   using PointsContainerPointer = MeshType::PointsContainerPointer;
+  
 
   using ReaderType = itk::MeshFileReader<MeshType>;
   using WriterType = itk::MeshFileWriter<MeshType>;
 
-  //#itk::Regu
+  using Traits = itk::QuadEdgeMeshExtendedTraits<CoordType, Dimension, 2, CoordType, CoordType, CoordType, bool, bool>;
+  using QEMeshType = itk::QuadEdgeMesh<CoordType, Dimension, Traits>;
+  using QEPointsContainerPointer = QEMeshType::PointsContainerPointer;
+
+  using CurvatureFilterType = itk::DiscreteGaussianCurvatureQuadEdgeMeshFilter<QEMeshType, QEMeshType>;
+  using QEReaderType = itk::MeshFileReader<QEMeshType>;
+
+  QEReaderType::Pointer qe_reader = QEReaderType::New();
+
   unsigned int numberOfIterations = 100;
 
   /*
@@ -94,8 +107,8 @@ itkThinShellDemonsTestv4_Affine(int args, char ** argv)
   */
   ReaderType::Pointer           fixedPolyDataReader = ReaderType::New();
   //typedef ReaderType::PointType PointType;
-  // fixedPolyDataReader->SetFileName(argv[1]);
-  fixedPolyDataReader->SetFileName("/home/pranjal.sahu/ITKThinShellDemons/test/Baseline/fixedMesh.vtk");
+  fixedPolyDataReader->SetFileName(argv[1]);
+  //fixedPolyDataReader->SetFileName("/home/pranjal.sahu/ITKThinShellDemons/test/Baseline/fixedMesh.vtk");
   try
   {
     fixedPolyDataReader->Update();
@@ -114,8 +127,9 @@ itkThinShellDemonsTestv4_Affine(int args, char ** argv)
   */
   ReaderType::Pointer           movingPolyDataReader = ReaderType::New();
   //typedef ReaderType::PointType PointType;
-  // movingPolyDataReader->SetFileName(argv[2]);
-  movingPolyDataReader->SetFileName("/home/pranjal.sahu/ITKThinShellDemons/test/Baseline/movingMesh.vtk");
+  movingPolyDataReader->SetFileName(argv[2]);
+  // movingPolyDataReader->SetFileName("/home/pranjal.sahu/ITKThinShellDemons/test/Baseline/movingMesh.vtk");
+  //movingPolyDataReader->SetFileName("/home/pranjal.sahu/decimate_0.ICP_result.vtk");
 
   try{
     movingPolyDataReader->Update();
@@ -130,34 +144,54 @@ itkThinShellDemonsTestv4_Affine(int args, char ** argv)
 
 
 
+  using TSimplex = itk::SimplexMesh<float, 3>;
+  using TConvert = itk::TriangleMeshToSimplexMeshFilter<MeshType, TSimplex>;
 
+  // Ensure that all cells of the mesh are triangles.
+  for (MeshType::CellsContainerIterator it = movingMesh->GetCells()->Begin();
+       it != movingMesh->GetCells()->End();
+       ++it)
+  {
+    MeshType::CellAutoPointer cell;
+    movingMesh->GetCell(it->Index(), cell);
+    if (3 != cell->GetNumberOfPoints())
+    {
+      std::cerr << "ERROR: All cells must be trianglar." << std::endl;
+      return EXIT_FAILURE;
+    }
+  }
+
+  // Convert the triangle mesh to a simplex mesh.
+  TConvert::Pointer convert = TConvert::New();
+  convert->SetInput(movingMesh);
+  convert->Update();
+
+  TSimplex::Pointer simplex_output = convert->GetOutput();
+  
+  std::cout << "Pranjal simplex output is " << simplex_output << std::endl;
+  
   /* For calculating itkDiscreteGaussianCurvatureQuadEdgeMeshFilterTest */
-  using CoordType = float;
-  using Traits = itk::QuadEdgeMeshExtendedTraits<CoordType, Dimension, 2, CoordType, CoordType, CoordType, bool, bool>;
-  using QEMeshType = itk::QuadEdgeMesh<CoordType, Dimension, Traits>;
-  using CurvatureFilterType = itk::DiscreteGaussianCurvatureQuadEdgeMeshFilter<QEMeshType, QEMeshType>;
-  using QEReaderType = itk::MeshFileReader<QEMeshType>;
+  
+  qe_reader->SetFileName(argv[2]);
+  qe_reader->Update();
+  QEMeshType::Pointer qe_moving_mesh = qe_reader->GetOutput();
 
-  QEReaderType::Pointer reader = QEReaderType::New();
-  reader->SetFileName("/home/pranjal.sahu/ITKThinShellDemons/test/Baseline/movingMesh.vtk");
-  try{
-    reader->Update();
-  }
-  catch (const itk::ExceptionObject & excp){
-    std::cerr << "Exception thrown while reading the input file " << std::endl;
-    std::cerr << excp << std::endl;
-    return EXIT_FAILURE;
-  }
+  qe_reader->SetFileName(argv[1]);
+  qe_reader->Update();
+  QEMeshType::Pointer qe_fixed_mesh = qe_reader->GetOutput();
 
-  QEMeshType::Pointer mesh = reader->GetOutput();
+
   CurvatureFilterType::Pointer gaussian_curvature = CurvatureFilterType::New();
-  gaussian_curvature->SetInput(mesh);
+  gaussian_curvature->SetInput(qe_fixed_mesh);
   gaussian_curvature->Update();
   QEMeshType::Pointer output = gaussian_curvature->GetOutput();
 
-  std::cout << "Gaussian curvature output number of points " << output->GetNumberOfPoints() << std::endl;
+  std::cout << "Pranjal Gaussian curvature output number of points " << output->GetNumberOfPoints() << std::endl;
+  QEPointsContainerPointer qe_points = qe_moving_mesh->GetPoints();
 
+  std::cout << "Pranjal got the qe_points " << qe_points << std::endl;
 
+  //qe_points->
 
 
 
@@ -186,8 +220,14 @@ itkThinShellDemonsTestv4_Affine(int args, char ** argv)
 
 
   PointsContainerPointer   points = movingMesh->GetPoints();
+  QEPointsContainerPointer   qe_points1 = qe_moving_mesh->GetPoints();
   
+  //qe_moving_mesh->GetPoin
+  //movingMesh->
   std::cout << "Pranjal count of points in the movingMesh quadedge " << movingMesh->GetNumberOfPoints() << std::endl;
+  
+  std::cout << "PointsContainerPointer is " << points << std::endl;
+  std::cout << "QEPointsContainerPointer is " << qe_points1 << std::endl;
 
   boundingBox->SetPoints(points);
   boundingBox->ComputeBoundingBox();
@@ -221,7 +261,7 @@ itkThinShellDemonsTestv4_Affine(int args, char ** argv)
 
   std::cout << "Before creating the ThinShellDemonsMetricv4 " << std::endl;
 
-  using PointSetMetricType = itk::ThinShellDemonsMetricv4<MeshType>;
+  using PointSetMetricType = itk::ThinShellDemonsMetricv4<MeshType, MeshType>;
   PointSetMetricType::Pointer metric = PointSetMetricType::New();
   metric->SetStretchWeight(1);
   metric->SetBendWeight(5);
@@ -250,6 +290,7 @@ itkThinShellDemonsTestv4_Affine(int args, char ** argv)
   shiftScaleEstimator->SetMetric(metric);
   // Needed with pointset metrics
   shiftScaleEstimator->SetVirtualDomainPointSet(metric->GetVirtualTransformedPointSet());
+  
 
   // optimizer
 
