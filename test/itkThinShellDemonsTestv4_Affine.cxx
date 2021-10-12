@@ -221,45 +221,31 @@ itkThinShellDemonsTestv4_Affine(int args, char ** argv)
   {
     SimplexMeshType::PointIdentifier id1 = n;
     SimplexMeshType::PixelType point_data = n;
+    SimplexMeshType::PixelType point_data1;
     
     simplexMesh->SetPointData(id1, point_data);
-    simplexMesh->GetPointData(id1, &point_data);
+    simplexMesh->GetPointData(id1, &point_data1);
     
-    std::cout << n << " " << simplexMesh->GetPoint(id1) << " : " << point_data << std::endl;
+    std::cout << n << " " << simplexMesh->GetPoint(id1) << " : " << point_data1 << std::endl;
   }
-  
-  // simplexPointDataContainer simplexMeshPoints = simplexMesh->GetPointData()->Begin();
-  // simplexPointDataContainer simplexMeshPoints = simplexMesh->GetPointData()->End();
-  /*
-  PointDataIterator end = pointData2->End();
-  while (pointDataIterator != end)
-  {
-    PixelType p = pointDataIterator.Value(); // access the pixel data
-    std::cout << p << std::endl;             // print the pixel data
-    ++pointDataIterator;                     // advance to next pixel/point
-  }
- */
-  // for (unsigned int n = 0; n < simplexMesh->GetNumberOfPoints(); n++)
-  // {
-  //   SimplexMeshType::PointIdentifier id1 = n;
-  //   SimplexMeshType::PixelType point_data;
-  //   //TriangleMeshType::PointType txMovingPoint = simplexMesh->GetPoint(n);
-  //    //TriangleMeshType::GetPointData txMovingPoint = simplexMesh->GetPointData(n);
-  //   simplexMesh->GetPointData(id1, &point_data);
-  //   std::cout << n << " : " << point_data << std::endl;
-  // }
+
+
 
 
   using FilterType = itk::SimplexMeshAdaptTopologyFilter<SimplexMeshType, SimplexMeshType>;
   FilterType::Pointer filter = FilterType::New();
   filter->SetInput(simplexMesh);
   filter->Update();
-  filter->Print(std::cout);
+  //filter->Print(std::cout);
 
   std::cout << "[TEST DONE]" << std::endl;
 
-
-
+  SimplexMeshType::Pointer simplexMeshAdapted = filter->GetOutput(); 
+  for (unsigned int n = 0; n < simplexMeshAdapted->GetNumberOfPoints(); n++)
+  {
+    SimplexMeshType::PointIdentifier id1 = n;
+    std::cout << n << " " << simplexMeshAdapted->GetPoint(id1) << " : " << simplexMeshAdapted->GetMeanCurvature(id1) << std::endl;
+  }
 
 
 
