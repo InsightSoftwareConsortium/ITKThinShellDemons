@@ -17,8 +17,8 @@
  *=========================================================================*/
 #include <cstdlib>
 
-#include "itkVTKPolyDataReader.h"
-#include "itkVTKPolyDataWriter.h"
+//#include "itkVTKPolyDataReader.h"
+//#include "itkVTKPolyDataWriter.h"
 
 #include "itkCommand.h"
 #include "itkThinShellDemonsMetricv4.h"
@@ -28,9 +28,12 @@
 #include "itkImageRegistrationMethodv4.h"
 #include "itkAffineTransform.h"
 
+#include "itkDiscreteGaussianCurvatureQuadEdgeMeshFilter.h"
+
 // Pranjal added these
-#include <itkMesh.h>
-//#include <itkMeshFileWriter.h>
+#include "itkMesh.h"
+#include "itkMeshFileReader.h"
+#include "itkMeshFileWriter.h"
 
 template <typename TFilter>
 class CommandIterationUpdate : public itk::Command
@@ -74,10 +77,14 @@ int
 itkThinShellDemonsTestv4_Affine(int args, char ** argv)
 {
   const unsigned int Dimension = 3;
-  using MeshType = itk::Mesh<float, 3>;
+  using PointType = float;
+
+  using MeshType = itk::Mesh<PointType, 3>;
+
   using PointsContainerPointer = MeshType::PointsContainerPointer;
-  using ReaderType = itk::VTKPolyDataReader<MeshType>;
-  using WriterType = itk::VTKPolyDataWriter<MeshType>;
+
+  using ReaderType = itk::MeshFileReader<MeshType>;
+  using WriterType = itk::MeshFileWriter<MeshType>;
 
   //#itk::Regu
   unsigned int numberOfIterations = 100;
@@ -86,7 +93,7 @@ itkThinShellDemonsTestv4_Affine(int args, char ** argv)
   Initialize fixed mesh polydata reader
   */
   ReaderType::Pointer           fixedPolyDataReader = ReaderType::New();
-  typedef ReaderType::PointType PointType;
+  //typedef ReaderType::PointType PointType;
   // fixedPolyDataReader->SetFileName(argv[1]);
   fixedPolyDataReader->SetFileName("/home/pranjal.sahu/ITKThinShellDemons/test/Baseline/fixedMesh.vtk");
   try
@@ -106,7 +113,7 @@ itkThinShellDemonsTestv4_Affine(int args, char ** argv)
   Initialize moving mesh polydata reader
   */
   ReaderType::Pointer           movingPolyDataReader = ReaderType::New();
-  typedef ReaderType::PointType PointType;
+  //typedef ReaderType::PointType PointType;
   // movingPolyDataReader->SetFileName(argv[2]);
   movingPolyDataReader->SetFileName("/home/pranjal.sahu/ITKThinShellDemons/test/Baseline/movingMesh.vtk");
 
@@ -120,6 +127,41 @@ itkThinShellDemonsTestv4_Affine(int args, char ** argv)
   }
 
   MeshType::Pointer movingMesh = movingPolyDataReader->GetOutput();
+
+
+
+
+  /* For calculating itkDiscreteGaussianCurvatureQuadEdgeMeshFilterTest */
+  using CoordType = float;
+  using Traits = itk::QuadEdgeMeshExtendedTraits<CoordType, Dimension, 2, CoordType, CoordType, CoordType, bool, bool>;
+  using QEMeshType = itk::QuadEdgeMesh<CoordType, Dimension, Traits>;
+  using CurvatureFilterType = itk::DiscreteGaussianCurvatureQuadEdgeMeshFilter<QEMeshType, QEMeshType>;
+  using QEReaderType = itk::MeshFileReader<QEMeshType>;
+
+  QEReaderType::Pointer reader = QEReaderType::New();
+  reader->SetFileName("/home/pranjal.sahu/ITKThinShellDemons/test/Baseline/movingMesh.vtk");
+  try{
+    reader->Update();
+  }
+  catch (const itk::ExceptionObject & excp){
+    std::cerr << "Exception thrown while reading the input file " << std::endl;
+    std::cerr << excp << std::endl;
+    return EXIT_FAILURE;
+  }
+
+  QEMeshType::Pointer mesh = reader->GetOutput();
+  CurvatureFilterType::Pointer gaussian_curvature = CurvatureFilterType::New();
+  gaussian_curvature->SetInput(mesh);
+  gaussian_curvature->Update();
+  QEMeshType::Pointer output = gaussian_curvature->GetOutput();
+
+  std::cout << "Gaussian curvature output number of points " << output->GetNumberOfPoints() << std::endl;
+
+
+
+
+
+  //simpleMeshType::Pointer simpleMovingMesh = movingMesh;
 
   /*
   WriterType::Pointer  PolyDataWriter = WriterType::New();
@@ -141,7 +183,12 @@ itkThinShellDemonsTestv4_Affine(int args, char ** argv)
   using PointIdentifier = MeshType::PointIdentifier;
   using BoundingBoxType = itk::BoundingBox<PointIdentifier, Dimension>;
   BoundingBoxType::Pointer boundingBox = BoundingBoxType::New();
+
+
   PointsContainerPointer   points = movingMesh->GetPoints();
+  
+  std::cout << "Pranjal count of points in the movingMesh quadedge " << movingMesh->GetNumberOfPoints() << std::endl;
+
   boundingBox->SetPoints(points);
   boundingBox->ComputeBoundingBox();
 
@@ -253,14 +300,13 @@ itkThinShellDemonsTestv4_Affine(int args, char ** argv)
 
   for (unsigned int n = 0; n < movingMesh->GetNumberOfPoints(); n++)
   {
-    PointType txMovingPoint = tx->TransformPoint(movingMesh->GetPoint(n));
+    MeshType::PointType txMovingPoint = tx->TransformPoint(movingMesh->GetPoint(n));
     movingMesh->SetPoint(n, txMovingPoint);
   }
 
-  typedef itk::VTKPolyDataWriter<MeshType> WriterType;
-  WriterType::Pointer                      writer = WriterType::New();
+  WriterType::Pointer writer = WriterType::New();
   writer->SetInput(movingMesh);
   writer->SetFileName("affineMovingMesh.vtk");
-  writer->Write();
+  writer->Update();
   return EXIT_SUCCESS;
 }
