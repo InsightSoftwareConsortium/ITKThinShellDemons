@@ -200,6 +200,17 @@ itkThinShellDemonsTestv4_Affine(int args, char ** argv)
   std::cout << "before movingMesh Created : " << movingMesh->GetNumberOfPoints() << std::endl;
   std::cout << "Simplex Mesh Created : " << simplexMesh->GetNumberOfPoints() << std::endl;
 
+  using simplexGeometryMapPointer = typename SimplexMeshType::GeometryMapPointer;
+  using simplexGeometryMapIterator = typename SimplexMeshType::GeometryMapIterator;
+ 
+  simplexGeometryMapPointer  geometryMap = simplexMesh->GetGeometryData();
+  simplexGeometryMapIterator pointDataIterator = geometryMap->Begin();
+  simplexGeometryMapIterator pointDataEnd = geometryMap->End();
+
+  int i = 0;
+  std::cout << "Simplex Mesh geometry" << std::endl;
+
+
   for (unsigned int n = 0; n < simplexMesh->GetNumberOfPoints(); n++)
   {
     SimplexMeshType::PointIdentifier id1 = n;
@@ -210,6 +221,8 @@ itkThinShellDemonsTestv4_Affine(int args, char ** argv)
     simplexMesh->GetPointData(id1, &point_data1);
     
     std::cout << n << " " << simplexMesh->GetPoint(id1) << " : " << point_data1 << " " << simplexMesh->GetMeanCurvature(id1) << std::endl;
+    //geometryMap->GetElement(id1)->ComputeGeometry();
+    std::cout << n << " " << geometryMap->GetElement(id1)->pos << std::endl;
   }
 
 
