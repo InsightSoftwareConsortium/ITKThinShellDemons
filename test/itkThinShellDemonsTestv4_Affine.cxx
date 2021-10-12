@@ -91,13 +91,14 @@ itkThinShellDemonsTestv4_Affine(int args, char ** argv)
   using SimplexMeshTraits = itk::DefaultDynamicMeshTraits<float, 3, 3, float, float>;
   using SimplexMeshTraitsStatic = itk::DefaultStaticMeshTraits<float, 3, 3, float, float>;
 
-  using MeshType = itk::Mesh<PointType, 3, TriangleMeshTraitsStatic>;
+  // Declare the type of the input and output mesh
+  using MeshType = itk::Mesh<float, 3>;
+  using TriangleMeshType = itk::Mesh<float, 3, TriangleMeshTraits>;
+  using SimplexMeshType = itk::SimplexMesh<float, 3, SimplexMeshTraits>;
 
-  using PointsContainerPointer = MeshType::PointsContainerPointer;
-  
 
-  using ReaderType = itk::MeshFileReader<MeshType>;
-  using WriterType = itk::MeshFileWriter<MeshType>;
+  using ReaderType = itk::MeshFileReader<TriangleMeshType>;
+  using WriterType = itk::MeshFileWriter<TriangleMeshType>;
 
   using Traits = itk::QuadEdgeMeshExtendedTraits<CoordType, Dimension, 2, CoordType, CoordType, CoordType, bool, bool>;
   using QEMeshType = itk::QuadEdgeMesh<CoordType, Dimension, Traits>;
@@ -127,9 +128,8 @@ itkThinShellDemonsTestv4_Affine(int args, char ** argv)
     std::cerr << excp << std::endl;
     return EXIT_FAILURE;
   }
-  MeshType::Pointer fixedMesh = fixedPolyDataReader->GetOutput();
+  TriangleMeshType::Pointer fixedMesh = fixedPolyDataReader->GetOutput();
 
-  printf("Pranjal fixedMesh Reading Done Testing Change done\n");
   /*
   Initialize moving mesh polydata reader
   */
@@ -148,19 +148,20 @@ itkThinShellDemonsTestv4_Affine(int args, char ** argv)
     return EXIT_FAILURE;
   }
 
-  MeshType::Pointer movingMesh = movingPolyDataReader->GetOutput();
+  TriangleMeshType::Pointer movingMesh = movingPolyDataReader->GetOutput();
 
 
+  std::cout << "Fixed mesh points count " << fixedMesh->GetNumberOfPoints() << std::endl;
+  std::cout << "Moving mesh points count " << movingMesh->GetNumberOfPoints() << std::endl;
 
-  using TSimplex = itk::SimplexMesh<float, 3>;
-  using TConvert = itk::TriangleMeshToSimplexMeshFilter<MeshType, TSimplex>;
+  using TConvert = itk::TriangleMeshToSimplexMeshFilter<TriangleMeshType, SimplexMeshType>;
 
   // Ensure that all cells of the mesh are triangles.
-  for (MeshType::CellsContainerIterator it = movingMesh->GetCells()->Begin();
+  for (TriangleMeshType::CellsContainerIterator it = movingMesh->GetCells()->Begin();
        it != movingMesh->GetCells()->End();
        ++it)
   {
-    MeshType::CellAutoPointer cell;
+    TriangleMeshType::CellAutoPointer cell;
     movingMesh->GetCell(it->Index(), cell);
     if (3 != cell->GetNumberOfPoints())
     {
@@ -184,38 +185,20 @@ itkThinShellDemonsTestv4_Affine(int args, char ** argv)
 
 
 
-  // Declare the type of the input and output mesh
-  using TriangleMeshType = itk::Mesh<float, 3, TriangleMeshTraits>;
-  using SimplexMeshType = itk::SimplexMesh<float, 3, SimplexMeshTraits>;
-
-  // declare triangle mesh source
-  using SphereMeshSourceType = itk::RegularSphereMeshSource<TriangleMeshType>;
-  using sPointType = SphereMeshSourceType::PointType;
-  using VectorType = SphereMeshSourceType::VectorType;
-
+  
+  
   // declare the triangle to simplex mesh filter
   using SimplexFilterType = itk::TriangleMeshToSimplexMeshFilter<TriangleMeshType, SimplexMeshType>;
 
-  SphereMeshSourceType::Pointer mySphereMeshSource = SphereMeshSourceType::New();
-  sPointType                     center;
-  center.Fill(10);
-  sPointType::ValueType scaleInit[3] = { 3, 3, 3 };
-  VectorType           scale = scaleInit;
-
-  mySphereMeshSource->SetCenter(center);
-  mySphereMeshSource->SetResolution(2);
-  mySphereMeshSource->SetScale(scale);
-
-  std::cout << "Triangle mesh created. " << std::endl;
-
   SimplexFilterType::Pointer simplexFilter = SimplexFilterType::New();
-  simplexFilter->SetInput(mySphereMeshSource->GetOutput());
+  simplexFilter->SetInput(movingMesh);
   simplexFilter->Update();
 
   SimplexMeshType::Pointer simplexMesh = simplexFilter->GetOutput();
   simplexMesh->DisconnectPipeline();
 
-  std::cout << "Simplex Mesh Created : " << simplexMesh << std::endl;
+  std::cout << "before movingMesh Created : " << movingMesh->GetNumberOfPoints() << std::endl;
+  std::cout << "Simplex Mesh Created : " << simplexMesh->GetNumberOfPoints() << std::endl;
 
   for (unsigned int n = 0; n < simplexMesh->GetNumberOfPoints(); n++)
   {
@@ -226,7 +209,7 @@ itkThinShellDemonsTestv4_Affine(int args, char ** argv)
     simplexMesh->SetPointData(id1, point_data);
     simplexMesh->GetPointData(id1, &point_data1);
     
-    std::cout << n << " " << simplexMesh->GetPoint(id1) << " : " << point_data1 << std::endl;
+    std::cout << n << " " << simplexMesh->GetPoint(id1) << " : " << point_data1 << " " << simplexMesh->GetMeanCurvature(id1) << std::endl;
   }
 
 
@@ -239,13 +222,17 @@ itkThinShellDemonsTestv4_Affine(int args, char ** argv)
   //filter->Print(std::cout);
 
   std::cout << "[TEST DONE]" << std::endl;
-
+  
   SimplexMeshType::Pointer simplexMeshAdapted = filter->GetOutput(); 
-  for (unsigned int n = 0; n < simplexMeshAdapted->GetNumberOfPoints(); n++)
-  {
-    SimplexMeshType::PointIdentifier id1 = n;
-    std::cout << n << " " << simplexMeshAdapted->GetPoint(id1) << " : " << simplexMeshAdapted->GetMeanCurvature(id1) << std::endl;
-  }
+
+  std::cout << "Simplex Mesh Created : " << simplexMeshAdapted->GetNumberOfPoints() << std::endl;
+
+  
+  // for (unsigned int n = 0; n < simplexMeshAdapted->GetNumberOfPoints(); n++)
+  // {
+  //   SimplexMeshType::PointIdentifier id1 = n;
+  //   std::cout << n << " " << simplexMeshAdapted->GetPoint(id1) << " : " << simplexMeshAdapted->GetMeanCurvature(id1) << std::endl;
+  // }
 
 
 
@@ -264,7 +251,7 @@ itkThinShellDemonsTestv4_Affine(int args, char ** argv)
   convert->SetInput(movingMesh);
   convert->Update();
 
-  TSimplex::Pointer simplex_output = convert->GetOutput();
+  SimplexMeshType::Pointer simplex_output = convert->GetOutput();
   simplex_output->DisconnectPipeline();
 
   //std::cout << "Pranjal simplex output is " << simplex_output << std::endl;
@@ -322,23 +309,23 @@ itkThinShellDemonsTestv4_Affine(int args, char ** argv)
   FixedImageType::DirectionType fixedImageDirection;
   FixedImageType::SpacingType   fixedImageSpacing;
 
-  using PointIdentifier = MeshType::PointIdentifier;
+  using PointIdentifier = TriangleMeshType::PointIdentifier;
   using BoundingBoxType = itk::BoundingBox<PointIdentifier, Dimension>;
   BoundingBoxType::Pointer boundingBox = BoundingBoxType::New();
 
 
-  PointsContainerPointer   points = movingMesh->GetPoints();
+  //PointsContainerPointer   points = movingMesh->GetPoints();
   QEPointsContainerPointer   qe_points1 = qe_moving_mesh->GetPoints();
   
   //qe_moving_mesh->GetPoin
   //movingMesh->
   std::cout << "Pranjal count of points in the movingMesh quadedge " << movingMesh->GetNumberOfPoints() << std::endl;
   
-  std::cout << "PointsContainerPointer is " << points << std::endl;
+  //std::cout << "PointsContainerPointer is " << points << std::endl;
   //std::cout << "QEPointsContainerPointer is " << qe_points1 << std::endl;
 
-  boundingBox->SetPoints(points);
-  boundingBox->ComputeBoundingBox();
+  //boundingBox->SetPoints(points);
+  //boundingBox->ComputeBoundingBox();
 
   typename BoundingBoxType::PointType minBounds = boundingBox->GetMinimum();
   typename BoundingBoxType::PointType maxBounds = boundingBox->GetMaximum();
@@ -369,93 +356,98 @@ itkThinShellDemonsTestv4_Affine(int args, char ** argv)
 
   std::cout << "Before creating the ThinShellDemonsMetricv4 " << std::endl;
 
-  using PointSetMetricType = itk::ThinShellDemonsMetricv4<MeshType, MeshType>;
-  PointSetMetricType::Pointer metric = PointSetMetricType::New();
-  metric->SetStretchWeight(1);
-  metric->SetBendWeight(5);
-  metric->SetGeometricFeatureWeight(10);
-  metric->UseConfidenceWeightingOn();
-  metric->UseMaximalDistanceConfidenceSigmaOn();
-  metric->UpdateFeatureMatchingAtEachIterationOff();
-  metric->SetMovingTransform(transform);
-  // Reversed due to using points instead of an image
-  // to keep semantics the same as in itkThinShellDemonsTest.cxx
-  // For the ThinShellDemonsMetricv4 the fixed mesh is
-  // regularized
-  metric->SetFixedPointSet(movingMesh);
-  metric->SetMovingPointSet(fixedMesh);
-  metric->SetVirtualDomainFromImage(fixedImage);
-  metric->Initialize();
 
-  // movingMesh->GetAssignedCellBoundaryIfOneExists
-  std::cout << "Transform parameters are " << transform << std::endl;
 
-  std::cout << "After creating the ThinShellDemonsMetricv4 " << std::endl;
 
-  // Scales estimator
-  using ScalesType = itk::RegistrationParameterScalesFromPhysicalShift<PointSetMetricType>;
-  ScalesType::Pointer shiftScaleEstimator = ScalesType::New();
-  shiftScaleEstimator->SetMetric(metric);
-  // Needed with pointset metrics
-  shiftScaleEstimator->SetVirtualDomainPointSet(metric->GetVirtualTransformedPointSet());
+  
+//   using PointSetMetricType = itk::ThinShellDemonsMetricv4<MeshType, MeshType>;
+//   PointSetMetricType::Pointer metric = PointSetMetricType::New();
+//   metric->SetStretchWeight(1);
+//   metric->SetBendWeight(5);
+//   metric->SetGeometricFeatureWeight(10);
+//   metric->UseConfidenceWeightingOn();
+//   metric->UseMaximalDistanceConfidenceSigmaOn();
+//   metric->UpdateFeatureMatchingAtEachIterationOff();
+//   metric->SetMovingTransform(transform);
+//   // Reversed due to using points instead of an image
+//   // to keep semantics the same as in itkThinShellDemonsTest.cxx
+//   // For the ThinShellDemonsMetricv4 the fixed mesh is
+//   // regularized
+//   metric->SetFixedPointSet(movingMesh);
+//   metric->SetMovingPointSet(fixedMesh);
+//   metric->SetVirtualDomainFromImage(fixedImage);
+//   metric->Initialize();
+
+//   // movingMesh->GetAssignedCellBoundaryIfOneExists
+//   std::cout << "Transform parameters are " << transform << std::endl;
+
+//   std::cout << "After creating the ThinShellDemonsMetricv4 " << std::endl;
+
+//   // Scales estimator
+//   using ScalesType = itk::RegistrationParameterScalesFromPhysicalShift<PointSetMetricType>;
+//   ScalesType::Pointer shiftScaleEstimator = ScalesType::New();
+//   shiftScaleEstimator->SetMetric(metric);
+//   // Needed with pointset metrics
+//   shiftScaleEstimator->SetVirtualDomainPointSet(metric->GetVirtualTransformedPointSet());
   
 
-  // optimizer
+//   // optimizer
 
-  // Does currently not support scaling
-  // but change requested in:
-  // https://github.com/InsightSoftwareConsortium/ITK/pull/2372
-  /*
-  typedef itk::LBFGS2Optimizerv4 OptimizerType;
-  OptimizerType::Pointer optimizer = OptimizerType::New();
-  optimizer->SetScalesEstimator( shiftScaleEstimator );
-*/
-  typedef itk::ConjugateGradientLineSearchOptimizerv4 OptimizerType;
-  OptimizerType::Pointer                              optimizer = OptimizerType::New();
-  optimizer->SetNumberOfIterations(50);
-  optimizer->SetScalesEstimator(shiftScaleEstimator);
-  optimizer->SetMaximumStepSizeInPhysicalUnits(0.5);
-  optimizer->SetMinimumConvergenceValue(0.0);
-  optimizer->SetConvergenceWindowSize(10);
+//   // Does currently not support scaling
+//   // but change requested in:
+//   // https://github.com/InsightSoftwareConsortium/ITK/pull/2372
+//   /*
+//   typedef itk::LBFGS2Optimizerv4 OptimizerType;
+//   OptimizerType::Pointer optimizer = OptimizerType::New();
+//   optimizer->SetScalesEstimator( shiftScaleEstimator );
+// */
+//   typedef itk::ConjugateGradientLineSearchOptimizerv4 OptimizerType;
+//   OptimizerType::Pointer                              optimizer = OptimizerType::New();
+//   optimizer->SetNumberOfIterations(50);
+//   optimizer->SetScalesEstimator(shiftScaleEstimator);
+//   optimizer->SetMaximumStepSizeInPhysicalUnits(0.5);
+//   optimizer->SetMinimumConvergenceValue(0.0);
+//   optimizer->SetConvergenceWindowSize(10);
 
-  using CommandType = CommandIterationUpdate<OptimizerType>;
-  CommandType::Pointer observer = CommandType::New();
-  optimizer->AddObserver(itk::IterationEvent(), observer);
+//   using CommandType = CommandIterationUpdate<OptimizerType>;
+//   CommandType::Pointer observer = CommandType::New();
+//   optimizer->AddObserver(itk::IterationEvent(), observer);
 
-  using AffineRegistrationType =
-    itk::ImageRegistrationMethodv4<FixedImageType, MovingImageType, TransformType, FixedImageType, MeshType>;
-  AffineRegistrationType::Pointer registration = AffineRegistrationType::New();
-  registration->SetNumberOfLevels(1);
-  registration->SetObjectName("registration");
-  registration->SetFixedPointSet(movingMesh);
-  registration->SetMovingPointSet(fixedMesh);
-  registration->SetInitialTransform(transform);
-  registration->SetMetric(metric);
-  registration->SetOptimizer(optimizer);
+//   using AffineRegistrationType =
+//     itk::ImageRegistrationMethodv4<FixedImageType, MovingImageType, TransformType, FixedImageType, TriangleMeshType>;
+//   AffineRegistrationType::Pointer registration = AffineRegistrationType::New();
+//   registration->SetNumberOfLevels(1);
+//   registration->SetObjectName("registration");
+//   registration->SetFixedPointSet(movingMesh);
+//   registration->SetMovingPointSet(fixedMesh);
+//   registration->SetInitialTransform(transform);
+//   registration->SetMetric(metric);
+//   registration->SetOptimizer(optimizer);
 
-  std::cout << "Start Value= " << metric->GetValue() << std::endl;
-  try{
-    registration->Update();
-  }
-  catch (itk::ExceptionObject & e){
-    std::cerr << "Exception caught: " << e << std::endl;
-    return EXIT_FAILURE;
-  }
+//   std::cout << "Start Value= " << metric->GetValue() << std::endl;
+//   try{
+//     registration->Update();
+//   }
+//   catch (itk::ExceptionObject & e){
+//     std::cerr << "Exception caught: " << e << std::endl;
+//     return EXIT_FAILURE;
+//   }
 
-  TransformType::Pointer tx = registration->GetModifiableTransform();
-  metric->SetTransform(tx);
-  std::cout << "Solution Value= " << metric->GetValue() << std::endl;
+//   TransformType::Pointer tx = registration->GetModifiableTransform();
+//   metric->SetTransform(tx);
+//   std::cout << "Solution Value= " << metric->GetValue() << std::endl;
 
 
-  for (unsigned int n = 0; n < movingMesh->GetNumberOfPoints(); n++)
-  {
-    MeshType::PointType txMovingPoint = tx->TransformPoint(movingMesh->GetPoint(n));
-    movingMesh->SetPoint(n, txMovingPoint);
-  }
+//   for (unsigned int n = 0; n < movingMesh->GetNumberOfPoints(); n++)
+//   {
+//     TriangleMeshType::PointType txMovingPoint = tx->TransformPoint(movingMesh->GetPoint(n));
+//     movingMesh->SetPoint(n, txMovingPoint);
+//   }
 
-  WriterType::Pointer writer = WriterType::New();
-  writer->SetInput(movingMesh);
-  writer->SetFileName("affineMovingMesh.vtk");
-  writer->Update();
+//   WriterType::Pointer writer = WriterType::New();
+//   writer->SetInput(movingMesh);
+//   writer->SetFileName("affineMovingMesh.vtk");
+//   writer->Update();
+
   return EXIT_SUCCESS;
 }
