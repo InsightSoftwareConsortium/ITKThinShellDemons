@@ -37,6 +37,8 @@
 
 #include <itkSimplexMesh.h>
 #include <itkTriangleMeshToSimplexMeshFilter.h>
+#include <itkSimplexMeshAdaptTopologyFilter.h>
+#include <itkRegularSphereMeshSource.h>
 
 template <typename TFilter>
 class CommandIterationUpdate : public itk::Command
@@ -83,7 +85,13 @@ itkThinShellDemonsTestv4_Affine(int args, char ** argv)
   using PointType = float;
   using CoordType = float;
 
-  using MeshType = itk::Mesh<PointType, 3>;
+  using TriangleMeshTraits = itk::DefaultDynamicMeshTraits<float, 3, 3, float, float>;
+  using TriangleMeshTraitsStatic = itk::DefaultStaticMeshTraits<float, 3, 3, float, float>;
+
+  using SimplexMeshTraits = itk::DefaultDynamicMeshTraits<float, 3, 3, float, float>;
+  using SimplexMeshTraitsStatic = itk::DefaultStaticMeshTraits<float, 3, 3, float, float>;
+
+  using MeshType = itk::Mesh<PointType, 3, TriangleMeshTraitsStatic>;
 
   using PointsContainerPointer = MeshType::PointsContainerPointer;
   
@@ -121,7 +129,7 @@ itkThinShellDemonsTestv4_Affine(int args, char ** argv)
   }
   MeshType::Pointer fixedMesh = fixedPolyDataReader->GetOutput();
 
-  printf("Pranjal fixedMesh Reading Done Testting Change done\n");
+  printf("Pranjal fixedMesh Reading Done Testing Change done\n");
   /*
   Initialize moving mesh polydata reader
   */
@@ -161,15 +169,130 @@ itkThinShellDemonsTestv4_Affine(int args, char ** argv)
     }
   }
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  // Declare the type of the input and output mesh
+  using TriangleMeshType = itk::Mesh<float, 3, TriangleMeshTraits>;
+  using SimplexMeshType = itk::SimplexMesh<float, 3, SimplexMeshTraits>;
+
+  // declare triangle mesh source
+  using SphereMeshSourceType = itk::RegularSphereMeshSource<TriangleMeshType>;
+  using sPointType = SphereMeshSourceType::PointType;
+  using VectorType = SphereMeshSourceType::VectorType;
+
+  // declare the triangle to simplex mesh filter
+  using SimplexFilterType = itk::TriangleMeshToSimplexMeshFilter<TriangleMeshType, SimplexMeshType>;
+
+  SphereMeshSourceType::Pointer mySphereMeshSource = SphereMeshSourceType::New();
+  sPointType                     center;
+  center.Fill(10);
+  sPointType::ValueType scaleInit[3] = { 3, 3, 3 };
+  VectorType           scale = scaleInit;
+
+  mySphereMeshSource->SetCenter(center);
+  mySphereMeshSource->SetResolution(2);
+  mySphereMeshSource->SetScale(scale);
+
+  std::cout << "Triangle mesh created. " << std::endl;
+
+  SimplexFilterType::Pointer simplexFilter = SimplexFilterType::New();
+  simplexFilter->SetInput(mySphereMeshSource->GetOutput());
+  simplexFilter->Update();
+
+  SimplexMeshType::Pointer simplexMesh = simplexFilter->GetOutput();
+  simplexMesh->DisconnectPipeline();
+
+  std::cout << "Simplex Mesh Created : " << simplexMesh << std::endl;
+
+  for (unsigned int n = 0; n < simplexMesh->GetNumberOfPoints(); n++)
+  {
+    SimplexMeshType::PointIdentifier id1 = n;
+    SimplexMeshType::PixelType point_data = n;
+    
+    simplexMesh->SetPointData(id1, point_data);
+    simplexMesh->GetPointData(id1, &point_data);
+    
+    std::cout << n << " " << simplexMesh->GetPoint(id1) << " : " << point_data << std::endl;
+  }
+  
+  // simplexPointDataContainer simplexMeshPoints = simplexMesh->GetPointData()->Begin();
+  // simplexPointDataContainer simplexMeshPoints = simplexMesh->GetPointData()->End();
+  /*
+  PointDataIterator end = pointData2->End();
+  while (pointDataIterator != end)
+  {
+    PixelType p = pointDataIterator.Value(); // access the pixel data
+    std::cout << p << std::endl;             // print the pixel data
+    ++pointDataIterator;                     // advance to next pixel/point
+  }
+ */
+  // for (unsigned int n = 0; n < simplexMesh->GetNumberOfPoints(); n++)
+  // {
+  //   SimplexMeshType::PointIdentifier id1 = n;
+  //   SimplexMeshType::PixelType point_data;
+  //   //TriangleMeshType::PointType txMovingPoint = simplexMesh->GetPoint(n);
+  //    //TriangleMeshType::GetPointData txMovingPoint = simplexMesh->GetPointData(n);
+  //   simplexMesh->GetPointData(id1, &point_data);
+  //   std::cout << n << " : " << point_data << std::endl;
+  // }
+
+
+  using FilterType = itk::SimplexMeshAdaptTopologyFilter<SimplexMeshType, SimplexMeshType>;
+  FilterType::Pointer filter = FilterType::New();
+  filter->SetInput(simplexMesh);
+  filter->Update();
+  filter->Print(std::cout);
+
+  std::cout << "[TEST DONE]" << std::endl;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
   // Convert the triangle mesh to a simplex mesh.
   TConvert::Pointer convert = TConvert::New();
   convert->SetInput(movingMesh);
   convert->Update();
 
   TSimplex::Pointer simplex_output = convert->GetOutput();
+  simplex_output->DisconnectPipeline();
+
+  //std::cout << "Pranjal simplex output is " << simplex_output << std::endl;
   
-  std::cout << "Pranjal simplex output is " << simplex_output << std::endl;
-  
+  //using FilterType = itk::SimplexMeshAdaptTopologyFilter<TSimplex, TSimplex>;
+  //FilterType::Pointer filter = FilterType::New();
+  //filter->SetInput(simplex_output);
+  //filter->Update();
+  //filter->Print(std::cout);
+
+  //TSimplex::Pointer simplex_mesh_adapt = filter->GetOutput();
+  //std::cout << "Pranjal simplex output SimplexMeshAdaptTopologyFilter done " << simplex_mesh_adapt << std::endl;
+  std::cout << "Pranjal simplex output SimplexMeshAdaptTopologyFilter done " << simplex_output << std::endl;
+
   /* For calculating itkDiscreteGaussianCurvatureQuadEdgeMeshFilterTest */
   
   qe_reader->SetFileName(argv[2]);
@@ -180,7 +303,6 @@ itkThinShellDemonsTestv4_Affine(int args, char ** argv)
   qe_reader->Update();
   QEMeshType::Pointer qe_fixed_mesh = qe_reader->GetOutput();
 
-
   CurvatureFilterType::Pointer gaussian_curvature = CurvatureFilterType::New();
   gaussian_curvature->SetInput(qe_fixed_mesh);
   gaussian_curvature->Update();
@@ -189,7 +311,7 @@ itkThinShellDemonsTestv4_Affine(int args, char ** argv)
   std::cout << "Pranjal Gaussian curvature output number of points " << output->GetNumberOfPoints() << std::endl;
   QEPointsContainerPointer qe_points = qe_moving_mesh->GetPoints();
 
-  std::cout << "Pranjal got the qe_points " << qe_points << std::endl;
+  // std::cout << "Pranjal got the qe_points " << qe_points << std::endl;
 
   //qe_points->
 
@@ -227,7 +349,7 @@ itkThinShellDemonsTestv4_Affine(int args, char ** argv)
   std::cout << "Pranjal count of points in the movingMesh quadedge " << movingMesh->GetNumberOfPoints() << std::endl;
   
   std::cout << "PointsContainerPointer is " << points << std::endl;
-  std::cout << "QEPointsContainerPointer is " << qe_points1 << std::endl;
+  //std::cout << "QEPointsContainerPointer is " << qe_points1 << std::endl;
 
   boundingBox->SetPoints(points);
   boundingBox->ComputeBoundingBox();
