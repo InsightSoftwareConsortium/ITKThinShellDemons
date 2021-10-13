@@ -94,8 +94,9 @@ itkThinShellDemonsTestv4_Affine(int args, char ** argv)
 
   // Declare the type of the input and output mesh
   using MeshType = itk::Mesh<float, 3>;
-  using TriangleMeshType = itk::Mesh<float, 3, TriangleMeshTraits>;
-  
+  using TriangleMeshType = itk::Mesh<float, 3, TriangleMeshTraitsStatic>;
+  using TrianglePointsContainerPointer = TriangleMeshType::PointsContainerPointer;
+
   using ReaderType = itk::MeshFileReader<TriangleMeshType>;
   using WriterType = itk::MeshFileWriter<TriangleMeshType>;
 
@@ -368,20 +369,9 @@ itkThinShellDemonsTestv4_Affine(int args, char ** argv)
   using PointIdentifier = TriangleMeshType::PointIdentifier;
   using BoundingBoxType = itk::BoundingBox<PointIdentifier, Dimension>;
   BoundingBoxType::Pointer boundingBox = BoundingBoxType::New();
-
-
-  //PointsContainerPointer   points = movingMesh->GetPoints();
-  QEPointsContainerPointer   qe_points1 = qe_moving_mesh->GetPoints();
-  
-  //qe_moving_mesh->GetPoin
-  //movingMesh->
-  std::cout << "Pranjal count of points in the movingMesh quadedge " << movingMesh->GetNumberOfPoints() << std::endl;
-  
-  //std::cout << "PointsContainerPointer is " << points << std::endl;
-  //std::cout << "QEPointsContainerPointer is " << qe_points1 << std::endl;
-
-  //boundingBox->SetPoints(points);
-  //boundingBox->ComputeBoundingBox();
+  TrianglePointsContainerPointer points = movingMesh->GetPoints();
+  boundingBox->SetPoints(points);
+  boundingBox->ComputeBoundingBox();
 
   typename BoundingBoxType::PointType minBounds = boundingBox->GetMinimum();
   typename BoundingBoxType::PointType maxBounds = boundingBox->GetMaximum();
@@ -416,23 +406,23 @@ itkThinShellDemonsTestv4_Affine(int args, char ** argv)
 
 
   
-//   using PointSetMetricType = itk::ThinShellDemonsMetricv4<MeshType, MeshType>;
-//   PointSetMetricType::Pointer metric = PointSetMetricType::New();
-//   metric->SetStretchWeight(1);
-//   metric->SetBendWeight(5);
-//   metric->SetGeometricFeatureWeight(10);
-//   metric->UseConfidenceWeightingOn();
-//   metric->UseMaximalDistanceConfidenceSigmaOn();
-//   metric->UpdateFeatureMatchingAtEachIterationOff();
-//   metric->SetMovingTransform(transform);
-//   // Reversed due to using points instead of an image
-//   // to keep semantics the same as in itkThinShellDemonsTest.cxx
-//   // For the ThinShellDemonsMetricv4 the fixed mesh is
-//   // regularized
-//   metric->SetFixedPointSet(movingMesh);
-//   metric->SetMovingPointSet(fixedMesh);
-//   metric->SetVirtualDomainFromImage(fixedImage);
-//   metric->Initialize();
+  using PointSetMetricType = itk::ThinShellDemonsMetricv4<MeshType, MeshType>;
+  PointSetMetricType::Pointer metric = PointSetMetricType::New();
+  metric->SetStretchWeight(1);
+  metric->SetBendWeight(5);
+  metric->SetGeometricFeatureWeight(10);
+  metric->UseConfidenceWeightingOn();
+  metric->UseMaximalDistanceConfidenceSigmaOn();
+  metric->UpdateFeatureMatchingAtEachIterationOff();
+  metric->SetMovingTransform(transform);
+  // Reversed due to using points instead of an image
+  // to keep semantics the same as in itkThinShellDemonsTest.cxx
+  // For the ThinShellDemonsMetricv4 the fixed mesh is
+  // regularized
+  metric->SetFixedPointSet(movingMesh);
+  metric->SetMovingPointSet(fixedMesh);
+  metric->SetVirtualDomainFromImage(fixedImage);
+  metric->Initialize();
 
 //   // movingMesh->GetAssignedCellBoundaryIfOneExists
 //   std::cout << "Transform parameters are " << transform << std::endl;
