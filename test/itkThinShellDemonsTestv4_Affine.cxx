@@ -35,6 +35,7 @@
 #include "itkMeshFileReader.h"
 #include "itkMeshFileWriter.h"
 
+#include "itkTriangleCell.h"
 #include <itkSimplexMesh.h>
 #include <itkTriangleMeshToSimplexMeshFilter.h>
 #include <itkSimplexMeshAdaptTopologyFilter.h>
@@ -94,9 +95,7 @@ itkThinShellDemonsTestv4_Affine(int args, char ** argv)
   // Declare the type of the input and output mesh
   using MeshType = itk::Mesh<float, 3>;
   using TriangleMeshType = itk::Mesh<float, 3, TriangleMeshTraits>;
-  using SimplexMeshType = itk::SimplexMesh<float, 3, SimplexMeshTraits>;
-
-
+  
   using ReaderType = itk::MeshFileReader<TriangleMeshType>;
   using WriterType = itk::MeshFileWriter<TriangleMeshType>;
 
@@ -155,21 +154,21 @@ itkThinShellDemonsTestv4_Affine(int args, char ** argv)
   std::cout << "Fixed mesh points count " << fixedMesh->GetNumberOfPoints() << std::endl;
   std::cout << "Moving mesh points count " << movingMesh->GetNumberOfPoints() << std::endl;
 
-  using TConvert = itk::TriangleMeshToSimplexMeshFilter<TriangleMeshType, SimplexMeshType>;
+  // using TConvert = itk::TriangleMeshToSimplexMeshFilter<TriangleMeshType, SimplexMeshType>;
 
-  // Ensure that all cells of the mesh are triangles.
-  for (TriangleMeshType::CellsContainerIterator it = movingMesh->GetCells()->Begin();
-       it != movingMesh->GetCells()->End();
-       ++it)
-  {
-    TriangleMeshType::CellAutoPointer cell;
-    movingMesh->GetCell(it->Index(), cell);
-    if (3 != cell->GetNumberOfPoints())
-    {
-      std::cerr << "ERROR: All cells must be trianglar." << std::endl;
-      return EXIT_FAILURE;
-    }
-  }
+  // // Ensure that all cells of the mesh are triangles.
+  // for (TriangleMeshType::CellsContainerIterator it = movingMesh->GetCells()->Begin();
+  //      it != movingMesh->GetCells()->End();
+  //      ++it)
+  // {
+  //   TriangleMeshType::CellAutoPointer cell;
+  //   movingMesh->GetCell(it->Index(), cell);
+  //   if (3 != cell->GetNumberOfPoints())
+  //   {
+  //     std::cerr << "ERROR: All cells must be trianglar." << std::endl;
+  //     return EXIT_FAILURE;
+  //   }
+  // }
 
 
 
@@ -189,42 +188,26 @@ itkThinShellDemonsTestv4_Affine(int args, char ** argv)
   
   
   // declare the triangle to simplex mesh filter
-  using SimplexFilterType = itk::TriangleMeshToSimplexMeshFilter<TriangleMeshType, SimplexMeshType>;
+  // using SimplexFilterType = itk::TriangleMeshToSimplexMeshFilter<TriangleMeshType, SimplexMeshType>;
 
-  SimplexFilterType::Pointer simplexFilter = SimplexFilterType::New();
-  simplexFilter->SetInput(movingMesh);
-  simplexFilter->Update();
-
-  SimplexMeshType::Pointer simplexMesh = simplexFilter->GetOutput();
-  simplexMesh->DisconnectPipeline();
-
-  std::cout << "before movingMesh Created : " << movingMesh->GetNumberOfPoints() << std::endl;
-  std::cout << "Simplex Mesh Created : " << simplexMesh->GetNumberOfPoints() << std::endl;
-
-  using simplexGeometryMapPointer = typename SimplexMeshType::GeometryMapPointer;
-  using simplexGeometryMapIterator = typename SimplexMeshType::GeometryMapIterator;
- 
-  simplexGeometryMapPointer  geometryMap = simplexMesh->GetGeometryData();
-  simplexGeometryMapIterator pointDataIterator = geometryMap->Begin();
-  simplexGeometryMapIterator pointDataEnd = geometryMap->End();
-
-  int i = 0;
-  std::cout << "Simplex Mesh geometry" << std::endl;
-
-
-  for (unsigned int n = 0; n < simplexMesh->GetNumberOfPoints(); n++)
-  {
-    SimplexMeshType::PointIdentifier id1 = n;
-    SimplexMeshType::PixelType point_data = n;
-    SimplexMeshType::PixelType point_data1;
+  // SimplexFilterType::Pointer simplexFilter = SimplexFilterType::New();
+  // simplexFilter->SetInput(movingMesh);
+  // simplexFilter->Update();
+  // std::cout << "before movingMesh Created : " << movingMesh->GetNumberOfPoints() << std::endl;
+  // int i = 0;
+  // for (unsigned int n = 0; n < simplexMesh->GetNumberOfPoints(); n++)
+  // {
+  //   SimplexMeshType::PointIdentifier id1 = n;
+  //   SimplexMeshType::PixelType point_data = n;
+  //   SimplexMeshType::PixelType point_data1;
     
-    simplexMesh->SetPointData(id1, point_data);
-    simplexMesh->GetPointData(id1, &point_data1);
+  //   simplexMesh->SetPointData(id1, point_data);
+  //   simplexMesh->GetPointData(id1, &point_data1);
     
-    //std::cout << n << " " << simplexMesh->GetPoint(id1) << " : " << point_data1 << " " << simplexMesh->GetMeanCurvature(id1) << std::endl;
-    //geometryMap->GetElement(id1)->ComputeGeometry();
-    //std::cout << n << " " << geometryMap->GetElement(id1)->pos << std::endl;
-  }
+  //   //std::cout << n << " " << simplexMesh->GetPoint(id1) << " : " << point_data1 << " " << simplexMesh->GetMeanCurvature(id1) << std::endl;
+  //   //geometryMap->GetElement(id1)->ComputeGeometry();
+  //   //std::cout << n << " " << geometryMap->GetElement(id1)->pos << std::endl;
+  // }
 
   // SimplexMeshType::CellsContainerPointer cells = simplexMesh->GetCells();
 
@@ -255,6 +238,60 @@ itkThinShellDemonsTestv4_Affine(int args, char ** argv)
 
   std::cout << "[TEST DONE]" << std::endl;
   
+
+
+
+
+
+  /* Creating QuadEdgeMesh from Triangle Mesh by inserting points and cells one by one*/
+
+  using Traits = itk::QuadEdgeMeshExtendedTraits<CoordType, Dimension, 2, CoordType, CoordType, CoordType, bool, bool>;
+  using QEMeshType = itk::QuadEdgeMesh<CoordType, Dimension, Traits>;
+  using QEPointsContainerPointer = QEMeshType::PointsContainerPointer;
+
+  QEMeshType::Pointer qe_mesh = QEMeshType::New();
+
+  std::cout << "Pranjal Number of points in the QE Mesh Before " << qe_mesh->GetNumberOfPoints() << ::endl;
+  for (unsigned int n = 0; n < movingMesh->GetNumberOfPoints(); n++)
+  {
+    TriangleMeshType::PointIdentifier point_id = n;
+    QEMeshType::PointType point = movingMesh->GetPoint(point_id);
+
+    QEMeshType::PointIdentifier id1 = n;
+    qe_mesh->SetPoint(id1, point);
+  }
+  std::cout << "Pranjal Number of points in the QE Mesh After " << qe_mesh->GetNumberOfPoints() << ::endl;
+
+  std::cout << "Pranjal Number of cells in the QE Mesh Before " << qe_mesh->GetNumberOfCells() << ::endl;
+  for (unsigned int n = 0; n < movingMesh->GetNumberOfCells(); n++)
+  {
+    TriangleMeshType::CellIdentifier cell_id = n;
+    TriangleMeshType::CellAutoPointer tri_cell;
+    movingMesh->GetCell(cell_id, tri_cell);
+
+    using CellType = typename QEMeshType::CellType;
+    using TriangleCellType = itk::TriangleCell<CellType>;
+    using TriangleCellAutoPointer = typename TriangleCellType::SelfAutoPointer;
+
+
+    /* Creating a QE Cell from the Triangle Cell and inserting it into the QEMesh*/
+    auto * triangleCell = new TriangleCellType;
+    QEMeshType::CellAutoPointer qe_cell;
+
+    itk::Array<float> point_ids = tri_cell->GetPointIdsContainer();
+    for (unsigned int k = 0; k < 3; ++k)
+    {
+      triangleCell->SetPointId(k, point_ids[k]);
+    }
+
+    QEMeshType::CellIdentifier qe_cell_id = n;
+    qe_cell.TakeOwnership(triangleCell);
+    qe_mesh->SetCell(qe_cell_id, qe_cell);
+
+  }
+  std::cout << "Pranjal Number of cells in the QE Mesh After " << qe_mesh->GetNumberOfCells() << ::endl;
+
+
   // SimplexMeshType::Pointer simplexMeshAdapted = filter->GetOutput(); 
 
   // std::cout << "Simplex Mesh Created : " << simplexMeshAdapted->GetNumberOfPoints() << std::endl;
