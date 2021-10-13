@@ -18,7 +18,7 @@
 #include <cstdlib>
 
 //#include "itkVTKPolyDataReader.h"
-//#include "itkVTKPolyDataWriter.h"
+#include "itkVTKPolyDataWriter.h"
 
 #include "itkCommand.h"
 #include "itkThinShellDemonsMetricv4.h"
@@ -103,6 +103,7 @@ itkThinShellDemonsTestv4_Affine(int args, char ** argv)
   using Traits = itk::QuadEdgeMeshExtendedTraits<CoordType, Dimension, 2, CoordType, CoordType, CoordType, bool, bool>;
   using QEMeshType = itk::QuadEdgeMesh<CoordType, Dimension, Traits>;
   using QEPointsContainerPointer = QEMeshType::PointsContainerPointer;
+  using QEWriterType = itk::MeshFileWriter<QEMeshType>;
 
   using CurvatureFilterType = itk::DiscreteGaussianCurvatureQuadEdgeMeshFilter<QEMeshType, QEMeshType>;
   using QEReaderType = itk::MeshFileReader<QEMeshType>;
@@ -220,37 +221,45 @@ itkThinShellDemonsTestv4_Affine(int args, char ** argv)
     simplexMesh->SetPointData(id1, point_data);
     simplexMesh->GetPointData(id1, &point_data1);
     
-    std::cout << n << " " << simplexMesh->GetPoint(id1) << " : " << point_data1 << " " << simplexMesh->GetMeanCurvature(id1) << std::endl;
+    //std::cout << n << " " << simplexMesh->GetPoint(id1) << " : " << point_data1 << " " << simplexMesh->GetMeanCurvature(id1) << std::endl;
     //geometryMap->GetElement(id1)->ComputeGeometry();
-    std::cout << n << " " << geometryMap->GetElement(id1)->pos << std::endl;
+    //std::cout << n << " " << geometryMap->GetElement(id1)->pos << std::endl;
   }
 
+  // SimplexMeshType::CellsContainerPointer cells = simplexMesh->GetCells();
 
-
-
-  using FilterType = itk::SimplexMeshAdaptTopologyFilter<SimplexMeshType, SimplexMeshType>;
-  FilterType::Pointer filter = FilterType::New();
-  filter->SetInput(simplexMesh);
-  filter->Update();
-  //filter->Print(std::cout);
-
-  std::cout << "[TEST DONE]" << std::endl;
-  
-  SimplexMeshType::Pointer simplexMeshAdapted = filter->GetOutput(); 
-
-  std::cout << "Simplex Mesh Created : " << simplexMeshAdapted->GetNumberOfPoints() << std::endl;
-
-  
-  // for (unsigned int n = 0; n < simplexMeshAdapted->GetNumberOfPoints(); n++)
+  // for (unsigned int n = 0; n < simplexMesh->GetNumberOfCells(); n++)
   // {
-  //   SimplexMeshType::PointIdentifier id1 = n;
-  //   std::cout << n << " " << simplexMeshAdapted->GetPoint(id1) << " : " << simplexMeshAdapted->GetMeanCurvature(id1) << std::endl;
+  //   SimplexMeshType::CellIdentifier id1 = n;
+  //   itk::Array<float> point_ids = cells->GetElement(id1)->GetPointIdsContainer();
+
+  //   //std::cout << "Points are :" << std::endl;
+  //   for (unsigned int k = 0; k < point_ids.GetSize(); k++){
+  //     SimplexMeshType::PointIdentifier id2 = k;
+  //     //std::cout << point_ids[k] << " " << simplexMesh->GetMeanCurvature(id2) << ", ";
+  //   }
+  //   //std::cout << "--------------------" << std::endl;
+  //   //simplexMesh->GetCell(id1, &cell_data);
+  //   //std::cout << n << " " << simplexMesh->GetPoint(id1) << " : " << point_data1 << " " << simplexMesh->GetMeanCurvature(id1) << std::endl;
+  //   //geometryMap->GetElement(id1)->ComputeGeometry();
+  //   //std::cout << n << " " << geometryMap->GetElement(id1)->pos << std::endl;
   // }
 
 
 
+  // using FilterType = itk::SimplexMeshAdaptTopologyFilter<SimplexMeshType, SimplexMeshType>;
+  // FilterType::Pointer filter = FilterType::New();
+  // filter->SetInput(simplexMesh);
+  // filter->Update();
+  // //filter->Print(std::cout);
 
+  std::cout << "[TEST DONE]" << std::endl;
+  
+  // SimplexMeshType::Pointer simplexMeshAdapted = filter->GetOutput(); 
 
+  // std::cout << "Simplex Mesh Created : " << simplexMeshAdapted->GetNumberOfPoints() << std::endl;
+
+  
 
 
 
@@ -260,12 +269,12 @@ itkThinShellDemonsTestv4_Affine(int args, char ** argv)
 
 
   // Convert the triangle mesh to a simplex mesh.
-  TConvert::Pointer convert = TConvert::New();
-  convert->SetInput(movingMesh);
-  convert->Update();
+  // TConvert::Pointer convert = TConvert::New();
+  // convert->SetInput(movingMesh);
+  // convert->Update();
 
-  SimplexMeshType::Pointer simplex_output = convert->GetOutput();
-  simplex_output->DisconnectPipeline();
+  // SimplexMeshType::Pointer simplex_output = convert->GetOutput();
+  // simplex_output->DisconnectPipeline();
 
   //std::cout << "Pranjal simplex output is " << simplex_output << std::endl;
   
@@ -277,7 +286,7 @@ itkThinShellDemonsTestv4_Affine(int args, char ** argv)
 
   //TSimplex::Pointer simplex_mesh_adapt = filter->GetOutput();
   //std::cout << "Pranjal simplex output SimplexMeshAdaptTopologyFilter done " << simplex_mesh_adapt << std::endl;
-  std::cout << "Pranjal simplex output SimplexMeshAdaptTopologyFilter done " << simplex_output << std::endl;
+  //std::cout << "Pranjal simplex output SimplexMeshAdaptTopologyFilter done " << simplex_output << std::endl;
 
   /* For calculating itkDiscreteGaussianCurvatureQuadEdgeMeshFilterTest */
   
@@ -297,21 +306,17 @@ itkThinShellDemonsTestv4_Affine(int args, char ** argv)
   std::cout << "Pranjal Gaussian curvature output number of points " << output->GetNumberOfPoints() << std::endl;
   QEPointsContainerPointer qe_points = qe_moving_mesh->GetPoints();
 
-  // std::cout << "Pranjal got the qe_points " << qe_points << std::endl;
 
-  //qe_points->
-
-
-
-  //simpleMeshType::Pointer simpleMovingMesh = movingMesh;
-
-  /*
-  WriterType::Pointer  PolyDataWriter = WriterType::New();
-
-  PolyDataWriter->SetFileName("./mesh.vtk");
-  PolyDataWriter->SetInput(movingPolyDataReader->GetOutput());
+  QEWriterType::Pointer  PolyDataWriter = QEWriterType::New();
+  PolyDataWriter->SetFileName("./qe_curvature_mesh.vtk");
+  PolyDataWriter->SetInput(output);
   PolyDataWriter->Update();
- */
+  
+  PolyDataWriter->SetFileName("./qe_fixed_mesh.vtk");
+  PolyDataWriter->SetInput(qe_fixed_mesh);
+  PolyDataWriter->Update();
+  
+
 
   using PixelType = double;
   using FixedImageType = itk::Image<PixelType, Dimension>;
