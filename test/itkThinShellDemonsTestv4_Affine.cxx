@@ -94,11 +94,10 @@ itkThinShellDemonsTestv4_Affine(int args, char ** argv)
 
   // Declare the type of the input and output mesh
   using MeshType = itk::Mesh<float, 3>;
-  using TriangleMeshType = itk::Mesh<float, 3, TriangleMeshTraitsStatic>;
-  using TrianglePointsContainerPointer = TriangleMeshType::PointsContainerPointer;
+  using PointsContainerPointer = MeshType::PointsContainerPointer;
 
-  using ReaderType = itk::MeshFileReader<TriangleMeshType>;
-  using WriterType = itk::MeshFileWriter<TriangleMeshType>;
+  using ReaderType = itk::MeshFileReader<MeshType>;
+  using WriterType = itk::MeshFileWriter<MeshType>;
 
   using Traits = itk::QuadEdgeMeshExtendedTraits<CoordType, Dimension, 2, CoordType, CoordType, CoordType, bool, bool>;
   using QEMeshType = itk::QuadEdgeMesh<CoordType, Dimension, Traits>;
@@ -129,7 +128,7 @@ itkThinShellDemonsTestv4_Affine(int args, char ** argv)
     std::cerr << excp << std::endl;
     return EXIT_FAILURE;
   }
-  TriangleMeshType::Pointer fixedMesh = fixedPolyDataReader->GetOutput();
+  MeshType::Pointer fixedMesh = fixedPolyDataReader->GetOutput();
 
   /*
   Initialize moving mesh polydata reader
@@ -149,7 +148,7 @@ itkThinShellDemonsTestv4_Affine(int args, char ** argv)
     return EXIT_FAILURE;
   }
 
-  TriangleMeshType::Pointer movingMesh = movingPolyDataReader->GetOutput();
+  MeshType::Pointer movingMesh = movingPolyDataReader->GetOutput();
 
 
   std::cout << "Fixed mesh points count " << fixedMesh->GetNumberOfPoints() << std::endl;
@@ -255,7 +254,7 @@ itkThinShellDemonsTestv4_Affine(int args, char ** argv)
   std::cout << "Pranjal Number of points in the QE Mesh Before " << qe_mesh->GetNumberOfPoints() << ::endl;
   for (unsigned int n = 0; n < movingMesh->GetNumberOfPoints(); n++)
   {
-    TriangleMeshType::PointIdentifier point_id = n;
+    MeshType::PointIdentifier point_id = n;
     QEMeshType::PointType point = movingMesh->GetPoint(point_id);
 
     QEMeshType::PointIdentifier id1 = n;
@@ -266,8 +265,8 @@ itkThinShellDemonsTestv4_Affine(int args, char ** argv)
   std::cout << "Pranjal Number of cells in the QE Mesh Before " << qe_mesh->GetNumberOfCells() << ::endl;
   for (unsigned int n = 0; n < movingMesh->GetNumberOfCells(); n++)
   {
-    TriangleMeshType::CellIdentifier cell_id = n;
-    TriangleMeshType::CellAutoPointer tri_cell;
+    MeshType::CellIdentifier cell_id = n;
+    MeshType::CellAutoPointer tri_cell;
     movingMesh->GetCell(cell_id, tri_cell);
 
     using CellType = typename QEMeshType::CellType;
@@ -366,10 +365,10 @@ itkThinShellDemonsTestv4_Affine(int args, char ** argv)
   FixedImageType::DirectionType fixedImageDirection;
   FixedImageType::SpacingType   fixedImageSpacing;
 
-  using PointIdentifier = TriangleMeshType::PointIdentifier;
+  using PointIdentifier = MeshType::PointIdentifier;
   using BoundingBoxType = itk::BoundingBox<PointIdentifier, Dimension>;
   BoundingBoxType::Pointer boundingBox = BoundingBoxType::New();
-  TrianglePointsContainerPointer points = movingMesh->GetPoints();
+  PointsContainerPointer points = movingMesh->GetPoints();
   boundingBox->SetPoints(points);
   boundingBox->ComputeBoundingBox();
 
@@ -424,64 +423,61 @@ itkThinShellDemonsTestv4_Affine(int args, char ** argv)
   metric->SetVirtualDomainFromImage(fixedImage);
   metric->Initialize();
 
-//   // movingMesh->GetAssignedCellBoundaryIfOneExists
-//   std::cout << "Transform parameters are " << transform << std::endl;
+  std::cout << "After creating the ThinShellDemonsMetricv4 " << std::endl;
 
-//   std::cout << "After creating the ThinShellDemonsMetricv4 " << std::endl;
-
-//   // Scales estimator
-//   using ScalesType = itk::RegistrationParameterScalesFromPhysicalShift<PointSetMetricType>;
-//   ScalesType::Pointer shiftScaleEstimator = ScalesType::New();
-//   shiftScaleEstimator->SetMetric(metric);
-//   // Needed with pointset metrics
-//   shiftScaleEstimator->SetVirtualDomainPointSet(metric->GetVirtualTransformedPointSet());
+  // Scales estimator
+  using ScalesType = itk::RegistrationParameterScalesFromPhysicalShift<PointSetMetricType>;
+  ScalesType::Pointer shiftScaleEstimator = ScalesType::New();
+  shiftScaleEstimator->SetMetric(metric);
+  // Needed with pointset metrics
+  shiftScaleEstimator->SetVirtualDomainPointSet(metric->GetVirtualTransformedPointSet());
   
 
-//   // optimizer
+  // optimizer
 
-//   // Does currently not support scaling
-//   // but change requested in:
-//   // https://github.com/InsightSoftwareConsortium/ITK/pull/2372
-//   /*
-//   typedef itk::LBFGS2Optimizerv4 OptimizerType;
-//   OptimizerType::Pointer optimizer = OptimizerType::New();
-//   optimizer->SetScalesEstimator( shiftScaleEstimator );
-// */
-//   typedef itk::ConjugateGradientLineSearchOptimizerv4 OptimizerType;
-//   OptimizerType::Pointer                              optimizer = OptimizerType::New();
-//   optimizer->SetNumberOfIterations(50);
-//   optimizer->SetScalesEstimator(shiftScaleEstimator);
-//   optimizer->SetMaximumStepSizeInPhysicalUnits(0.5);
-//   optimizer->SetMinimumConvergenceValue(0.0);
-//   optimizer->SetConvergenceWindowSize(10);
+  // Does currently not support scaling
+  // but change requested in:
+  // https://github.com/InsightSoftwareConsortium/ITK/pull/2372
+  /*
+  typedef itk::LBFGS2Optimizerv4 OptimizerType;
+  OptimizerType::Pointer optimizer = OptimizerType::New();
+  optimizer->SetScalesEstimator( shiftScaleEstimator );
+*/
+  typedef itk::ConjugateGradientLineSearchOptimizerv4 OptimizerType;
+  OptimizerType::Pointer                              optimizer = OptimizerType::New();
+  optimizer->SetNumberOfIterations(50);
+  optimizer->SetScalesEstimator(shiftScaleEstimator);
+  optimizer->SetMaximumStepSizeInPhysicalUnits(0.5);
+  optimizer->SetMinimumConvergenceValue(0.0);
+  optimizer->SetConvergenceWindowSize(10);
 
-//   using CommandType = CommandIterationUpdate<OptimizerType>;
-//   CommandType::Pointer observer = CommandType::New();
-//   optimizer->AddObserver(itk::IterationEvent(), observer);
+  using CommandType = CommandIterationUpdate<OptimizerType>;
+  CommandType::Pointer observer = CommandType::New();
+  optimizer->AddObserver(itk::IterationEvent(), observer);
 
-//   using AffineRegistrationType =
-//     itk::ImageRegistrationMethodv4<FixedImageType, MovingImageType, TransformType, FixedImageType, TriangleMeshType>;
-//   AffineRegistrationType::Pointer registration = AffineRegistrationType::New();
-//   registration->SetNumberOfLevels(1);
-//   registration->SetObjectName("registration");
-//   registration->SetFixedPointSet(movingMesh);
-//   registration->SetMovingPointSet(fixedMesh);
-//   registration->SetInitialTransform(transform);
-//   registration->SetMetric(metric);
-//   registration->SetOptimizer(optimizer);
+  using AffineRegistrationType =
+    itk::ImageRegistrationMethodv4<FixedImageType, MovingImageType, TransformType, FixedImageType, MeshType>;
+  AffineRegistrationType::Pointer registration = AffineRegistrationType::New();
+  registration->SetNumberOfLevels(1);
+  registration->SetObjectName("registration");
+  registration->SetFixedPointSet(movingMesh);
+  registration->SetMovingPointSet(fixedMesh);
+  registration->SetInitialTransform(transform);
+  registration->SetMetric(metric);
+  registration->SetOptimizer(optimizer);
 
-//   std::cout << "Start Value= " << metric->GetValue() << std::endl;
-//   try{
-//     registration->Update();
-//   }
-//   catch (itk::ExceptionObject & e){
-//     std::cerr << "Exception caught: " << e << std::endl;
-//     return EXIT_FAILURE;
-//   }
+  std::cout << "Start Value= " << metric->GetValue() << std::endl;
+  try{
+    registration->Update();
+  }
+  catch (itk::ExceptionObject & e){
+    std::cerr << "Exception caught: " << e << std::endl;
+    return EXIT_FAILURE;
+  }
 
-//   TransformType::Pointer tx = registration->GetModifiableTransform();
-//   metric->SetTransform(tx);
-//   std::cout << "Solution Value= " << metric->GetValue() << std::endl;
+  TransformType::Pointer tx = registration->GetModifiableTransform();
+  metric->SetTransform(tx);
+  std::cout << "Solution Value= " << metric->GetValue() << std::endl;
 
 
 //   for (unsigned int n = 0; n < movingMesh->GetNumberOfPoints(); n++)
