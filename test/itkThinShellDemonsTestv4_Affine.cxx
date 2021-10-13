@@ -336,7 +336,8 @@ itkThinShellDemonsTestv4_Affine(int args, char ** argv)
   QEMeshType::Pointer qe_fixed_mesh = qe_reader->GetOutput();
 
   CurvatureFilterType::Pointer gaussian_curvature = CurvatureFilterType::New();
-  gaussian_curvature->SetInput(qe_fixed_mesh);
+  //gaussian_curvature->SetInput(qe_fixed_mesh);
+  gaussian_curvature->SetInput(qe_mesh);
   gaussian_curvature->Update();
   QEMeshType::Pointer output = gaussian_curvature->GetOutput();
 
@@ -345,11 +346,11 @@ itkThinShellDemonsTestv4_Affine(int args, char ** argv)
 
 
   QEWriterType::Pointer  PolyDataWriter = QEWriterType::New();
-  PolyDataWriter->SetFileName("./qe_curvature_mesh.vtk");
+  PolyDataWriter->SetFileName("./qe_curvature_mesh1.vtk");
   PolyDataWriter->SetInput(output);
   PolyDataWriter->Update();
   
-  PolyDataWriter->SetFileName("./qe_fixed_mesh.vtk");
+  PolyDataWriter->SetFileName("./qe_fixed_mesh1.vtk");
   PolyDataWriter->SetInput(qe_fixed_mesh);
   PolyDataWriter->Update();
   
