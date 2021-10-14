@@ -132,6 +132,8 @@ public:
 
   using PolyDataType = typename itk::PolyData< PixelType >;
   using PolyDataTypePointer = typename PolyDataType::Pointer;
+  using PolyDataPointsContainer = typename PolyDataType::PointsContainer;
+  using PolyDataPointsContainerPointer = typename PolyDataPointsContainer::Pointer;
   using FilterType = typename itk::MeshToPolyDataFilter< TFixedMesh >;
   using FilterTypePointer= typename FilterType::Pointer;
 

@@ -164,6 +164,7 @@ ThinShellDemonsMetricv4<TFixedMesh, TMovingMesh, TInternalComputationValueType>:
   }
 }
 
+/* Iterate over all the cells in which a point belongs and get the points present in those cells*/
 template <typename TFixedMesh, typename TMovingMesh, typename TInternalComputationValueType>
 void
 ThinShellDemonsMetricv4<TFixedMesh, TMovingMesh, TInternalComputationValueType>::ComputeNeighbors()
@@ -175,7 +176,7 @@ ThinShellDemonsMetricv4<TFixedMesh, TMovingMesh, TInternalComputationValueType>:
   {
     // Collect all neighbors
     vtkSmartPointer<vtkIdList> cellIdList = vtkSmartPointer<vtkIdList>::New();
-    //fixedVTKMesh1->
+    
     fixedVTKMesh->GetPointCells(id, cellIdList);
     vtkSmartPointer<vtkIdList> pointIdList = vtkSmartPointer<vtkIdList>::New();
     for (PointIdentifier i = 0; i < cellIdList->GetNumberOfIds(); i++)
@@ -383,15 +384,16 @@ ThinShellDemonsMetricv4<TFixedMesh, TMovingMesh, TInternalComputationValueType>:
     vtkSmartPointer<vtkPoints> pts = fixedVTKMesh->GetPoints();
     for (PointIdentifier i = 0; i < this->m_FixedTransformedPointSet->GetNumberOfPoints(); i++)
     {
+      PointType data1 = pts->GetPoint(i);
       pts->SetPoint(i, this->m_FixedTransformedPointSet->GetPoint(i).data());
     }
    
     // Updating the itkPolyData Mesh
     for (PointIdentifier i = 0; i < this->m_FixedTransformedPointSet->GetNumberOfPoints(); i++)
     {
-      PixelType data1;
-      this->m_FixedTransformedPointSet->GetPointData(i, &data1);
-      fixedVTKMesh1->SetPointData(i, data1);
+      PointType data1 = this->m_FixedTransformedPointSet->GetPoint(i);
+      fixedVTKMesh1->SetPoint(i, data1);
+      data1 = fixedVTKMesh1->GetPoint(i);
     }
 
     std::cout << "Updating 1 done " << std::endl;
@@ -408,9 +410,8 @@ ThinShellDemonsMetricv4<TFixedMesh, TMovingMesh, TInternalComputationValueType>:
     // Updating the itkPolyData Mesh
     for (PointIdentifier i = 0; i < this->m_MovingTransformedPointSet->GetNumberOfPoints(); i++)
     {
-      PixelType data1;
-      this->m_MovingTransformedPointSet->GetPointData(i, &data1);
-      movingVTKMesh1->SetPointData(i, data1);
+      PointType data1 = this->m_MovingTransformedPointSet->GetPoint(i);
+      movingVTKMesh1->SetPoint(i, data1);
     }
 
     std::cout << "Updating 2 done " << std::endl;
