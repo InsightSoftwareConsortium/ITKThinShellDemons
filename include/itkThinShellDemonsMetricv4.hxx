@@ -119,7 +119,7 @@ ThinShellDemonsMetricv4<TFixedMesh, TMovingMesh, TInternalComputationValueType>:
     MeshCellAutoPointer tri_cell;
     this->m_MovingPointSet->GetCell(cell_id, tri_cell);
 
-    /* Creating a QE Cell from the Triangle Cell and inserting it into the QEMesh*/
+    /* Creating a QE Cell from the Triangle Cell and inserting it into the QEMesh */
     auto * triangleCell = new TriangleCellType;
     QECellAutoPointer qe_cell;
 
@@ -136,6 +136,15 @@ ThinShellDemonsMetricv4<TFixedMesh, TMovingMesh, TInternalComputationValueType>:
 
   std::cout << "Pranjal QE1 Number of cells in the QE1 Mesh After " << this->fixedQEMesh->GetNumberOfCells() << ::endl;
 
+  CurvatureFilterTypePointer gaussian_curvature = CurvatureFilterType::New();
+  gaussian_curvature->SetInput(this->fixedQEMesh);
+  gaussian_curvature->Update();
+  QEMeshTypePointer output = gaussian_curvature->GetOutput();
+
+  QEWriterTypePointer  PolyDataWriter = QEWriterType::New();
+  PolyDataWriter->SetFileName("./qe_curvature_mesh_2.vtk");
+  PolyDataWriter->SetInput(output);
+  PolyDataWriter->Update();
 
   std::cout << "Pranjal Obtained vtk mesh from the itkmesh using the filter " << std::endl;
 

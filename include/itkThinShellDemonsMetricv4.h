@@ -30,6 +30,8 @@
 #include <vtkDataArray.h>
 #include <vtkPolyData.h>
 #include <vtkSmartPointer.h>
+#include "itkMeshFileWriter.h"
+#include "itkMeshFileReader.h"
 
 namespace itk
 {
@@ -98,6 +100,33 @@ public:
   static constexpr DimensionType MovingPointDimension = Superclass::MovingPointDimension;
 
   using VectorType = typename itk::Vector<double, PointType::Dimension>;
+
+  /* For the QE Mesh and to obtain the curvature using it */
+  using CoordType = float;
+  using QETraits = typename itk::QuadEdgeMeshExtendedTraits<CoordType, PointType::Dimension, 2, CoordType, CoordType, CoordType, bool, bool>;
+  using QEMeshType = typename itk::QuadEdgeMesh<CoordType, PointType::Dimension, QETraits>;
+  using QEMeshTypePointer = typename QEMeshType::Pointer;
+  using QEPointsContainerPointer = typename QEMeshType::PointsContainerPointer;
+
+  using MeshPointIdentifier = typename TFixedMesh::PointIdentifier;
+  using MeshCellIdentifier = typename TFixedMesh::CellIdentifier;
+  using MeshCellAutoPointer = typename TFixedMesh::CellAutoPointer;
+
+  using QEMeshPointType = typename QEMeshType::PointType;
+  using QEMeshPointIdentifier = typename QEMeshType::PointIdentifier;
+  using QECellType = typename QEMeshType::CellType;
+  using QECellAutoPointer = typename QECellType::SelfAutoPointer;
+  using QECellIdentifier = typename QEMeshType::CellIdentifier;
+  using TriangleCellType = itk::TriangleCell<QECellType>;
+  using TriangleCellAutoPointer = typename TriangleCellType::SelfAutoPointer;
+
+  using CurvatureFilterType = typename itk::DiscreteGaussianCurvatureQuadEdgeMeshFilter<QEMeshType, QEMeshType>;
+  using CurvatureFilterTypePointer = typename CurvatureFilterType::Pointer;
+
+  using QEReaderType = typename itk::MeshFileReader<QEMeshType>;
+  using QEReaderTypePointer = typename QEReaderType::Pointer;
+  using QEWriterType = typename itk::MeshFileWriter<QEMeshType>;
+  using QEWriterTypePointer = typename QEWriterType::Pointer;
 
   void Initialize(void) override;
 
@@ -237,24 +266,7 @@ private:
   mutable vtkSmartPointer<vtkPolyData> fixedVTKMesh;
   mutable vtkSmartPointer<vtkDataArray> fixedCurvature;
   
-  /* Create a QE Mesh here and get the curvature using it */
-  using CoordType = float;
-  using Traits = typename itk::QuadEdgeMeshExtendedTraits<CoordType, PointType::Dimension, 2, CoordType, CoordType, CoordType, bool, bool>;
-  using QEMeshType = typename itk::QuadEdgeMesh<CoordType, PointType::Dimension, Traits>;
-  using QEMeshTypePointer = typename QEMeshType::Pointer;
-
-  using MeshPointIdentifier = typename TFixedMesh::PointIdentifier;
-  using MeshCellIdentifier = typename TFixedMesh::CellIdentifier;
-  using MeshCellAutoPointer = typename TFixedMesh::CellAutoPointer;
-
-  using QEMeshPointType = typename QEMeshType::PointType;
-  using QEMeshPointIdentifier = typename QEMeshType::PointIdentifier;
-  using QECellType = typename QEMeshType::CellType;
-  using QECellAutoPointer = typename QECellType::SelfAutoPointer;
-  using QECellIdentifier = typename QEMeshType::CellIdentifier;
-  using TriangleCellType = itk::TriangleCell<QECellType>;
-  using TriangleCellAutoPointer = typename TriangleCellType::SelfAutoPointer;
-
+  
   mutable QEMeshTypePointer  movingQEMesh;
   mutable QEMeshTypePointer  fixedQEMesh;
   mutable QEMeshTypePointer  fixedQECurvature;
