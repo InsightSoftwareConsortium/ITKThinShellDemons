@@ -21,7 +21,6 @@
 
 #include "itkThinShellDemonsMetricv4.h"
 #include "itkPointSet.h"
-#include "itkMeshToPolyDataFilter.h"
 #include "itkMeshTovtkPolyData.h"
 
 // Remove these
@@ -81,20 +80,18 @@ ThinShellDemonsMetricv4<TFixedMesh, TMovingMesh, TInternalComputationValueType>:
     this->m_FixedPointSet->GetSource()->Update();
   }
 
-  std::cout << "Number of points are m_MovingPointSet  " <<  this->m_MovingPointSet->GetNumberOfPoints() << std::endl;
+  std::cout << "Number of points are m_MovingPointSet  " <<  this->m_MovingPointSet->GetNumberOfPoints() <<std::endl;
   std::cout << "Class of m_FixedPointSet " <<  typeid(this->m_FixedPointSet).name() << std::endl;
   std::cout << "Number of points are m_FixedPointSet " <<  this->m_FixedPointSet->GetNumberOfPoints() << std::endl;
 
+  FilterTypePointer mesh_filter = FilterType::New();
+  mesh_filter->SetInput(this->m_FixedPointSet);
+  mesh_filter->Update();
+  this->fixedVTKMesh1 = mesh_filter->GetOutput();
+
+  std::cout << "fixedVTKMesh1  " <<  this->fixedVTKMesh1->GetNumberOfPoints() << " " << typeid(this->fixedVTKMesh1).name() <<std::endl;
+
   // generate a VTK copy of the same mesh
-  
-
-  //this->fixedVTKMesh = filter->SetInput(this->m_FixedPointSet);
-  //PolyDataType::ConstPointer polyData = filter->GetOutput();
-
-  //this->movingVTKMesh = filter->SetInput(this->m_MovingPointSet);
-  
-  //temp_filter = itk::MeshToPolyDataFilter<>::
-
   this->movingVTKMesh = itkMeshTovtkPolyData<MovingPointSetType>::Convert(this->m_MovingPointSet);
   this->fixedVTKMesh = itkMeshTovtkPolyData<FixedPointSetType>::Convert(this->m_FixedPointSet);
 
@@ -166,8 +163,10 @@ template <typename TFixedMesh, typename TMovingMesh, typename TInternalComputati
 void
 ThinShellDemonsMetricv4<TFixedMesh, TMovingMesh, TInternalComputationValueType>::ComputeNeighbors()
 {
-  this->neighborMap.resize(fixedVTKMesh->GetNumberOfPoints());
-  this->edgeLengthMap.resize(fixedVTKMesh->GetNumberOfPoints());
+  this->neighborMap.resize(fixedVTKMesh1->GetNumberOfPoints());
+  this->edgeLengthMap.resize(fixedVTKMesh1->GetNumberOfPoints());
+
+  std::cout << "fixedVTKMesh1->GetNumberOfPoints()  " << fixedVTKMesh1->GetNumberOfPoints() <<  std::endl;
 
   for (PointIdentifier id = 0; id < fixedVTKMesh->GetNumberOfPoints(); id++)
   {
