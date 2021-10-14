@@ -101,15 +101,7 @@ itkThinShellDemonsTestv4_Affine(int args, char ** argv)
   using ReaderType = itk::MeshFileReader<MeshType>;
   using WriterType = itk::MeshFileWriter<MeshType>;
 
-  using Traits = itk::QuadEdgeMeshExtendedTraits<CoordType, Dimension, 2, CoordType, CoordType, CoordType, bool, bool>;
-  using QEMeshType = itk::QuadEdgeMesh<CoordType, Dimension, Traits>;
-  using QEPointsContainerPointer = QEMeshType::PointsContainerPointer;
-  using QEWriterType = itk::MeshFileWriter<QEMeshType>;
-
-  using CurvatureFilterType = itk::DiscreteGaussianCurvatureQuadEdgeMeshFilter<QEMeshType, QEMeshType>;
-  using QEReaderType = itk::MeshFileReader<QEMeshType>;
-
-  QEReaderType::Pointer qe_reader = QEReaderType::New();
+  //QEReaderTypePointer qe_reader = QEReaderType::New();
 
   unsigned int numberOfIterations = 100;
 
@@ -245,60 +237,53 @@ itkThinShellDemonsTestv4_Affine(int args, char ** argv)
 
 
 
-  /* Creating QuadEdgeMesh from Triangle Mesh by inserting points and cells one by one*/
+  // /* Creating QuadEdgeMesh from Triangle Mesh by inserting points and cells one by one*/
 
-  using Traits = itk::QuadEdgeMeshExtendedTraits<CoordType, Dimension, 2, CoordType, CoordType, CoordType, bool, bool>;
-  using QEMeshType = itk::QuadEdgeMesh<CoordType, Dimension, Traits>;
-  using QEPointsContainerPointer = QEMeshType::PointsContainerPointer;
+  // using Traits = itk::QuadEdgeMeshExtendedTraits<CoordType, Dimension, 2, CoordType, CoordType, CoordType, bool, bool>;
+  // using QEMeshType = itk::QuadEdgeMesh<CoordType, Dimension, Traits>;
+  // using QEPointsContainerPointer = QEMeshType::PointsContainerPointer;
 
-  QEMeshType::Pointer qe_mesh = QEMeshType::New();
+  // QEMeshType::Pointer qe_mesh = QEMeshType::New();
 
-  std::cout << "Pranjal Number of points in the QE Mesh Before " << qe_mesh->GetNumberOfPoints() << ::endl;
-  for (unsigned int n = 0; n < movingMesh->GetNumberOfPoints(); n++)
-  {
-    MeshType::PointIdentifier point_id = n;
-    QEMeshType::PointType point = movingMesh->GetPoint(point_id);
+  // std::cout << "Pranjal Number of points in the QE Mesh Before " << qe_mesh->GetNumberOfPoints() << ::endl;
+  // for (unsigned int n = 0; n < movingMesh->GetNumberOfPoints(); n++)
+  // {
+  //   MeshType::PointIdentifier point_id = n;
+  //   QEMeshType::PointType point = movingMesh->GetPoint(point_id);
 
-    QEMeshType::PointIdentifier id1 = n;
-    qe_mesh->SetPoint(id1, point);
-  }
-  std::cout << "Pranjal Number of points in the QE Mesh After " << qe_mesh->GetNumberOfPoints() << ::endl;
+  //   QEMeshType::PointIdentifier id1 = n;
+  //   qe_mesh->SetPoint(id1, point);
+  // }
+  // std::cout << "Pranjal Number of points in the QE Mesh After " << qe_mesh->GetNumberOfPoints() << ::endl;
 
-  std::cout << "Pranjal Number of cells in the QE Mesh Before " << qe_mesh->GetNumberOfCells() << ::endl;
-  for (unsigned int n = 0; n < movingMesh->GetNumberOfCells(); n++)
-  {
-    MeshType::CellIdentifier cell_id = n;
-    MeshType::CellAutoPointer tri_cell;
-    movingMesh->GetCell(cell_id, tri_cell);
+  // std::cout << "Pranjal Number of cells in the QE Mesh Before " << qe_mesh->GetNumberOfCells() << ::endl;
+  // for (unsigned int n = 0; n < movingMesh->GetNumberOfCells(); n++)
+  // {
+  //   MeshType::CellIdentifier cell_id = n;
+  //   MeshType::CellAutoPointer tri_cell;
+  //   movingMesh->GetCell(cell_id, tri_cell);
 
-    using CellType = typename QEMeshType::CellType;
-    using TriangleCellType = itk::TriangleCell<CellType>;
-    using TriangleCellAutoPointer = typename TriangleCellType::SelfAutoPointer;
-
-
-    /* Creating a QE Cell from the Triangle Cell and inserting it into the QEMesh*/
-    auto * triangleCell = new TriangleCellType;
-    QEMeshType::CellAutoPointer qe_cell;
-
-    itk::Array<float> point_ids = tri_cell->GetPointIdsContainer();
-    for (unsigned int k = 0; k < 3; ++k)
-    {
-      triangleCell->SetPointId(k, point_ids[k]);
-    }
-
-    QEMeshType::CellIdentifier qe_cell_id = n;
-    qe_cell.TakeOwnership(triangleCell);
-    qe_mesh->SetCell(qe_cell_id, qe_cell);
-
-  }
-  std::cout << "Pranjal Number of cells in the QE Mesh After " << qe_mesh->GetNumberOfCells() << ::endl;
+  //   using CellType = typename QEMeshType::CellType;
+  //   using TriangleCellType = itk::TriangleCell<CellType>;
+  //   using TriangleCellAutoPointer = typename TriangleCellType::SelfAutoPointer;
 
 
-  // SimplexMeshType::Pointer simplexMeshAdapted = filter->GetOutput(); 
+  //   /* Creating a QE Cell from the Triangle Cell and inserting it into the QEMesh*/
+  //   auto * triangleCell = new TriangleCellType;
+  //   QEMeshType::CellAutoPointer qe_cell;
 
-  // std::cout << "Simplex Mesh Created : " << simplexMeshAdapted->GetNumberOfPoints() << std::endl;
+  //   itk::Array<float> point_ids = tri_cell->GetPointIdsContainer();
+  //   for (unsigned int k = 0; k < 3; ++k)
+  //   {
+  //     triangleCell->SetPointId(k, point_ids[k]);
+  //   }
 
-  
+  //   QEMeshType::CellIdentifier qe_cell_id = n;
+  //   qe_cell.TakeOwnership(triangleCell);
+  //   qe_mesh->SetCell(qe_cell_id, qe_cell);
+
+  // }
+  // std::cout << "Pranjal Number of cells in the QE Mesh After " << qe_mesh->GetNumberOfCells() << ::endl;
 
 
 
@@ -329,32 +314,32 @@ itkThinShellDemonsTestv4_Affine(int args, char ** argv)
 
   /* For calculating itkDiscreteGaussianCurvatureQuadEdgeMeshFilterTest */
   
-  qe_reader->SetFileName(argv[2]);
-  qe_reader->Update();
-  QEMeshType::Pointer qe_moving_mesh = qe_reader->GetOutput();
+  // qe_reader->SetFileName(argv[2]);
+  // qe_reader->Update();
+  // QEMeshType::Pointer qe_moving_mesh = qe_reader->GetOutput();
 
-  qe_reader->SetFileName(argv[1]);
-  qe_reader->Update();
-  QEMeshType::Pointer qe_fixed_mesh = qe_reader->GetOutput();
+  // qe_reader->SetFileName(argv[1]);
+  // qe_reader->Update();
+  // QEMeshType::Pointer qe_fixed_mesh = qe_reader->GetOutput();
 
-  CurvatureFilterType::Pointer gaussian_curvature = CurvatureFilterType::New();
-  //gaussian_curvature->SetInput(qe_fixed_mesh);
-  gaussian_curvature->SetInput(qe_mesh);
-  gaussian_curvature->Update();
-  QEMeshType::Pointer output = gaussian_curvature->GetOutput();
+  // CurvatureFilterType::Pointer gaussian_curvature = CurvatureFilterType::New();
+  // //gaussian_curvature->SetInput(qe_fixed_mesh);
+  // gaussian_curvature->SetInput(qe_mesh);
+  // gaussian_curvature->Update();
+  // QEMeshType::Pointer output = gaussian_curvature->GetOutput();
 
-  std::cout << "Pranjal Gaussian curvature output number of points " << output->GetNumberOfPoints() << std::endl;
-  QEPointsContainerPointer qe_points = qe_moving_mesh->GetPoints();
+  // std::cout << "Pranjal Gaussian curvature output number of points " << output->GetNumberOfPoints() << std::endl;
+  // QEPointsContainerPointer qe_points = qe_moving_mesh->GetPoints();
 
 
-  QEWriterType::Pointer  PolyDataWriter = QEWriterType::New();
-  PolyDataWriter->SetFileName("./qe_curvature_mesh1.vtk");
-  PolyDataWriter->SetInput(output);
-  PolyDataWriter->Update();
+  // QEWriterType::Pointer  PolyDataWriter = QEWriterType::New();
+  // PolyDataWriter->SetFileName("./qe_curvature_mesh1.vtk");
+  // PolyDataWriter->SetInput(output);
+  // PolyDataWriter->Update();
   
-  PolyDataWriter->SetFileName("./qe_fixed_mesh1.vtk");
-  PolyDataWriter->SetInput(qe_fixed_mesh);
-  PolyDataWriter->Update();
+  // PolyDataWriter->SetFileName("./qe_fixed_mesh1.vtk");
+  // PolyDataWriter->SetInput(qe_fixed_mesh);
+  // PolyDataWriter->Update();
   
 
 
