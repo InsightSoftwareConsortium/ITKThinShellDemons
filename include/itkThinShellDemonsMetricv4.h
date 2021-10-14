@@ -19,9 +19,9 @@
 #define itkThinShellDemonsMetricv4_h
 
 #include "itkPointSetToPointSetMetricWithIndexv4.h"
-#include "itkMeshTovtkPolyData.h"
 
 #include <itkMesh.h>
+//#include "itkPolyData.h"
 #include <itkQuadEdge.h>
 #include <itkQuadEdgeMesh.h>
 #include <itkQuadEdgeMeshExtendedTraits.h>
@@ -225,9 +225,39 @@ private:
   typedef std::vector< std::vector<double> > EdgeLengthMap;
   EdgeLengthMap edgeLengthMap;
 
+  
+
+  /*
+  using PolyDataType = itk::PolyData< PixelType >;
+  mutable PolyDataType::Pointer movingVTKMesh;
+  mutable PolyDataType::Pointer fixedVTKMesh;
+  mutable PolyDataType::Pointer fixedCurvature;*/
+
   mutable vtkSmartPointer<vtkPolyData> movingVTKMesh;
   mutable vtkSmartPointer<vtkPolyData> fixedVTKMesh;
   mutable vtkSmartPointer<vtkDataArray> fixedCurvature;
+  
+  /* Create a QE Mesh here and get the curvature using it */
+  using CoordType = float;
+  using Traits = typename itk::QuadEdgeMeshExtendedTraits<CoordType, PointType::Dimension, 2, CoordType, CoordType, CoordType, bool, bool>;
+  using QEMeshType = typename itk::QuadEdgeMesh<CoordType, PointType::Dimension, Traits>;
+  using QEMeshTypePointer = typename QEMeshType::Pointer;
+
+  using MeshPointIdentifier = typename TFixedMesh::PointIdentifier;
+  using MeshCellIdentifier = typename TFixedMesh::CellIdentifier;
+  using MeshCellAutoPointer = typename TFixedMesh::CellAutoPointer;
+
+  using QEMeshPointType = typename QEMeshType::PointType;
+  using QEMeshPointIdentifier = typename QEMeshType::PointIdentifier;
+  using QECellType = typename QEMeshType::CellType;
+  using QECellAutoPointer = typename QECellType::SelfAutoPointer;
+  using QECellIdentifier = typename QEMeshType::CellIdentifier;
+  using TriangleCellType = itk::TriangleCell<QECellType>;
+  using TriangleCellAutoPointer = typename TriangleCellType::SelfAutoPointer;
+
+  mutable QEMeshTypePointer  movingQEMesh;
+  mutable QEMeshTypePointer  fixedQEMesh;
+  mutable QEMeshTypePointer  fixedQECurvature;
 
   double m_StretchWeight;
   double m_BendWeight;

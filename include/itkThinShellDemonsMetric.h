@@ -21,6 +21,7 @@
 #include "itkMeshToMeshMetric.h"
 #include "itkCovariantVector.h"
 #include "itkMesh.h"
+//#include "itkPolyData.h"
 #include "itkImage.h"
 #include "itkMeshTovtkPolyData.h"
 #include "vtkSmartPointer.h"
@@ -190,6 +191,13 @@ private:
 
   typedef std::vector< std::vector<double> > EdgeLengthMap;
   EdgeLengthMap edgeLengthMap;
+
+  /*
+  using PixelType = typename Superclass::PixelType;
+  typedef PolyData< PixelType> PolyDataType;
+  PolyDataType::Pointer movingVTKMesh;
+  PolyDataType::Pointer fixedVTKMesh;
+  PolyDataType::Pointer fixedCurvature;*/
 
   vtkSmartPointer<vtkPolyData> movingVTKMesh;
   vtkSmartPointer<vtkPolyData> fixedVTKMesh;

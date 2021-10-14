@@ -21,7 +21,8 @@
 
 #include "itkThinShellDemonsMetricv4.h"
 #include "itkPointSet.h"
-
+#include "itkMeshToPolyDataFilter.h"
+#include "itkMeshTovtkPolyData.h"
 
 // Remove these
 #include <vtkCurvatures.h>
@@ -85,8 +86,56 @@ ThinShellDemonsMetricv4<TFixedMesh, TMovingMesh, TInternalComputationValueType>:
   std::cout << "Number of points are m_FixedPointSet " <<  this->m_FixedPointSet->GetNumberOfPoints() << std::endl;
 
   // generate a VTK copy of the same mesh
+  
+
+  //this->fixedVTKMesh = filter->SetInput(this->m_FixedPointSet);
+  //PolyDataType::ConstPointer polyData = filter->GetOutput();
+
+  //this->movingVTKMesh = filter->SetInput(this->m_MovingPointSet);
+  
+  //temp_filter = itk::MeshToPolyDataFilter<>::
+
   this->movingVTKMesh = itkMeshTovtkPolyData<MovingPointSetType>::Convert(this->m_MovingPointSet);
   this->fixedVTKMesh = itkMeshTovtkPolyData<FixedPointSetType>::Convert(this->m_FixedPointSet);
+
+  this->fixedQEMesh = QEMeshType::New();
+  this->movingQEMesh = QEMeshType::New();
+  this->fixedQECurvature = QEMeshType::New();
+
+  std::cout << "Pranjal QE1 Number of points in the QE Mesh Before " << this->fixedQEMesh->GetNumberOfPoints() << ::endl;
+  for (unsigned int n = 0; n < this->m_MovingPointSet->GetNumberOfPoints(); n++)
+  {
+    MeshPointIdentifier point_id = n;
+    QEMeshPointType point = this->m_MovingPointSet->GetPoint(point_id);
+    QEMeshPointIdentifier id1 = n;
+    this->fixedQEMesh->SetPoint(id1, point);
+  }
+
+  std::cout << "Pranjal Number of cells in the QE1 Mesh Before " << this->fixedQEMesh->GetNumberOfCells() << ::endl;
+  
+  for (unsigned int n = 0; n < this->m_MovingPointSet->GetNumberOfCells(); n++)
+  {
+    MeshCellIdentifier cell_id = n;
+    MeshCellAutoPointer tri_cell;
+    this->m_MovingPointSet->GetCell(cell_id, tri_cell);
+
+    /* Creating a QE Cell from the Triangle Cell and inserting it into the QEMesh*/
+    auto * triangleCell = new TriangleCellType;
+    QECellAutoPointer qe_cell;
+
+    itk::Array<float> point_ids = tri_cell->GetPointIdsContainer();
+    for (unsigned int k = 0; k < 3; ++k)
+    {
+      triangleCell->SetPointId(k, point_ids[k]);
+    }
+
+    QECellIdentifier qe_cell_id = n;
+    qe_cell.TakeOwnership(triangleCell);
+    this->fixedQEMesh->SetCell(qe_cell_id, qe_cell);
+  }
+
+  std::cout << "Pranjal QE1 Number of cells in the QE1 Mesh After " << this->fixedQEMesh->GetNumberOfCells() << ::endl;
+
 
   std::cout << "Pranjal Obtained vtk mesh from the itkmesh using the filter " << std::endl;
 
@@ -310,6 +359,9 @@ ThinShellDemonsMetricv4<TFixedMesh, TMovingMesh, TInternalComputationValueType>:
   bool fixed) const
 {
   std::cout << "Pranjal GenerateFeaturePointSets " << std::endl;
+  //std::cout << "Pranjal " << TFixedMesh::PointType << "  " << TFixedMesh::PointDimension << std::endl;
+
+  
 
   vtkSmartPointer<vtkPolyData> vMesh;
   // Update meshes according to current transforms
@@ -333,15 +385,16 @@ ThinShellDemonsMetricv4<TFixedMesh, TMovingMesh, TInternalComputationValueType>:
   }
 
   
-  using CoordType = float;
+  /*using CoordType = float;
   using Traits = itk::QuadEdgeMeshExtendedTraits<CoordType, PointType::Dimension, 2, PixelType, PixelType, PixelType, bool, bool>;
   using MeshType = itk::QuadEdgeMesh<PixelType, PointType::Dimension, Traits>;
   using CurvatureFilterType = itk::DiscreteGaussianCurvatureQuadEdgeMeshFilter<MeshType, MeshType>;
   
-
-  std::cout << "Pranjal QuadEdge Mesh Filter init is done" << std::endl;
-  
-  //std::cout << "Pranjal PixelType is " << PixelType <<  std::endl;
+  CurvatureFilterType::Pointer gaussian_curvature = CurvatureFilterType::New();
+  gaussian_curvature->SetInput(mesh);
+  gaussian_curvature->Update();
+  MeshType::Pointer output = gaussian_curvature->GetOutput();
+  std::cout << "Pranjal QuadEdge Mesh Filter init is done " << output->GetNumberOfPoints() << std::endl;*/
   
   /* Obtain curvature information at each point */
   vtkSmartPointer<vtkCurvatures> curvaturesFilter = vtkSmartPointer<vtkCurvatures>::New();
