@@ -30,6 +30,7 @@
 #include <vtkDataArray.h>
 #include <vtkPolyData.h>
 #include <vtkSmartPointer.h>
+#include <itkSmartPointer.h>
 #include "itkMeshFileWriter.h"
 #include "itkMeshFileReader.h"
 #include "itkMeshToPolyDataFilter.h"
@@ -133,7 +134,6 @@ public:
   using PolyDataTypePointer = typename PolyDataType::Pointer;
   using FilterType = typename itk::MeshToPolyDataFilter< TFixedMesh >;
   using FilterTypePointer= typename FilterType::Pointer;
-
 
   void Initialize(void) override;
 

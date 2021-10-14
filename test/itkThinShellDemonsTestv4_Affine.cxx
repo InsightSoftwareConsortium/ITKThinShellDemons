@@ -96,12 +96,8 @@ itkThinShellDemonsTestv4_Affine(int args, char ** argv)
   using MeshType = itk::Mesh<float, 3>;
   using PointsContainerPointer = MeshType::PointsContainerPointer;
   
-  //std::cout << "Pranjal " << MeshType::PointType << "  " << MeshType::PointDimension << std::endl;
-
   using ReaderType = itk::MeshFileReader<MeshType>;
   using WriterType = itk::MeshFileWriter<MeshType>;
-
-  //QEReaderTypePointer qe_reader = QEReaderType::New();
 
   unsigned int numberOfIterations = 100;
 

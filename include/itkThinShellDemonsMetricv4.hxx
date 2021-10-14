@@ -89,7 +89,12 @@ ThinShellDemonsMetricv4<TFixedMesh, TMovingMesh, TInternalComputationValueType>:
   mesh_filter->Update();
   this->fixedVTKMesh1 = mesh_filter->GetOutput();
 
+  mesh_filter->SetInput(this->m_MovingPointSet);
+  mesh_filter->Update();
+  this->movingVTKMesh1 = mesh_filter->GetOutput();
+
   std::cout << "fixedVTKMesh1  " <<  this->fixedVTKMesh1->GetNumberOfPoints() << " " << typeid(this->fixedVTKMesh1).name() <<std::endl;
+  std::cout << "movingVTKMesh1  " <<  this->movingVTKMesh1->GetNumberOfPoints() << " " << typeid(this->movingVTKMesh1).name() <<std::endl;
 
   // generate a VTK copy of the same mesh
   this->movingVTKMesh = itkMeshTovtkPolyData<MovingPointSetType>::Convert(this->m_MovingPointSet);
@@ -163,15 +168,14 @@ template <typename TFixedMesh, typename TMovingMesh, typename TInternalComputati
 void
 ThinShellDemonsMetricv4<TFixedMesh, TMovingMesh, TInternalComputationValueType>::ComputeNeighbors()
 {
-  this->neighborMap.resize(fixedVTKMesh1->GetNumberOfPoints());
-  this->edgeLengthMap.resize(fixedVTKMesh1->GetNumberOfPoints());
-
-  std::cout << "fixedVTKMesh1->GetNumberOfPoints()  " << fixedVTKMesh1->GetNumberOfPoints() <<  std::endl;
-
+  this->neighborMap.resize(fixedVTKMesh->GetNumberOfPoints());
+  this->edgeLengthMap.resize(fixedVTKMesh->GetNumberOfPoints());
+  
   for (PointIdentifier id = 0; id < fixedVTKMesh->GetNumberOfPoints(); id++)
   {
     // Collect all neighbors
     vtkSmartPointer<vtkIdList> cellIdList = vtkSmartPointer<vtkIdList>::New();
+    //fixedVTKMesh1->
     fixedVTKMesh->GetPointCells(id, cellIdList);
     vtkSmartPointer<vtkIdList> pointIdList = vtkSmartPointer<vtkIdList>::New();
     for (PointIdentifier i = 0; i < cellIdList->GetNumberOfIds(); i++)
@@ -369,7 +373,8 @@ ThinShellDemonsMetricv4<TFixedMesh, TMovingMesh, TInternalComputationValueType>:
   std::cout << "Pranjal GenerateFeaturePointSets " << std::endl;
   //std::cout << "Pranjal " << TFixedMesh::PointType << "  " << TFixedMesh::PointDimension << std::endl;
 
-  
+  //using PolyDataPointsContainer = typename PolyDataType::PointsContainer;
+  //using PolyDataPointIdentifier = typename PolyDataType::PointIdentifier;
 
   vtkSmartPointer<vtkPolyData> vMesh;
   // Update meshes according to current transforms
@@ -380,6 +385,16 @@ ThinShellDemonsMetricv4<TFixedMesh, TMovingMesh, TInternalComputationValueType>:
     {
       pts->SetPoint(i, this->m_FixedTransformedPointSet->GetPoint(i).data());
     }
+   
+    // Updating the itkPolyData Mesh
+    for (PointIdentifier i = 0; i < this->m_FixedTransformedPointSet->GetNumberOfPoints(); i++)
+    {
+      PixelType data1;
+      this->m_FixedTransformedPointSet->GetPointData(i, &data1);
+      fixedVTKMesh1->SetPointData(i, data1);
+    }
+
+    std::cout << "Updating 1 done " << std::endl;
     vMesh = fixedVTKMesh;
   }
   else
@@ -389,6 +404,16 @@ ThinShellDemonsMetricv4<TFixedMesh, TMovingMesh, TInternalComputationValueType>:
     {
       pts->SetPoint(i, this->m_MovingTransformedPointSet->GetPoint(i).data());
     }
+
+    // Updating the itkPolyData Mesh
+    for (PointIdentifier i = 0; i < this->m_MovingTransformedPointSet->GetNumberOfPoints(); i++)
+    {
+      PixelType data1;
+      this->m_MovingTransformedPointSet->GetPointData(i, &data1);
+      movingVTKMesh1->SetPointData(i, data1);
+    }
+
+    std::cout << "Updating 2 done " << std::endl;
     vMesh = movingVTKMesh;
   }
 
