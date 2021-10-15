@@ -110,17 +110,26 @@ public:
   using QEMeshTypePointer = typename QEMeshType::Pointer;
   using QEPointsContainerPointer = typename QEMeshType::PointsContainerPointer;
 
-  using MeshPointIdentifier = typename TFixedMesh::PointIdentifier;
-  using MeshCellIdentifier = typename TFixedMesh::CellIdentifier;
-  using MeshCellAutoPointer = typename TFixedMesh::CellAutoPointer;
+  //using MeshPointIdentifier = typename TFixedMesh::PointIdentifier;
+  //using MeshCellIdentifier = typename TFixedMesh::CellIdentifier;
+  //using MeshCellAutoPointer = typename TFixedMesh::CellAutoPointer;
+
+  using MeshType = TFixedMesh;//typename itk::Mesh<CoordType, PointType::Dimension>;
+  using MeshTypePointer = typename MeshType::Pointer;
+  using MeshPointIdentifier = typename MeshType::PointIdentifier;
+  using MeshCellType = typename MeshType::CellType;
+  using MeshCellIdentifier = typename MeshType::CellIdentifier;
+  using MeshCellAutoPointer = typename MeshCellType::CellAutoPointer;
+  using MeshTriangleCellType = itk::TriangleCell<MeshCellType>;
+  //using MeshTriangleCellAutoPointer = typename MeshTriangleCellType::SelfAutoPointer;
 
   using QEMeshPointType = typename QEMeshType::PointType;
   using QEMeshPointIdentifier = typename QEMeshType::PointIdentifier;
   using QECellType = typename QEMeshType::CellType;
   using QECellAutoPointer = typename QECellType::SelfAutoPointer;
   using QECellIdentifier = typename QEMeshType::CellIdentifier;
-  using TriangleCellType = itk::TriangleCell<QECellType>;
-  using TriangleCellAutoPointer = typename TriangleCellType::SelfAutoPointer;
+  using QETriangleCellType = itk::TriangleCell<QECellType>;
+  //using QETriangleCellAutoPointer = typename QETriangleCellType::SelfAutoPointer;
 
   using CurvatureFilterType = typename itk::DiscreteGaussianCurvatureQuadEdgeMeshFilter<QEMeshType, QEMeshType>;
   using CurvatureFilterTypePointer = typename CurvatureFilterType::Pointer;
@@ -263,6 +272,10 @@ private:
   typedef std::vector< std::vector<double> > EdgeLengthMap;
   EdgeLengthMap edgeLengthMap;
 
+  mutable MeshTypePointer fixedITKMesh1;
+  mutable MeshTypePointer movingITKMesh1;
+  mutable MeshTypePointer fixedCurvatureITK1;
+
   mutable PolyDataTypePointer movingVTKMesh1;
   mutable PolyDataTypePointer fixedVTKMesh1;
   mutable PolyDataTypePointer fixedCurvature1;
@@ -270,7 +283,6 @@ private:
   mutable vtkSmartPointer<vtkPolyData> movingVTKMesh;
   mutable vtkSmartPointer<vtkPolyData> fixedVTKMesh;
   mutable vtkSmartPointer<vtkDataArray> fixedCurvature;
-  
   
   mutable QEMeshTypePointer  movingQEMesh;
   mutable QEMeshTypePointer  fixedQEMesh;

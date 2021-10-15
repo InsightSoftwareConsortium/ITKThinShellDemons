@@ -89,9 +89,6 @@ itkThinShellDemonsTestv4_Affine(int args, char ** argv)
   using TriangleMeshTraits = itk::DefaultDynamicMeshTraits<float, 3, 3, float, float>;
   using TriangleMeshTraitsStatic = itk::DefaultStaticMeshTraits<float, 3, 3, float, float>;
 
-  using SimplexMeshTraits = itk::DefaultDynamicMeshTraits<float, 3, 3, float, float>;
-  using SimplexMeshTraitsStatic = itk::DefaultStaticMeshTraits<float, 3, 3, float, float>;
-
   // Declare the type of the input and output mesh
   using MeshType = itk::Mesh<float, 3>;
   using PointsContainerPointer = MeshType::PointsContainerPointer;
