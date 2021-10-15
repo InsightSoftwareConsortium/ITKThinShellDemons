@@ -177,14 +177,18 @@ ThinShellDemonsMetricv4<TFixedMesh, TMovingMesh, TInternalComputationValueType>:
     // Collect all neighbors
     vtkSmartPointer<vtkIdList> cellIdList = vtkSmartPointer<vtkIdList>::New();
     
+    // Get all the neighboring cells
     fixedVTKMesh->GetPointCells(id, cellIdList);
     vtkSmartPointer<vtkIdList> pointIdList = vtkSmartPointer<vtkIdList>::New();
     for (PointIdentifier i = 0; i < cellIdList->GetNumberOfIds(); i++)
     {
       vtkSmartPointer<vtkIdList> pointIdListTmp = vtkSmartPointer<vtkIdList>::New();
+
+      // get all the points in the ith cell
       fixedVTKMesh->GetCellPoints(cellIdList->GetId(i), pointIdListTmp);
       for (PointIdentifier j = 0; j < pointIdListTmp->GetNumberOfIds(); j++)
       {
+        // insert only if it is not the same point
         if (pointIdListTmp->GetId(j) != id)
         {
           pointIdList->InsertUniqueId(pointIdListTmp->GetId(j));
