@@ -109,11 +109,6 @@ public:
   using QEMeshType = typename itk::QuadEdgeMesh<CoordType, PointType::Dimension, QETraits>;
   using QEMeshTypePointer = typename QEMeshType::Pointer;
   using QEPointsContainerPointer = typename QEMeshType::PointsContainerPointer;
-  
-  // using MeshPointIdentifier = typename TFixedMesh::PointIdentifier;
-  // using MeshCellIdentifier = typename TFixedMesh::CellIdentifier;
-  // using MeshCellAutoPointer = typename TFixedMesh::CellAutoPointer;
-  // typename itk::Mesh<CoordType, PointType::Dimension>;
 
   using MeshType = TFixedMesh;
   using MeshTypePointer = typename MeshType::Pointer;
@@ -277,20 +272,16 @@ private:
   mutable MeshTypePointer fixedITKMesh1;
   mutable MeshTypePointer movingITKMesh1;
   mutable MeshTypePointer fixedCurvatureITK1;
-
-  mutable PolyDataTypePointer movingVTKMesh1;
-  mutable PolyDataTypePointer fixedVTKMesh1;
-  mutable PolyDataTypePointer fixedCurvature1;
-
-  // 
+  
   mutable vtkSmartPointer<vtkPolyData> movingVTKMesh;
   mutable vtkSmartPointer<vtkPolyData> fixedVTKMesh;
   mutable vtkSmartPointer<vtkDataArray> fixedCurvature;
   
-  
   mutable QEMeshTypePointer  movingQEMesh;
   mutable QEMeshTypePointer  fixedQEMesh;
   mutable QEMeshTypePointer  fixedQECurvature;
+
+  CurvatureFilterTypePointer gaussian_curvature_filter;
 
   double m_StretchWeight;
   double m_BendWeight;

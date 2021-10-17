@@ -84,15 +84,6 @@ ThinShellDemonsMetricv4<TFixedMesh, TMovingMesh, TInternalComputationValueType>:
   //std::cout << "Class of m_FixedPointSet " <<  typeid(this->m_FixedPointSet).name() << std::endl;
   std::cout << "Number of points are m_FixedPointSet " <<  this->m_FixedPointSet->GetNumberOfPoints() << std::endl;
 
-  FilterTypePointer mesh_filter = FilterType::New();
-  mesh_filter->SetInput(this->m_FixedPointSet);
-  mesh_filter->Update();
-  this->fixedVTKMesh1 = mesh_filter->GetOutput();
-  
-  mesh_filter->SetInput(this->m_MovingPointSet);
-  mesh_filter->Update();
-  this->movingVTKMesh1 = mesh_filter->GetOutput();
-
   this->fixedITKMesh1 = MeshType::New();
   this->movingITKMesh1 = MeshType::New();
   
@@ -143,8 +134,9 @@ ThinShellDemonsMetricv4<TFixedMesh, TMovingMesh, TInternalComputationValueType>:
   this->movingQEMesh = QEMeshType::New();
   this->fixedQECurvature = QEMeshType::New();
 
-  
-  std::cout << "Pranjal QE1 Number of points in the QE Mesh Before " << this->fixedQEMesh->GetNumberOfPoints() << ::endl;
+  this->gaussian_curvature_filter = CurvatureFilterType::New();
+
+  //std::cout << "Pranjal QE1 Number of points in the QE Mesh Before " << this->fixedQEMesh->GetNumberOfPoints() << ::endl;
   for (unsigned int n = 0; n < this->m_MovingPointSet->GetNumberOfPoints(); n++)
   {
     MeshPointIdentifier point_id = n;
@@ -153,8 +145,7 @@ ThinShellDemonsMetricv4<TFixedMesh, TMovingMesh, TInternalComputationValueType>:
     this->fixedQEMesh->SetPoint(id1, point);
   }
 
-  std::cout << "Pranjal Number of cells in the QE1 Mesh Before " << this->fixedQEMesh->GetNumberOfCells() << ::endl;
-  
+  //std::cout << "Pranjal Number of cells in the QE1 Mesh Before " << this->fixedQEMesh->GetNumberOfCells() << ::endl;
   for (unsigned int n = 0; n < this->m_MovingPointSet->GetNumberOfCells(); n++)
   {
     MeshCellIdentifier cell_id = n;
@@ -176,19 +167,23 @@ ThinShellDemonsMetricv4<TFixedMesh, TMovingMesh, TInternalComputationValueType>:
     this->fixedQEMesh->SetCell(qe_cell_id, qe_cell);
   }
 
-  std::cout << "Pranjal QE1 Number of cells in the QE1 Mesh After " << this->fixedQEMesh->GetNumberOfCells() << ::endl;
+  //std::cout << "Pranjal QE1 Number of cells in the QE1 Mesh After " << this->fixedQEMesh->GetNumberOfCells() << ::endl;
+  //CurvatureFilterTypePointer gaussian_curvature = CurvatureFilterType::New();
+  //gaussian_curvature->SetInput(this->fixedQEMesh);
+  //gaussian_curvature->Update();
+  //QEMeshTypePointer output = gaussian_curvature->GetOutput();
 
-  CurvatureFilterTypePointer gaussian_curvature = CurvatureFilterType::New();
-  gaussian_curvature->SetInput(this->fixedQEMesh);
-  gaussian_curvature->Update();
-  QEMeshTypePointer output = gaussian_curvature->GetOutput();
+  gaussian_curvature_filter->SetInput(this->fixedQEMesh);
+  gaussian_curvature_filter->Update();
+  QEMeshTypePointer output = gaussian_curvature_filter->GetOutput();
+  
 
   QEWriterTypePointer  PolyDataWriter = QEWriterType::New();
-  PolyDataWriter->SetFileName("./qe_curvature_mesh_2.vtk");
+  PolyDataWriter->SetFileName("./qe_curvature_mesh_3.vtk");
   PolyDataWriter->SetInput(output);
   PolyDataWriter->Update();
 
-  std::cout << "Pranjal Obtained vtk mesh from the itkmesh using the filter " << std::endl;
+  //std::cout << "Pranjal Obtained vtk mesh from the itkmesh using the filter " << std::endl;
 
   /* Compute Neighbors which will be used to calculate the stretch and bend energy*/
   this->ComputeNeighbors();
