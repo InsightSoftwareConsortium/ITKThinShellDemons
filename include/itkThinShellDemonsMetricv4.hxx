@@ -87,7 +87,7 @@ ThinShellDemonsMetricv4<TFixedMesh, TMovingMesh, TInternalComputationValueType>:
   this->fixedITKMesh1 = MeshType::New();
   this->movingITKMesh1 = MeshType::New();
   
-  std::cout << "Pranjal Number of points in the ITK Mesh Before " << this->fixedITKMesh1->GetNumberOfPoints() << ::endl;
+  //std::cout << "Pranjal Number of points in the ITK Mesh Before " << this->fixedITKMesh1->GetNumberOfPoints() << ::endl;
   for (unsigned int n = 0; n < this->m_FixedPointSet->GetNumberOfPoints(); n++)
   {
     PointIdentifier point_id = n;
@@ -95,7 +95,7 @@ ThinShellDemonsMetricv4<TFixedMesh, TMovingMesh, TInternalComputationValueType>:
     MeshPointIdentifier id1 = n;
     this->fixedITKMesh1->SetPoint(id1, point);
   }
-  std::cout << "Pranjal Number of points in the ITK Mesh After " << this->fixedITKMesh1->GetNumberOfPoints() << ::endl;
+  //std::cout << "Pranjal Number of points in the ITK Mesh After " << this->fixedITKMesh1->GetNumberOfPoints() << ::endl;
   
   for (unsigned int n = 0; n < this->m_FixedPointSet->GetNumberOfCells(); n++)
   {
@@ -117,7 +117,7 @@ ThinShellDemonsMetricv4<TFixedMesh, TMovingMesh, TInternalComputationValueType>:
     t_cell.TakeOwnership(triangleCell);
     this->fixedITKMesh1->SetCell(mesh_cell_id, t_cell);
   }
-  std::cout << "Pranjal Number of Cells in the ITK Mesh After " << this->fixedITKMesh1->GetNumberOfCells() << ::endl;
+  //std::cout << "Pranjal Number of Cells in the ITK Mesh After " << this->fixedITKMesh1->GetNumberOfCells() << ::endl;
   
 
   //std::cout << "fixedITKMesh1  " <<  this->fixedITKMesh1->GetNumberOfPoints() << " " << typeid(this->fixedITKMesh1).name() <<std::endl;
@@ -132,7 +132,7 @@ ThinShellDemonsMetricv4<TFixedMesh, TMovingMesh, TInternalComputationValueType>:
 
   this->fixedQEMesh = QEMeshType::New();
   this->movingQEMesh = QEMeshType::New();
-  this->fixedQECurvature = QEMeshType::New();
+  this->qeMeshCurvature = QEMeshType::New();
 
   this->gaussian_curvature_filter = CurvatureFilterType::New();
 
@@ -167,16 +167,13 @@ ThinShellDemonsMetricv4<TFixedMesh, TMovingMesh, TInternalComputationValueType>:
     this->fixedQEMesh->SetCell(qe_cell_id, qe_cell);
   }
 
-  //std::cout << "Pranjal QE1 Number of cells in the QE1 Mesh After " << this->fixedQEMesh->GetNumberOfCells() << ::endl;
-  //CurvatureFilterTypePointer gaussian_curvature = CurvatureFilterType::New();
-  //gaussian_curvature->SetInput(this->fixedQEMesh);
-  //gaussian_curvature->Update();
-  //QEMeshTypePointer output = gaussian_curvature->GetOutput();
-
+  /* Get curvature using the QE Mesh */
   gaussian_curvature_filter->SetInput(this->fixedQEMesh);
   gaussian_curvature_filter->Update();
   QEMeshTypePointer output = gaussian_curvature_filter->GetOutput();
   
+
+  std::cout << " curvature output size is " << output->GetPointData()->Size() << std::endl;
 
   QEWriterTypePointer  PolyDataWriter = QEWriterType::New();
   PolyDataWriter->SetFileName("./qe_curvature_mesh_3.vtk");
@@ -418,6 +415,7 @@ ThinShellDemonsMetricv4<TFixedMesh, TMovingMesh, TInternalComputationValueType>:
 
   vtkSmartPointer<vtkPolyData> vMesh;
   MeshTypePointer VMesh1;
+  QEMeshTypePointer qeMesh;
 
   // Update meshes according to current transforms
   if (fixed)
@@ -440,6 +438,7 @@ ThinShellDemonsMetricv4<TFixedMesh, TMovingMesh, TInternalComputationValueType>:
     std::cout << "Updating 1 done " << std::endl;
     vMesh = fixedVTKMesh;
     VMesh1 = fixedITKMesh1;
+    qeMesh = fixedQEMesh;
   }
   else
   {
@@ -459,28 +458,49 @@ ThinShellDemonsMetricv4<TFixedMesh, TMovingMesh, TInternalComputationValueType>:
     std::cout << "Updating 2 done " << std::endl;
     vMesh = movingVTKMesh;
     VMesh1 = movingITKMesh1;
+    qeMesh = movingQEMesh;
   }
 
-  
-  using Traits = itk::QuadEdgeMeshExtendedTraits<CoordType, PointType::Dimension, 2, PixelType, PixelType, PixelType, bool, bool>;
-  using CurvatureFilterType = itk::DiscreteGaussianCurvatureQuadEdgeMeshFilter<QEMeshType, QEMeshType>;
-  
-  QEMeshTypePointer qe_mesh = QEMeshType::New();
-  std::cout << "Pranjal Number of points in the QE Mesh Before " << qe_mesh->GetNumberOfPoints() << ::endl;
+  /* Convert ITK Mesh to QE Mesh for calculating the curvature */
+  qeMesh->Clear();
+  // std::cout << "Pranjal Number of points in the QE Mesh Before " << qeMesh->GetNumberOfPoints() << ::endl;
   for (unsigned int n = 0; n < VMesh1->GetNumberOfPoints(); n++)
   {
     MeshPointIdentifier point_id = n;
     QEMeshPointType point = VMesh1->GetPoint(point_id);
     QEMeshPointIdentifier id1 = n;
-    qe_mesh->SetPoint(id1, point);
+    qeMesh->SetPoint(id1, point);
   }
-  std::cout << "Pranjal Number of points in the QE Mesh After " << qe_mesh->GetNumberOfPoints() << ::endl;
 
-  /*CurvatureFilterType::Pointer gaussian_curvature = CurvatureFilterType::New();
-  gaussian_curvature->SetInput(mesh);
-  gaussian_curvature->Update();
-  MeshType::Pointer output = gaussian_curvature->GetOutput();
-  std::cout << "Pranjal QuadEdge Mesh Filter init is done " << output->GetNumberOfPoints() << std::endl;*/
+  //std::cout << "Pranjal Number of cells in the QE1 Mesh Before " << this->fixedQEMesh->GetNumberOfCells() << ::endl;
+  for (unsigned int n = 0; n < VMesh1->GetNumberOfCells(); n++)
+  {
+    MeshCellIdentifier cell_id = n;
+    MeshCellAutoPointer tri_cell;
+    VMesh1->GetCell(cell_id, tri_cell);
+
+    /* Creating a QE Cell from the Triangle Cell and inserting it into the QEMesh */
+    auto * triangleCell = new QETriangleCellType;
+    QECellAutoPointer qe_cell;
+
+    itk::Array<float> point_ids = tri_cell->GetPointIdsContainer();
+    for (unsigned int k = 0; k < 3; ++k)
+    {
+      triangleCell->SetPointId(k, point_ids[k]);
+    }
+
+    QECellIdentifier qe_cell_id = n;
+    qe_cell.TakeOwnership(triangleCell);
+    qeMesh->SetCell(qe_cell_id, qe_cell);
+  }
+
+
+  // std::cout << "Pranjal Number of points in the QE Mesh After " << qeMesh->GetNumberOfPoints() << ::endl;
+  QEMeshTypePointer curvature_output;
+  gaussian_curvature_filter->SetInput(qeMesh);
+  gaussian_curvature_filter->Update();
+  curvature_output = gaussian_curvature_filter->GetOutput();
+  std::cout << "Pranjal QuadEdge Mesh Filter Curvature is done " << curvature_output->GetNumberOfPoints() << " " << curvature_output->GetPointData()->Size() << std::endl;
   
   /* Obtain curvature information at each point */
   vtkSmartPointer<vtkCurvatures> curvaturesFilter = vtkSmartPointer<vtkCurvatures>::New();
@@ -488,12 +508,20 @@ ThinShellDemonsMetricv4<TFixedMesh, TMovingMesh, TInternalComputationValueType>:
   curvaturesFilter->SetCurvatureTypeToGaussian();
   curvaturesFilter->Update();
 
-  std::cout << "Number of points in the mesh" << std::endl;
-  std::cout << vMesh->GetNumberOfPoints() << std::endl;
+  //std::cout << "Number of points in the mesh" << std::endl;
+  //std::cout << vMesh->GetNumberOfPoints() << std::endl;
 
   vtkSmartPointer<vtkPolyData>  curvaturesOutput = curvaturesFilter->GetOutput();
   vtkSmartPointer<vtkDataArray> curvature = curvaturesOutput->GetPointData()->GetScalars();
   FeaturePointSetPointer        features = FeaturePointSetType::New();
+
+  // For printing the results
+  /* for (PointIdentifier i = 0; i < vMesh->GetNumberOfPoints(); i++)
+  {
+    std::cout << "curvature for " << i << " " << curvature->GetTuple1(i) << " "  << curvature_output->GetPointData()->ElementAt(i) << std::endl;
+    //FeaturePointType point = this->GetFeaturePoint(vMesh->GetPoint(i), curvature->GetTuple1(i));
+    //fPoints->InsertElement(i, point);
+  }*/
 
   if (fixed){
     fixedCurvature = curvature;
@@ -502,10 +530,7 @@ ThinShellDemonsMetricv4<TFixedMesh, TMovingMesh, TInternalComputationValueType>:
     auto fPoints = features->GetPoints();
     for (PointIdentifier i = 0; i < vMesh->GetNumberOfPoints(); i++)
     {
-      //std::string name("curvature");
-      //std::cout << name << std::endl;
-      //std::cout << curvature->GetTuple1(i) << std::endl;
-
+      // std::cout << curvature->GetTuple1(i) << " " << curvature_output->GetPointData()->ElementAt(i) << std::endl;
       FeaturePointType point = this->GetFeaturePoint(vMesh->GetPoint(i), curvature->GetTuple1(i));
       fPoints->InsertElement(i, point);
     }
