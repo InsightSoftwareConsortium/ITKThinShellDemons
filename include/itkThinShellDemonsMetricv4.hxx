@@ -198,10 +198,13 @@ ThinShellDemonsMetricv4<TFixedMesh, TMovingMesh, TInternalComputationValueType>:
     // Get all the neighboring cells
     fixedVTKMesh->GetPointCells(id, cellIdList);
     vtkSmartPointer<vtkIdList> pointIdList = vtkSmartPointer<vtkIdList>::New();
+    
+    std::cout << " vtk " << id << std::endl;
+
     for (PointIdentifier i = 0; i < cellIdList->GetNumberOfIds(); i++)
     {
       vtkSmartPointer<vtkIdList> pointIdListTmp = vtkSmartPointer<vtkIdList>::New();
-
+      std::cout << cellIdList->GetId(i) << ",";
       // get all the points in the ith cell
       fixedVTKMesh->GetCellPoints(cellIdList->GetId(i), pointIdListTmp);
       for (PointIdentifier j = 0; j < pointIdListTmp->GetNumberOfIds(); j++)
@@ -213,6 +216,9 @@ ThinShellDemonsMetricv4<TFixedMesh, TMovingMesh, TInternalComputationValueType>:
         }
       }
     }
+
+    std::cout << std::endl;
+    std::cout << " vtk " << " -------------------" << std::endl;
 
     // Store edge lengths
     edgeLengthMap[id].resize(pointIdList->GetNumberOfIds());
@@ -232,23 +238,42 @@ ThinShellDemonsMetricv4<TFixedMesh, TMovingMesh, TInternalComputationValueType>:
     neighborMap[id] = pointIdList;
   }
 
-  /* For iterating over the cells for a given point */
-  MeshCellLinksContainerIterator itr = this->fixedITKMesh1->GetCellLinks()->Begin();
-  int itp = 0;
-  while (itr != this->fixedITKMesh1->GetCellLinks()->End())
-  {
-    std::cout << itp << std::endl;
-    const std::set<long unsigned int> link_set = itr->Value();
+  std::cout << "ITK Mesh --------------------" << std::endl;
+  for (PointIdentifier id = 0; id < fixedITKMesh1->GetNumberOfPoints(); id++){
+    /* For iterating over the cells for a given point */
+    const std::set<long unsigned int> link_set = this->fixedITKMesh1->GetCellLinks()->ElementAt(id);
+    
+    std::cout << id << "  " << std::endl;
     for (auto elem : link_set){
-      std::cout << elem << " , ";
+        std::cout << elem << " , ";
     }
     std::cout << "--------------------" << std::endl;
-   ++itr;
-   itp = itp + 1;
-  }
+
+    // while (itr != this->fixedITKMesh1->GetCellLinks()->End())
+    // {
+    //   std::cout << itp << std::endl;
+    //   const std::set<long unsigned int> link_set = itr->Value();
+    //   for (auto elem : link_set){
+    //     std::cout << elem << " , ";
+    //   }
+    // std::cout << "--------------------" << std::endl;
+    // ++itr;
+    // itp = itp + 1;
+  } 
+
+  // while (itr != this->fixedITKMesh1->GetCellLinks()->End())
+  // {
+  //   std::cout << itp << std::endl;
+  //   const std::set<long unsigned int> link_set = itr->Value();
+  //   for (auto elem : link_set){
+  //     std::cout << elem << " , ";
+  //   }
+  //   std::cout << "--------------------" << std::endl;
+  //  ++itr;
+  //  itp = itp + 1;
+  // }
   
   std::cout << "" << std::endl;
-  std::cout << "Getting the element at " << std::endl;
   
   std::cout << "Pranjal ComputeNeighbors done " << std::endl;
 }
