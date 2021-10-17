@@ -230,13 +230,10 @@ itkThinShellDemonsTestv4_Affine(int args, char ** argv)
 
 
 
-  // /* Creating QuadEdgeMesh from Triangle Mesh by inserting points and cells one by one*/
-
-  // using Traits = itk::QuadEdgeMeshExtendedTraits<CoordType, Dimension, 2, CoordType, CoordType, CoordType, bool, bool>;
-  // using QEMeshType = itk::QuadEdgeMesh<CoordType, Dimension, Traits>;
-  // using QEPointsContainerPointer = QEMeshType::PointsContainerPointer;
-
-  // QEMeshType::Pointer qe_mesh = QEMeshType::New();
+  /* Creating QuadEdgeMesh from Triangle Mesh by inserting points and cells one by one */
+  /* Moved this code inside the itkThinShellDemonsMetricv4 */
+  
+  // QEMeshTypePointer qe_mesh = QEMeshType::New();
 
   // std::cout << "Pranjal Number of points in the QE Mesh Before " << qe_mesh->GetNumberOfPoints() << ::endl;
   // for (unsigned int n = 0; n < movingMesh->GetNumberOfPoints(); n++)

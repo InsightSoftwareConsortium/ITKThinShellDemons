@@ -109,19 +109,19 @@ public:
   using QEMeshType = typename itk::QuadEdgeMesh<CoordType, PointType::Dimension, QETraits>;
   using QEMeshTypePointer = typename QEMeshType::Pointer;
   using QEPointsContainerPointer = typename QEMeshType::PointsContainerPointer;
+  
+  // using MeshPointIdentifier = typename TFixedMesh::PointIdentifier;
+  // using MeshCellIdentifier = typename TFixedMesh::CellIdentifier;
+  // using MeshCellAutoPointer = typename TFixedMesh::CellAutoPointer;
+  // typename itk::Mesh<CoordType, PointType::Dimension>;
 
-  //using MeshPointIdentifier = typename TFixedMesh::PointIdentifier;
-  //using MeshCellIdentifier = typename TFixedMesh::CellIdentifier;
-  //using MeshCellAutoPointer = typename TFixedMesh::CellAutoPointer;
-
-  using MeshType = TFixedMesh;//typename itk::Mesh<CoordType, PointType::Dimension>;
+  using MeshType = TFixedMesh;
   using MeshTypePointer = typename MeshType::Pointer;
   using MeshPointIdentifier = typename MeshType::PointIdentifier;
   using MeshCellType = typename MeshType::CellType;
   using MeshCellIdentifier = typename MeshType::CellIdentifier;
   using MeshCellAutoPointer = typename MeshCellType::CellAutoPointer;
   using MeshTriangleCellType = itk::TriangleCell<MeshCellType>;
-  //using MeshTriangleCellAutoPointer = typename MeshTriangleCellType::SelfAutoPointer;
 
   using QEMeshPointType = typename QEMeshType::PointType;
   using QEMeshPointIdentifier = typename QEMeshType::PointIdentifier;
@@ -129,7 +129,9 @@ public:
   using QECellAutoPointer = typename QECellType::SelfAutoPointer;
   using QECellIdentifier = typename QEMeshType::CellIdentifier;
   using QETriangleCellType = itk::TriangleCell<QECellType>;
-  //using QETriangleCellAutoPointer = typename QETriangleCellType::SelfAutoPointer;
+
+  using TriangleCellType = itk::TriangleCell<QECellType>;
+  using TriangleCellAutoPointer = typename TriangleCellType::SelfAutoPointer;
 
   using CurvatureFilterType = typename itk::DiscreteGaussianCurvatureQuadEdgeMeshFilter<QEMeshType, QEMeshType>;
   using CurvatureFilterTypePointer = typename CurvatureFilterType::Pointer;
@@ -280,9 +282,11 @@ private:
   mutable PolyDataTypePointer fixedVTKMesh1;
   mutable PolyDataTypePointer fixedCurvature1;
 
+  // 
   mutable vtkSmartPointer<vtkPolyData> movingVTKMesh;
   mutable vtkSmartPointer<vtkPolyData> fixedVTKMesh;
   mutable vtkSmartPointer<vtkDataArray> fixedCurvature;
+  
   
   mutable QEMeshTypePointer  movingQEMesh;
   mutable QEMeshTypePointer  fixedQEMesh;
