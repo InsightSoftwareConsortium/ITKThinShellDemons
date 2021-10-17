@@ -86,9 +86,6 @@ itkThinShellDemonsTestv4_Affine(int args, char ** argv)
   using PointType = float;
   using CoordType = float;
 
-  using TriangleMeshTraits = itk::DefaultDynamicMeshTraits<float, 3, 3, float, float>;
-  using TriangleMeshTraitsStatic = itk::DefaultStaticMeshTraits<float, 3, 3, float, float>;
-
   // Declare the type of the input and output mesh
   using MeshType = itk::Mesh<float, 3>;
   using PointsContainerPointer = MeshType::PointsContainerPointer;
@@ -143,7 +140,29 @@ itkThinShellDemonsTestv4_Affine(int args, char ** argv)
 
   std::cout << "[TEST DONE]" << std::endl;
   
+  /* Building the Cell Links to compute the neighbours later */
+  fixedMesh->BuildCellLinks();
+  movingMesh->BuildCellLinks();
+
+  std::cout << " movingMesh " << movingMesh << std::endl;
+  std::cout << " fixedMesh" << fixedMesh << std::endl;
+
+  //MeshType::CellLinksContainer itr = movingMesh->GetCellLinks()->Begin();
+  // MeshType::CellLinksContainer * itr = movingMesh->GetCellLinks();
+  // if (itr){
+  //   std::cout << " Size of cell links " << itr->Size() << std::endl;
+  // }
+  // else{
+  //   std::cout << " Cell Links does not exists " << std::endl;
+  // }
+  // while (itr != movingMesh->GetCellLinks()->End())
+  // {
+  //  std::cout << itr->Value();
+  //  ++itr;
+  // }
   
+
+
 
   // QEWriterType::Pointer  PolyDataWriter = QEWriterType::New();
   // PolyDataWriter->SetFileName("./qe_curvature_mesh1.vtk");
