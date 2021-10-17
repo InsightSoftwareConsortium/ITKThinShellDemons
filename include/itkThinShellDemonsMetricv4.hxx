@@ -148,6 +148,10 @@ ThinShellDemonsMetricv4<TFixedMesh, TMovingMesh, TInternalComputationValueType>:
   std::cout << "fixedITKMesh1  " <<  this->fixedITKMesh1->GetNumberOfPoints() << " " << this->fixedITKMesh1->GetNumberOfCells() <<std::endl;
   std::cout << "movingITKMesh1  " <<  this->movingITKMesh1->GetNumberOfPoints() << " " <<  this->movingITKMesh1->GetNumberOfCells() <<std::endl;
   
+  /* Build the Cell Links for the ITK Mesh for calculating the neighbours*/
+  this->fixedITKMesh1->BuildCellLinks();
+  this->movingITKMesh1->BuildCellLinks();
+
   // generate a VTK copy of the same mesh
   this->movingVTKMesh = itkMeshTovtkPolyData<MovingPointSetType>::Convert(this->m_MovingPointSet);
   this->fixedVTKMesh = itkMeshTovtkPolyData<FixedPointSetType>::Convert(this->m_FixedPointSet);
@@ -228,83 +232,24 @@ ThinShellDemonsMetricv4<TFixedMesh, TMovingMesh, TInternalComputationValueType>:
     neighborMap[id] = pointIdList;
   }
 
-
-  //MeshCellsContainerConstIterator itr = this->fixedITKMesh1->GetCellLinks()->Begin();
-  //while (itr != this->fixedITKMesh1->GetCellLinks()->End())
-  //{
-  //  std::cout << itr->Value();
-  //  ++itr;
-  //}
-  //std::cout << "" << std::endl;
-
-  //std::cout << this->fixedITKMesh1->GetCellLinks()->GetElement(id) <<  std::endl;
-  /*auto all_links = fixedITKMesh1->GetCellLinks();
-  auto it_links = all_links->begin();
-  int ipcl = 0;
-
-  while (it_links != all_links->end())
+  /* For iterating over the cells for a given point */
+  MeshCellLinksContainerIterator itr = this->fixedITKMesh1->GetCellLinks()->Begin();
+  int itp = 0;
+  while (itr != this->fixedITKMesh1->GetCellLinks()->End())
   {
-    // typename MeshType::PointCellLinksContainer pcl;
-    // std::list<int>::const_iterator it_link = (*it_links)->m_Links.begin();
-    // while (it_link != (*it_links)->m_Links.end())
-    // {
-    //   pcl.insert(*it_link);
-    //   it_link++;
-    // }
-    it_links++;
-    ipcl = ipcl+1;
-  }*/
-
-  // Add cell links
-  int ipcl = 0;
-  MeshCellLinksContainer * links = fixedITKMesh1->GetCellLinks();
-
-  if (links)
-  {
-    typename MeshCellLinksContainer::ConstIterator it_celllinks = links->Begin();
-
-    while (it_celllinks != links->End())
-    {
-      ++it_celllinks;
-      ipcl = ipcl+1;
+    std::cout << itp << std::endl;
+    const std::set<long unsigned int> link_set = itr->Value();
+    for (auto elem : link_set){
+      std::cout << elem << " , ";
     }
+    std::cout << "--------------------" << std::endl;
+   ++itr;
+   itp = itp + 1;
   }
-
-
-  std::cout << " ComputeNeighbors " << ipcl << std::endl;
-  //for (PointIdentifier id = 0; id < fixedITKMesh1->GetNumberOfPoints(); id++)
-  //{
-  //  std::set<long unsigned int> temp = fixedITKMesh1->GetCellLinks()->GetElement(id);
-  //  std::cout << "Pranjal fixedITKMesh1->PointCellLinksContainerIterator " << temp.size() << std::endl;
-  //}
   
-
-
-  /*for (PointIdentifier id = 0; id < fixedITKMesh1->GetNumberOfPoints(); id++)
-  {
-    // Collect all neighbors
-    // vtkSmartPointer<vtkIdList> cellIdList = vtkSmartPointer<vtkIdList>::New();
-    
-    // Get all the neighboring cells
-    
-    // fixedVTKMesh->GetPointCells(id, cellIdList);
-    vtkSmartPointer<vtkIdList> pointIdList = vtkSmartPointer<vtkIdList>::New();
-    for (PointIdentifier i = 0; i < cellIdList->GetNumberOfIds(); i++)
-    {
-      vtkSmartPointer<vtkIdList> pointIdListTmp = vtkSmartPointer<vtkIdList>::New();
-
-      // get all the points in the ith cell
-      fixedVTKMesh->GetCellPoints(cellIdList->GetId(i), pointIdListTmp);
-      for (PointIdentifier j = 0; j < pointIdListTmp->GetNumberOfIds(); j++)
-      {
-        // insert only if it is not the same point
-        if (pointIdListTmp->GetId(j) != id)
-        {
-          pointIdList->InsertUniqueId(pointIdListTmp->GetId(j));
-        }
-      }
-    }*/
-
+  std::cout << "" << std::endl;
+  std::cout << "Getting the element at " << std::endl;
+  
   std::cout << "Pranjal ComputeNeighbors done " << std::endl;
 }
 
