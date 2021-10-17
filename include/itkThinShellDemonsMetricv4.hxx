@@ -192,19 +192,16 @@ ThinShellDemonsMetricv4<TFixedMesh, TMovingMesh, TInternalComputationValueType>:
   
   for (PointIdentifier id = 0; id < fixedVTKMesh->GetNumberOfPoints(); id++)
   {
-    // Collect all neighbors
-    vtkSmartPointer<vtkIdList> cellIdList = vtkSmartPointer<vtkIdList>::New();
-    
     // Get all the neighboring cells
+    vtkSmartPointer<vtkIdList> cellIdList = vtkSmartPointer<vtkIdList>::New();
     fixedVTKMesh->GetPointCells(id, cellIdList);
+
     vtkSmartPointer<vtkIdList> pointIdList = vtkSmartPointer<vtkIdList>::New();
     
-    std::cout << " vtk " << id << std::endl;
-
     for (PointIdentifier i = 0; i < cellIdList->GetNumberOfIds(); i++)
     {
       vtkSmartPointer<vtkIdList> pointIdListTmp = vtkSmartPointer<vtkIdList>::New();
-      std::cout << cellIdList->GetId(i) << ",";
+      
       // get all the points in the ith cell
       fixedVTKMesh->GetCellPoints(cellIdList->GetId(i), pointIdListTmp);
       for (PointIdentifier j = 0; j < pointIdListTmp->GetNumberOfIds(); j++)
@@ -216,9 +213,6 @@ ThinShellDemonsMetricv4<TFixedMesh, TMovingMesh, TInternalComputationValueType>:
         }
       }
     }
-
-    std::cout << std::endl;
-    std::cout << " vtk " << " -------------------" << std::endl;
 
     // Store edge lengths
     edgeLengthMap[id].resize(pointIdList->GetNumberOfIds());
@@ -238,43 +232,24 @@ ThinShellDemonsMetricv4<TFixedMesh, TMovingMesh, TInternalComputationValueType>:
     neighborMap[id] = pointIdList;
   }
 
-  std::cout << "ITK Mesh --------------------" << std::endl;
+  /* For iterating over the cells for a given point */
   for (PointIdentifier id = 0; id < fixedITKMesh1->GetNumberOfPoints(); id++){
-    /* For iterating over the cells for a given point */
     const std::set<long unsigned int> link_set = this->fixedITKMesh1->GetCellLinks()->ElementAt(id);
     
-    std::cout << id << "  " << std::endl;
-    for (auto elem : link_set){
-        std::cout << elem << " , ";
-    }
-    std::cout << "--------------------" << std::endl;
+    std::set<long unsigned int> pointIdList_1;
 
-    // while (itr != this->fixedITKMesh1->GetCellLinks()->End())
-    // {
-    //   std::cout << itp << std::endl;
-    //   const std::set<long unsigned int> link_set = itr->Value();
-    //   for (auto elem : link_set){
-    //     std::cout << elem << " , ";
-    //   }
-    // std::cout << "--------------------" << std::endl;
-    // ++itr;
-    // itp = itp + 1;
+    std::cout << "Point " << id << std::endl;
+
+    /* Iterate over cells  and get the points */
+    for (auto elem : link_set){
+        std::cout << "Cell " << elem;
+        MeshCellAutoPointer tri_cell;
+        this->fixedITKMesh1->GetCell(elem, tri_cell);
+        MeshCellPointIdConstIterator point_ids = tri_cell->GetPointIds();
+        std::cout << elem << "  " << point_ids[0] << "  " << point_ids[1] << "  " << point_ids[2] << std::endl;
+    }
   } 
 
-  // while (itr != this->fixedITKMesh1->GetCellLinks()->End())
-  // {
-  //   std::cout << itp << std::endl;
-  //   const std::set<long unsigned int> link_set = itr->Value();
-  //   for (auto elem : link_set){
-  //     std::cout << elem << " , ";
-  //   }
-  //   std::cout << "--------------------" << std::endl;
-  //  ++itr;
-  //  itp = itp + 1;
-  // }
-  
-  std::cout << "" << std::endl;
-  
   std::cout << "Pranjal ComputeNeighbors done " << std::endl;
 }
 

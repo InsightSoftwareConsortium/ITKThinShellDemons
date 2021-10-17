@@ -115,6 +115,7 @@ public:
   using MeshPointIdentifier = typename MeshType::PointIdentifier;
   using MeshCellType = typename MeshType::CellType;
   using MeshCellIdentifier = typename MeshType::CellIdentifier;
+  using MeshCellPointIdConstIterator = typename MeshCellType::PointIdConstIterator;
   using MeshCellAutoPointer = typename MeshCellType::CellAutoPointer;
   using MeshTriangleCellType = itk::TriangleCell<MeshCellType>;
   using MeshCellLinksContainerIterator = typename MeshType::CellLinksContainerIterator;
