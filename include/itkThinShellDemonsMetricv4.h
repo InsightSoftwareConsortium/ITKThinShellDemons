@@ -271,16 +271,14 @@ private:
 
   mutable MeshTypePointer fixedITKMesh1;
   mutable MeshTypePointer movingITKMesh1;
-  mutable MeshTypePointer fixedCurvatureITK1;
-  
+  mutable QEMeshTypePointer  qeMeshCurvature;
+
   mutable vtkSmartPointer<vtkPolyData> movingVTKMesh;
   mutable vtkSmartPointer<vtkPolyData> fixedVTKMesh;
   mutable vtkSmartPointer<vtkDataArray> fixedCurvature;
   
-  mutable QEMeshTypePointer  fixedQEMesh;
-  mutable QEMeshTypePointer  movingQEMesh;
-  mutable QEMeshTypePointer  qeMeshCurvature;
-
+  //mutable QEMeshTypePointer  fixedQEMesh;
+  //mutable QEMeshTypePointer  movingQEMesh;
   CurvatureFilterTypePointer gaussian_curvature_filter;
 
   double m_StretchWeight;
