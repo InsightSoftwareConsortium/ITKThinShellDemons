@@ -228,6 +228,83 @@ ThinShellDemonsMetricv4<TFixedMesh, TMovingMesh, TInternalComputationValueType>:
     neighborMap[id] = pointIdList;
   }
 
+
+  //MeshCellsContainerConstIterator itr = this->fixedITKMesh1->GetCellLinks()->Begin();
+  //while (itr != this->fixedITKMesh1->GetCellLinks()->End())
+  //{
+  //  std::cout << itr->Value();
+  //  ++itr;
+  //}
+  //std::cout << "" << std::endl;
+
+  //std::cout << this->fixedITKMesh1->GetCellLinks()->GetElement(id) <<  std::endl;
+  /*auto all_links = fixedITKMesh1->GetCellLinks();
+  auto it_links = all_links->begin();
+  int ipcl = 0;
+
+  while (it_links != all_links->end())
+  {
+    // typename MeshType::PointCellLinksContainer pcl;
+    // std::list<int>::const_iterator it_link = (*it_links)->m_Links.begin();
+    // while (it_link != (*it_links)->m_Links.end())
+    // {
+    //   pcl.insert(*it_link);
+    //   it_link++;
+    // }
+    it_links++;
+    ipcl = ipcl+1;
+  }*/
+
+  // Add cell links
+  int ipcl = 0;
+  MeshCellLinksContainer * links = fixedITKMesh1->GetCellLinks();
+
+  if (links)
+  {
+    typename MeshCellLinksContainer::ConstIterator it_celllinks = links->Begin();
+
+    while (it_celllinks != links->End())
+    {
+      ++it_celllinks;
+      ipcl = ipcl+1;
+    }
+  }
+
+
+  std::cout << " ComputeNeighbors " << ipcl << std::endl;
+  //for (PointIdentifier id = 0; id < fixedITKMesh1->GetNumberOfPoints(); id++)
+  //{
+  //  std::set<long unsigned int> temp = fixedITKMesh1->GetCellLinks()->GetElement(id);
+  //  std::cout << "Pranjal fixedITKMesh1->PointCellLinksContainerIterator " << temp.size() << std::endl;
+  //}
+  
+
+
+  /*for (PointIdentifier id = 0; id < fixedITKMesh1->GetNumberOfPoints(); id++)
+  {
+    // Collect all neighbors
+    // vtkSmartPointer<vtkIdList> cellIdList = vtkSmartPointer<vtkIdList>::New();
+    
+    // Get all the neighboring cells
+    
+    // fixedVTKMesh->GetPointCells(id, cellIdList);
+    vtkSmartPointer<vtkIdList> pointIdList = vtkSmartPointer<vtkIdList>::New();
+    for (PointIdentifier i = 0; i < cellIdList->GetNumberOfIds(); i++)
+    {
+      vtkSmartPointer<vtkIdList> pointIdListTmp = vtkSmartPointer<vtkIdList>::New();
+
+      // get all the points in the ith cell
+      fixedVTKMesh->GetCellPoints(cellIdList->GetId(i), pointIdListTmp);
+      for (PointIdentifier j = 0; j < pointIdListTmp->GetNumberOfIds(); j++)
+      {
+        // insert only if it is not the same point
+        if (pointIdListTmp->GetId(j) != id)
+        {
+          pointIdList->InsertUniqueId(pointIdListTmp->GetId(j));
+        }
+      }
+    }*/
+
   std::cout << "Pranjal ComputeNeighbors done " << std::endl;
 }
 
@@ -490,14 +567,6 @@ ThinShellDemonsMetricv4<TFixedMesh, TMovingMesh, TInternalComputationValueType>:
   vtkSmartPointer<vtkPolyData>  curvaturesOutput = curvaturesFilter->GetOutput();
   vtkSmartPointer<vtkDataArray> curvature = curvaturesOutput->GetPointData()->GetScalars();
   FeaturePointSetPointer        features = FeaturePointSetType::New();
-
-  // For printing the results
-  for (PointIdentifier i = 0; i < vMesh->GetNumberOfPoints(); i++)
-  {
-    std::cout << "curvature for " << i << " " << curvature->GetTuple1(i) << " "  << curvature_output->GetPointData()->ElementAt(i) << std::endl;
-    //FeaturePointType point = this->GetFeaturePoint(vMesh->GetPoint(i), curvature->GetTuple1(i));
-    //fPoints->InsertElement(i, point);
-  }
 
   if (fixed){
     fixedCurvature = curvature;
