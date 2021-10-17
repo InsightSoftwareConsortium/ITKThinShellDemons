@@ -190,37 +190,37 @@ ThinShellDemonsMetricv4<TFixedMesh, TMovingMesh, TInternalComputationValueType>:
   this->neighborMap.resize(fixedVTKMesh->GetNumberOfPoints());
   this->edgeLengthMap.resize(fixedVTKMesh->GetNumberOfPoints());
   
+  //std::cout << fixedVTKMesh->GetNumberOfPoints() << " neighborMap size is " << this->neighborMap.size() << std::endl;
+  //std::cout << fixedVTKMesh->GetNumberOfPoints() << " edgeLengthMap size is " << this->edgeLengthMap.size() << std::endl;
+
   for (PointIdentifier id = 0; id < fixedVTKMesh->GetNumberOfPoints(); id++)
   {
-    // Get all the neighboring cells
-    vtkSmartPointer<vtkIdList> cellIdList = vtkSmartPointer<vtkIdList>::New();
-    fixedVTKMesh->GetPointCells(id, cellIdList);
+    /* For iterating over the cells for a given point */
+    const std::set<PointIdentifier> link_set = this->fixedITKMesh1->GetCellLinks()->ElementAt(id);
+    std::set<PointIdentifier> pointIdSet;
 
-    vtkSmartPointer<vtkIdList> pointIdList = vtkSmartPointer<vtkIdList>::New();
-    
-    for (PointIdentifier i = 0; i < cellIdList->GetNumberOfIds(); i++)
-    {
-      vtkSmartPointer<vtkIdList> pointIdListTmp = vtkSmartPointer<vtkIdList>::New();
-      
-      // get all the points in the ith cell
-      fixedVTKMesh->GetCellPoints(cellIdList->GetId(i), pointIdListTmp);
-      for (PointIdentifier j = 0; j < pointIdListTmp->GetNumberOfIds(); j++)
-      {
-        // insert only if it is not the same point
-        if (pointIdListTmp->GetId(j) != id)
-        {
-          pointIdList->InsertUniqueId(pointIdListTmp->GetId(j));
+    /* Iterate over the cells  and get the neighbouring points */
+    for (auto elem : link_set){
+        MeshCellAutoPointer tri_cell;
+        this->fixedITKMesh1->GetCell(elem, tri_cell);
+        MeshCellPointIdConstIterator point_ids = tri_cell->GetPointIds();
+        for (int ik = 0; ik < 3; ++ik){
+          if (point_ids[ik] != id){
+            pointIdSet.insert(point_ids[ik]);
+          }
         }
-      }
-    }
+    } 
 
-    std::cout << "pointIdList->GetNumberOfIds() " << id << " " <<  pointIdList->GetNumberOfIds()  << std::endl;
+    // Convert Set to Vector for  later use
+    std::vector<PointIdentifier> pointIdList( pointIdSet.begin(), pointIdSet.end() );
+
     // Store edge lengths
-    edgeLengthMap[id].resize(pointIdList->GetNumberOfIds());
+    edgeLengthMap[id].resize(pointIdList.size());
+    
     const PointType & p = this->m_FixedPointSet->GetPoint(id);
-    for (PointIdentifier j = 0; j < pointIdList->GetNumberOfIds(); j++)
+    for (unsigned long int j=0; j < pointIdList.size(); ++j)
     {
-      const vtkIdType & nid = pointIdList->GetId(j);
+      PointIdentifier nid = pointIdList[j];
       const PointType & pn = this->m_FixedPointSet->GetPoint(nid);
       edgeLengthMap[id][j] = p.EuclideanDistanceTo(pn);
       // Avoid division by zero
@@ -233,27 +233,7 @@ ThinShellDemonsMetricv4<TFixedMesh, TMovingMesh, TInternalComputationValueType>:
     neighborMap[id] = pointIdList;
   }
 
-  /* For iterating over the cells for a given point */
-  for (PointIdentifier id = 0; id < fixedITKMesh1->GetNumberOfPoints(); id++){
-    const std::set<long unsigned int> link_set = this->fixedITKMesh1->GetCellLinks()->ElementAt(id);
-    
-    std::set<long unsigned int> pointIdList_1;
-
-    /* Iterate over the cells  and get the neighbouring points */
-    for (auto elem : link_set){
-        MeshCellAutoPointer tri_cell;
-        this->fixedITKMesh1->GetCell(elem, tri_cell);
-        MeshCellPointIdConstIterator point_ids = tri_cell->GetPointIds();
-        for (int ik = 0; ik < 3; ++ik){
-          if (point_ids[ik] != id){
-            pointIdList_1.insert(point_ids[ik]);
-          }
-        }
-    }
-
-    std::cout << "pointIdList_1 " << id << " " << pointIdList_1.size()  << std::endl;
-  } 
-
+  
   std::cout << "Pranjal ComputeNeighbors done " << std::endl;
 }
 
@@ -300,16 +280,16 @@ ThinShellDemonsMetricv4<TFixedMesh, TMovingMesh, TInternalComputationValueType>:
   bend.Fill(0);
 
   // Collect all neighbors
-  const vtkSmartPointer<vtkIdList> & pointIdList = this->neighborMap[identifier];
-  int                                degree = pointIdList->GetNumberOfIds();
+  std::vector<PointIdentifier> pointIdList = this->neighborMap[identifier];
+  int                                degree = pointIdList.size();
   VectorType                         v = this->GetMovingDirection(identifier);
   VectorType                         bEnergy;
   bEnergy.Fill(0);
 
-  for (PointIdentifier i = 0; i < pointIdList->GetNumberOfIds(); i++)
+  for (long unsigned int i=0; i < pointIdList.size(); ++i)
   {
-    PointIdentifier neighborIdx = pointIdList->GetId(i);
-    int             nDegree = this->neighborMap[neighborIdx]->GetNumberOfIds();
+    PointIdentifier neighborIdx = pointIdList[i];
+    int             nDegree = this->neighborMap[neighborIdx].size();
 
     VectorType vn = this->GetMovingDirection(neighborIdx);
     VectorType dx = (v - vn);

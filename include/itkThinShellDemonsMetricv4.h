@@ -265,7 +265,7 @@ protected:
   void PrintSelf(std::ostream & os, Indent indent) const ITK_OVERRIDE;
 
 private:
-  typedef std::vector<vtkSmartPointer<vtkIdList>> NeighborhoodMap;
+  typedef std::vector<std::vector<PointIdentifier>> NeighborhoodMap;
   NeighborhoodMap neighborMap;
 
   typedef std::vector< std::vector<double> > EdgeLengthMap;
