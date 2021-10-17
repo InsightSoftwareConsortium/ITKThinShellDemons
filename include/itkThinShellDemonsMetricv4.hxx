@@ -214,6 +214,7 @@ ThinShellDemonsMetricv4<TFixedMesh, TMovingMesh, TInternalComputationValueType>:
       }
     }
 
+    std::cout << "pointIdList->GetNumberOfIds() " << id << " " <<  pointIdList->GetNumberOfIds()  << std::endl;
     // Store edge lengths
     edgeLengthMap[id].resize(pointIdList->GetNumberOfIds());
     const PointType & p = this->m_FixedPointSet->GetPoint(id);
@@ -238,16 +239,19 @@ ThinShellDemonsMetricv4<TFixedMesh, TMovingMesh, TInternalComputationValueType>:
     
     std::set<long unsigned int> pointIdList_1;
 
-    std::cout << "Point " << id << std::endl;
-
-    /* Iterate over cells  and get the points */
+    /* Iterate over the cells  and get the neighbouring points */
     for (auto elem : link_set){
-        std::cout << "Cell " << elem;
         MeshCellAutoPointer tri_cell;
         this->fixedITKMesh1->GetCell(elem, tri_cell);
         MeshCellPointIdConstIterator point_ids = tri_cell->GetPointIds();
-        std::cout << elem << "  " << point_ids[0] << "  " << point_ids[1] << "  " << point_ids[2] << std::endl;
+        for (int ik = 0; ik < 3; ++ik){
+          if (point_ids[ik] != id){
+            pointIdList_1.insert(point_ids[ik]);
+          }
+        }
     }
+
+    std::cout << "pointIdList_1 " << id << " " << pointIdList_1.size()  << std::endl;
   } 
 
   std::cout << "Pranjal ComputeNeighbors done " << std::endl;
