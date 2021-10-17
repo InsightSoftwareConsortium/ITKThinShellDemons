@@ -27,7 +27,6 @@
 #include <itkQuadEdgeMeshExtendedTraits.h>
 #include <itkDiscreteGaussianCurvatureQuadEdgeMeshFilter.h>
 
-#include <vtkDataArray.h>
 #include <vtkPolyData.h>
 #include <vtkSmartPointer.h>
 #include <itkSmartPointer.h>

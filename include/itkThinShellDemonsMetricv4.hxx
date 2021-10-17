@@ -213,7 +213,7 @@ ThinShellDemonsMetricv4<TFixedMesh, TMovingMesh, TInternalComputationValueType>:
 
     // Convert Set to Vector for  later use
     std::vector<PointIdentifier> pointIdList( pointIdSet.begin(), pointIdSet.end() );
-
+    
     // Store edge lengths
     edgeLengthMap[id].resize(pointIdList.size());
     
@@ -505,7 +505,11 @@ ThinShellDemonsMetricv4<TFixedMesh, TMovingMesh, TInternalComputationValueType>:
     for (PointIdentifier i = 0; i < vMesh->GetNumberOfPoints(); i++)
     {
       // std::cout << curvature->GetTuple1(i) << " " << curvature_output->GetPointData()->ElementAt(i) << std::endl;
-      FeaturePointType point = this->GetFeaturePoint(vMesh->GetPoint(i), curvature->GetTuple1(i));
+      // FeaturePointType point = this->GetFeaturePoint(vMesh->GetPoint(i), curvature->GetTuple1(i));
+      // Replacing the VTK curvature with the QE curvature
+      FeaturePointType point = this->GetFeaturePoint(VMesh1->GetPoint(i), curvature_output->GetPointData()->ElementAt(i));
+      // FeaturePointType point = this->GetFeaturePoint(VMesh1->GetPoint(i), curvature->GetTuple1(i));
+
       fPoints->InsertElement(i, point);
     }
   }
