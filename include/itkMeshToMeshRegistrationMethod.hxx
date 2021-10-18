@@ -22,17 +22,18 @@
 namespace itk
 {
 
-template <typename TFixedMesh, typename TMovingMesh>
-MeshToMeshRegistrationMethod<TFixedMesh, TMovingMesh>::MeshToMeshRegistrationMethod()
+template< typename TFixedMesh, typename TMovingMesh>
+MeshToMeshRegistrationMethod< TFixedMesh, TMovingMesh >
+  ::MeshToMeshRegistrationMethod()
 {
   this->SetNumberOfRequiredOutputs(1);
 
-  m_InitialTransformParameters = ParametersType(FixedMeshType::PointDimension);
-  m_LastTransformParameters = ParametersType(FixedMeshType::PointDimension);
+  m_InitialTransformParameters = ParametersType( FixedMeshType::PointDimension);
+  m_LastTransformParameters = ParametersType( FixedMeshType::PointDimension );
 
-  m_InitialTransformParameters.Fill(0);
-  m_LastTransformParameters.Fill(0);
-
+  m_InitialTransformParameters.Fill( 0 );
+  m_LastTransformParameters.Fill( 0 );
+  
   TransformOutputPointer transformDecorator =
     itkDynamicCastInDebugMode<TransformOutputType *>(this->MakeOutput(0).GetPointer());
 
@@ -47,7 +48,7 @@ MeshToMeshRegistrationMethod<TFixedMesh, TMovingMesh>::SetInitialTransformParame
   this->Modified();
 }
 
-template <typename TFixedMesh, typename TMovingMesh>
+template< typename TFixedMesh, typename TMovingMesh >
 void
   MeshToMeshRegistrationMethod< TFixedMesh, TMovingMesh >
   ::Initialize()
@@ -174,7 +175,7 @@ MeshToMeshRegistrationMethod<TFixedMesh, TMovingMesh>::UpdateMovingMesh()
 
   typename InputPointsContainer::ConstIterator inputPoint = inPoints->Begin();
   typename InputPointsContainer::ConstIterator inputEnd = inPoints->End();
-  typename OutputPointsContainer::Iterator     outputPoint = outPoints->Begin();
+  typename OutputPointsContainer::Iterator outputPoint = outPoints->Begin();
 
   ParametersType m_VectorField = m_Transform->GetParameters();
   int            idx = 0;
