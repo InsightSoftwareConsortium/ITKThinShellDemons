@@ -1,6 +1,0 @@
-/home/pranjal.sahu/ITK/Modules/External/ITKThinShellDemons/include/itk*.h
-/home/pranjal.sahu/ITK/Modules/External/ITKThinShellDemons/include/itk*.hxx
-/home/pranjal.sahu/ITK/Modules/External/ITKThinShellDemons/src/*.cxx
-/home/pranjal.sahu/ITK/Modules/External/ITKThinShellDemons/src/*.h
-/home/pranjal.sahu/ITK/Modules/External/ITKThinShellDemons/src/*.hxx
-/home/pranjal.sahu/ITK/Modules/External/ITKThinShellDemons/test/*.cxx

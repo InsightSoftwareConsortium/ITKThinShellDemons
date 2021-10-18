@@ -1,8 +1,0 @@
-# Target labels
- ThinShellDemons
-# Source files and their labels
-/home/pranjal.sahu/ITK/Modules/External/ITKThinShellDemons/build/test/ThinShellDemonsTestDriver.cxx
-/home/pranjal.sahu/ITK/Modules/External/ITKThinShellDemons/test/itkThinShellDemonsTest.cxx
-/home/pranjal.sahu/ITK/Modules/External/ITKThinShellDemons/test/itkThinShellDemonsTestv4_Affine.cxx
-/home/pranjal.sahu/ITK/Modules/External/ITKThinShellDemons/test/itkThinShellDemonsTestv4_Displacement.cxx
-/home/pranjal.sahu/ITK/Modules/External/ITKThinShellDemons/test/itkThinShellDemonsTestv4_SyN.cxx

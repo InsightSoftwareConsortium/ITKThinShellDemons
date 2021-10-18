@@ -1,3 +1,0 @@
-repository='https://github.com/Kitware/KWStyle.git'
-module=''
-tag='origin'
