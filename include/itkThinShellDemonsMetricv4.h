@@ -21,7 +21,6 @@
 #include "itkPointSetToPointSetMetricWithIndexv4.h"
 
 #include <itkMesh.h>
-#include "itkPolyData.h"
 #include <itkQuadEdge.h>
 #include <itkQuadEdgeMesh.h>
 #include <itkQuadEdgeMeshExtendedTraits.h>
@@ -29,7 +28,6 @@
 
 #include "itkMeshFileWriter.h"
 #include "itkMeshFileReader.h"
-#include "itkMeshToPolyDataFilter.h"
 
 namespace itk
 {
@@ -128,19 +126,7 @@ public:
 
   using CurvatureFilterType = typename itk::DiscreteGaussianCurvatureQuadEdgeMeshFilter<QEMeshType, QEMeshType>;
   using CurvatureFilterTypePointer = typename CurvatureFilterType::Pointer;
-
-  using QEReaderType = typename itk::MeshFileReader<QEMeshType>;
-  using QEReaderTypePointer = typename QEReaderType::Pointer;
-  using QEWriterType = typename itk::MeshFileWriter<QEMeshType>;
-  using QEWriterTypePointer = typename QEWriterType::Pointer;
-
-  using PolyDataType = typename itk::PolyData< PixelType >;
-  using PolyDataTypePointer = typename PolyDataType::Pointer;
-  using PolyDataPointsContainer = typename PolyDataType::PointsContainer;
-  using PolyDataPointsContainerPointer = typename PolyDataPointsContainer::Pointer;
-  using FilterType = typename itk::MeshToPolyDataFilter< TFixedMesh >;
-  using FilterTypePointer= typename FilterType::Pointer;
-
+  
   void Initialize(void) override;
 
   MeasureType
@@ -267,8 +253,8 @@ private:
   typedef std::vector< std::vector<double> > EdgeLengthMap;
   EdgeLengthMap edgeLengthMap;
 
-  mutable MeshTypePointer fixedITKMesh1;
-  mutable MeshTypePointer movingITKMesh1;
+  mutable MeshTypePointer fixedITKMesh;
+  mutable MeshTypePointer movingITKMesh;
   mutable QEMeshTypePointer  qeMeshCurvature;
 
   mutable QEMeshTypePointer fixedCurvature;

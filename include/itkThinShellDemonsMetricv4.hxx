@@ -21,12 +21,6 @@
 
 #include "itkThinShellDemonsMetricv4.h"
 #include "itkPointSet.h"
-#include "itkMeshTovtkPolyData.h"
-
-// Remove these
-#include <vtkCurvatures.h>
-#include <vtkPointData.h>
-#include <typeinfo>
 #include <math.h>
 
 namespace itk
@@ -45,8 +39,8 @@ ThinShellDemonsMetricv4<TFixedMesh, TMovingMesh, TInternalComputationValueType>:
   m_UpdateFeatureMatchingAtEachIteration = false;
   m_MovingTransformedFeaturePointsLocator = nullptr;
   
-  fixedITKMesh1 = nullptr;
-  movingITKMesh1 = nullptr;
+  fixedITKMesh = nullptr;
+  movingITKMesh = nullptr;
   fixedCurvature = nullptr;
 }
 
@@ -81,17 +75,17 @@ ThinShellDemonsMetricv4<TFixedMesh, TMovingMesh, TInternalComputationValueType>:
   }
 
 
-  this->fixedITKMesh1 = MeshType::New();
-  this->movingITKMesh1 = MeshType::New();
+  this->fixedITKMesh = MeshType::New();
+  this->movingITKMesh = MeshType::New();
 
   /* TODO: Avoid repetition and make a function for this */  
-  /* Insert points and cells in the fixedITKMesh1 */
+  /* Insert points and cells in the fixedITKMesh */
   for (unsigned int n = 0; n < this->m_FixedPointSet->GetNumberOfPoints(); n++)
   {
     PointIdentifier point_id = n;
     PointType point = this->m_FixedPointSet->GetPoint(point_id);
     MeshPointIdentifier id1 = n;
-    this->fixedITKMesh1->SetPoint(id1, point);
+    this->fixedITKMesh->SetPoint(id1, point);
   }
   
   for (unsigned int n = 0; n < this->m_FixedPointSet->GetNumberOfCells(); n++)
@@ -112,16 +106,16 @@ ThinShellDemonsMetricv4<TFixedMesh, TMovingMesh, TInternalComputationValueType>:
     MeshCellAutoPointer t_cell;
     MeshCellIdentifier mesh_cell_id = n;
     t_cell.TakeOwnership(triangleCell);
-    this->fixedITKMesh1->SetCell(mesh_cell_id, t_cell);
+    this->fixedITKMesh->SetCell(mesh_cell_id, t_cell);
   }
 
-  /* Insert points and cells in the movingITKMesh1 */
+  /* Insert points and cells in the movingITKMesh */
   for (unsigned int n = 0; n < this->m_MovingPointSet->GetNumberOfPoints(); n++)
   {
     PointIdentifier point_id = n;
     PointType point = this->m_MovingPointSet->GetPoint(point_id);
     MeshPointIdentifier id1 = n;
-    this->movingITKMesh1->SetPoint(id1, point);
+    this->movingITKMesh->SetPoint(id1, point);
   }
   
   for (unsigned int n = 0; n < this->m_MovingPointSet->GetNumberOfCells(); n++)
@@ -142,15 +136,12 @@ ThinShellDemonsMetricv4<TFixedMesh, TMovingMesh, TInternalComputationValueType>:
     MeshCellAutoPointer t_cell;
     MeshCellIdentifier mesh_cell_id = n;
     t_cell.TakeOwnership(triangleCell);
-    this->movingITKMesh1->SetCell(mesh_cell_id, t_cell);
+    this->movingITKMesh->SetCell(mesh_cell_id, t_cell);
   }
 
-  std::cout << "fixedITKMesh1  " <<  this->fixedITKMesh1->GetNumberOfPoints() << " " << this->fixedITKMesh1->GetNumberOfCells() <<std::endl;
-  std::cout << "movingITKMesh1  " <<  this->movingITKMesh1->GetNumberOfPoints() << " " <<  this->movingITKMesh1->GetNumberOfCells() <<std::endl;
-  
   /* Build the Cell Links for the ITK Mesh for calculating the neighbours*/
-  this->fixedITKMesh1->BuildCellLinks();
-  this->movingITKMesh1->BuildCellLinks();
+  this->fixedITKMesh->BuildCellLinks();
+  this->movingITKMesh->BuildCellLinks();
   
   this->qeMeshCurvature = QEMeshType::New();
   this->gaussian_curvature_filter = CurvatureFilterType::New();
@@ -183,19 +174,19 @@ template <typename TFixedMesh, typename TMovingMesh, typename TInternalComputati
 void
 ThinShellDemonsMetricv4<TFixedMesh, TMovingMesh, TInternalComputationValueType>::ComputeNeighbors()
 {
-  this->neighborMap.resize(fixedITKMesh1->GetNumberOfPoints());
-  this->edgeLengthMap.resize(fixedITKMesh1->GetNumberOfPoints());
+  this->neighborMap.resize(fixedITKMesh->GetNumberOfPoints());
+  this->edgeLengthMap.resize(fixedITKMesh->GetNumberOfPoints());
   
-  for (PointIdentifier id = 0; id < fixedITKMesh1->GetNumberOfPoints(); id++)
+  for (PointIdentifier id = 0; id < fixedITKMesh->GetNumberOfPoints(); id++)
   {
     /* For iterating over the cells for a given point */
-    const std::set<PointIdentifier> link_set = this->fixedITKMesh1->GetCellLinks()->ElementAt(id);
+    const std::set<PointIdentifier> link_set = this->fixedITKMesh->GetCellLinks()->ElementAt(id);
     std::set<PointIdentifier> pointIdSet;
 
     /* Iterate over the cells  and get the neighbouring points */
     for (auto elem : link_set){
         MeshCellAutoPointer tri_cell;
-        this->fixedITKMesh1->GetCell(elem, tri_cell);
+        this->fixedITKMesh->GetCell(elem, tri_cell);
         MeshCellPointIdConstIterator point_ids = tri_cell->GetPointIds();
         for (int ik = 0; ik < 3; ++ik){
           if (point_ids[ik] != id){
@@ -388,9 +379,7 @@ typename ThinShellDemonsMetricv4<TFixedMesh, TMovingMesh, TInternalComputationVa
 ThinShellDemonsMetricv4<TFixedMesh, TMovingMesh, TInternalComputationValueType>::GenerateFeaturePointSets(
   bool fixed) const
 {
-  std::cout << "Pranjal GenerateFeaturePointSets " << std::endl;
-  
-  MeshTypePointer VMesh1;
+  MeshTypePointer VMesh;
 
   // Update meshes according to current transforms
   if (fixed)
@@ -399,11 +388,10 @@ ThinShellDemonsMetricv4<TFixedMesh, TMovingMesh, TInternalComputationValueType>:
     for (PointIdentifier i = 0; i < this->m_FixedTransformedPointSet->GetNumberOfPoints(); i++)
     {
       PointType data1 = this->m_FixedTransformedPointSet->GetPoint(i);
-      fixedITKMesh1->SetPoint(i, data1);
+      fixedITKMesh->SetPoint(i, data1);
     }
 
-    std::cout << "Updating 1 done " << std::endl;
-    VMesh1 = fixedITKMesh1;
+    VMesh = fixedITKMesh;
   }
   else
   {
@@ -411,29 +399,28 @@ ThinShellDemonsMetricv4<TFixedMesh, TMovingMesh, TInternalComputationValueType>:
     for (PointIdentifier i = 0; i < this->m_MovingTransformedPointSet->GetNumberOfPoints(); i++)
     {
       PointType data1 = this->m_MovingTransformedPointSet->GetPoint(i);
-      movingITKMesh1->SetPoint(i, data1);
+      movingITKMesh->SetPoint(i, data1);
     }
 
-    std::cout << "Updating 2 done " << std::endl;
-    VMesh1 = movingITKMesh1;
+    VMesh = movingITKMesh;
   }
 
   /* Create a QE Mesh to get the curvature */
   QEMeshTypePointer qeMesh = QEMeshType::New();
-  for (unsigned int n = 0; n < VMesh1->GetNumberOfPoints(); n++)
+  for (unsigned int n = 0; n < VMesh->GetNumberOfPoints(); n++)
   {
     MeshPointIdentifier point_id = n;
-    QEMeshPointType point = VMesh1->GetPoint(point_id);
+    QEMeshPointType point = VMesh->GetPoint(point_id);
     QEMeshPointIdentifier id1 = n;
     qeMesh->SetPoint(id1, point);
   }
 
   /* Clear Re-make the cells in the QE Mesh */
-  for (unsigned int n = 0; n < VMesh1->GetNumberOfCells(); n++)
+  for (unsigned int n = 0; n < VMesh->GetNumberOfCells(); n++)
   {
     MeshCellIdentifier cell_id = n;
     MeshCellAutoPointer tri_cell;
-    VMesh1->GetCell(cell_id, tri_cell);
+    VMesh->GetCell(cell_id, tri_cell);
 
     /* Creating a QE Cell from the Triangle Cell and inserting it into the QEMesh */
     auto * triangleCell = new QETriangleCellType;
@@ -450,12 +437,10 @@ ThinShellDemonsMetricv4<TFixedMesh, TMovingMesh, TInternalComputationValueType>:
     qeMesh->SetCell(qe_cell_id, qe_cell);
   }
   
-  std::cout << "Pranjal Number of points in the QE Mesh After " << qeMesh->GetNumberOfPoints() << ::endl;
   QEMeshTypePointer curvature_output;
   gaussian_curvature_filter->SetInput(qeMesh);
   gaussian_curvature_filter->Update();
   curvature_output = gaussian_curvature_filter->GetOutput();
-  std::cout << "Pranjal QuadEdge Mesh Filter Curvature is done " << curvature_output->GetNumberOfPoints() << " " << curvature_output->GetPointData()->Size() << std::endl;
   
   FeaturePointSetPointer        features = FeaturePointSetType::New();
 
@@ -464,14 +449,9 @@ ThinShellDemonsMetricv4<TFixedMesh, TMovingMesh, TInternalComputationValueType>:
   }
   else{
     auto fPoints = features->GetPoints();
-    for (PointIdentifier i = 0; i < VMesh1->GetNumberOfPoints(); i++)
+    for (PointIdentifier i = 0; i < VMesh->GetNumberOfPoints(); i++)
     {
-      // std::cout << curvature->GetTuple1(i) << " " << curvature_output->GetPointData()->ElementAt(i) << std::endl;
-      // FeaturePointType point = this->GetFeaturePoint(vMesh->GetPoint(i), curvature->GetTuple1(i));
-      // Replacing the VTK curvature with the QE curvature
-      FeaturePointType point = this->GetFeaturePoint(VMesh1->GetPoint(i), curvature_output->GetPointData()->ElementAt(i));
-      // FeaturePointType point = this->GetFeaturePoint(VMesh1->GetPoint(i), curvature->GetTuple1(i));
-
+      FeaturePointType point = this->GetFeaturePoint(VMesh->GetPoint(i), curvature_output->GetPointData()->ElementAt(i));
       fPoints->InsertElement(i, point);
     }
   }
@@ -484,9 +464,9 @@ ThinShellDemonsMetricv4<TFixedMesh, TMovingMesh, TInternalComputationValueType>:
 {
   FeaturePointsContainerPointer mpoints = this->m_MovingTransformedFeaturePointsLocator->GetPoints();
   double                        maximalDistance = 0;
-  for (PointIdentifier i = 0; i < fixedITKMesh1->GetNumberOfPoints(); i++)
+  for (PointIdentifier i = 0; i < fixedITKMesh->GetNumberOfPoints(); i++)
   {
-    FeaturePointType fpoint = this->GetFeaturePoint(fixedITKMesh1->GetPoint(i), fixedCurvature->GetPointData()->ElementAt(i));
+    FeaturePointType fpoint = this->GetFeaturePoint(fixedITKMesh->GetPoint(i), fixedCurvature->GetPointData()->ElementAt(i));
     PointIdentifier  id = this->m_MovingTransformedFeaturePointsLocator->FindClosestPoint(fpoint);
     FeaturePointType cpoint = mpoints->GetElement(id);
     double           dist = cpoint.SquaredEuclideanDistanceTo(fpoint);
@@ -507,7 +487,6 @@ ThinShellDemonsMetricv4<TFixedMesh, TMovingMesh, TInternalComputationValueType>:
   if (!fixedCurvature || this->m_UpdateFeatureMatchingAtEachIteration)
   {
     this->GenerateFeaturePointSets(true);
-    std::cout << "Pranjal InitializeFeaturePointsLocators 1 " << std::endl;
   }
 
   // Update moving curvature feature locator
