@@ -338,7 +338,7 @@ ThinShellDemonsMetricv4<TFixedMesh, TMovingMesh, TInternalComputationValueType>:
                                                   const PixelType &       pixel) const
 {
   
-  FeaturePointType fpoint = this->GetFeaturePoint(point, fixedCurvature->GetTuple1(identifier));
+  FeaturePointType fpoint = this->GetFeaturePoint(point, fixedCurvature->GetPointData()->ElementAt(identifier));
 
   // fpoint = [641.261, -15.2199, 471.961, -0.000875806]
   // point = [641.261, -15.2199, 471.961]
@@ -396,24 +396,12 @@ ThinShellDemonsMetricv4<TFixedMesh, TMovingMesh, TInternalComputationValueType>:
   bool fixed) const
 {
   std::cout << "Pranjal GenerateFeaturePointSets " << std::endl;
-  //std::cout << "Pranjal " << TFixedMesh::PointType << "  " << TFixedMesh::PointDimension << std::endl;
-
-  //using PolyDataPointsContainer = typename PolyDataType::PointsContainer;
-  //using PolyDataPointIdentifier = typename PolyDataType::PointIdentifier;
-
-  vtkSmartPointer<vtkPolyData> vMesh;
+  
   MeshTypePointer VMesh1;
 
   // Update meshes according to current transforms
   if (fixed)
   {
-    vtkSmartPointer<vtkPoints> pts = fixedVTKMesh->GetPoints();
-    for (PointIdentifier i = 0; i < this->m_FixedTransformedPointSet->GetNumberOfPoints(); i++)
-    {
-      PointType data1 = pts->GetPoint(i);
-      pts->SetPoint(i, this->m_FixedTransformedPointSet->GetPoint(i).data());
-    }
-   
     // Updating the itk Mesh (for calculating the neighbours later)
     for (PointIdentifier i = 0; i < this->m_FixedTransformedPointSet->GetNumberOfPoints(); i++)
     {
@@ -422,17 +410,10 @@ ThinShellDemonsMetricv4<TFixedMesh, TMovingMesh, TInternalComputationValueType>:
     }
 
     std::cout << "Updating 1 done " << std::endl;
-    vMesh = fixedVTKMesh;
     VMesh1 = fixedITKMesh1;
   }
   else
   {
-    vtkSmartPointer<vtkPoints> pts = movingVTKMesh->GetPoints();
-    for (PointIdentifier i = 0; i < this->m_MovingTransformedPointSet->GetNumberOfPoints(); i++)
-    {
-      pts->SetPoint(i, this->m_MovingTransformedPointSet->GetPoint(i).data());
-    }
-
     // Updating the itk Mesh (for calculating the neighbours later)
     for (PointIdentifier i = 0; i < this->m_MovingTransformedPointSet->GetNumberOfPoints(); i++)
     {
@@ -441,7 +422,6 @@ ThinShellDemonsMetricv4<TFixedMesh, TMovingMesh, TInternalComputationValueType>:
     }
 
     std::cout << "Updating 2 done " << std::endl;
-    vMesh = movingVTKMesh;
     VMesh1 = movingITKMesh1;
   }
 
@@ -484,25 +464,14 @@ ThinShellDemonsMetricv4<TFixedMesh, TMovingMesh, TInternalComputationValueType>:
   curvature_output = gaussian_curvature_filter->GetOutput();
   std::cout << "Pranjal QuadEdge Mesh Filter Curvature is done " << curvature_output->GetNumberOfPoints() << " " << curvature_output->GetPointData()->Size() << std::endl;
   
-  /* Obtain curvature information at each point */
-  vtkSmartPointer<vtkCurvatures> curvaturesFilter = vtkSmartPointer<vtkCurvatures>::New();
-  curvaturesFilter->SetInputData(vMesh);
-  curvaturesFilter->SetCurvatureTypeToGaussian();
-  curvaturesFilter->Update();
-
-  //std::cout << "Number of points in the mesh" << std::endl;
-  //std::cout << vMesh->GetNumberOfPoints() << std::endl;
-
-  vtkSmartPointer<vtkPolyData>  curvaturesOutput = curvaturesFilter->GetOutput();
-  vtkSmartPointer<vtkDataArray> curvature = curvaturesOutput->GetPointData()->GetScalars();
   FeaturePointSetPointer        features = FeaturePointSetType::New();
 
   if (fixed){
-    fixedCurvature = curvature;
+    fixedCurvature = curvature_output;
   }
   else{
     auto fPoints = features->GetPoints();
-    for (PointIdentifier i = 0; i < vMesh->GetNumberOfPoints(); i++)
+    for (PointIdentifier i = 0; i < VMesh1->GetNumberOfPoints(); i++)
     {
       // std::cout << curvature->GetTuple1(i) << " " << curvature_output->GetPointData()->ElementAt(i) << std::endl;
       // FeaturePointType point = this->GetFeaturePoint(vMesh->GetPoint(i), curvature->GetTuple1(i));
@@ -522,9 +491,9 @@ ThinShellDemonsMetricv4<TFixedMesh, TMovingMesh, TInternalComputationValueType>:
 {
   FeaturePointsContainerPointer mpoints = this->m_MovingTransformedFeaturePointsLocator->GetPoints();
   double                        maximalDistance = 0;
-  for (PointIdentifier i = 0; i < fixedVTKMesh->GetNumberOfPoints(); i++)
+  for (PointIdentifier i = 0; i < fixedITKMesh1->GetNumberOfPoints(); i++)
   {
-    FeaturePointType fpoint = this->GetFeaturePoint(fixedVTKMesh->GetPoint(i), fixedCurvature->GetTuple1(i));
+    FeaturePointType fpoint = this->GetFeaturePoint(fixedITKMesh1->GetPoint(i), fixedCurvature->GetPointData()->ElementAt(i));
     PointIdentifier  id = this->m_MovingTransformedFeaturePointsLocator->FindClosestPoint(fpoint);
     FeaturePointType cpoint = mpoints->GetElement(id);
     double           dist = cpoint.SquaredEuclideanDistanceTo(fpoint);

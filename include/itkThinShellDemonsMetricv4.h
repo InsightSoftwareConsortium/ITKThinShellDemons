@@ -276,8 +276,9 @@ private:
 
   mutable vtkSmartPointer<vtkPolyData> movingVTKMesh;
   mutable vtkSmartPointer<vtkPolyData> fixedVTKMesh;
-  mutable vtkSmartPointer<vtkDataArray> fixedCurvature;
-  
+  //mutable vtkSmartPointer<vtkDataArray> fixedCurvature;
+  mutable QEMeshTypePointer fixedCurvature;
+
   //mutable QEMeshTypePointer  fixedQEMesh;
   //mutable QEMeshTypePointer  movingQEMesh;
   CurvatureFilterTypePointer gaussian_curvature_filter;
