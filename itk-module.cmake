@@ -16,6 +16,8 @@ itk_module(ThinShellDemons
   COMPILE_DEPENDS
     ITKCommon
 	  ITKMesh
+    ITKIOMeshBase
+    MeshToPolyData
 	  ITKRegistrationCommon
 	  ITKQuadEdgeMesh
 	  ITKQuadEdgeMeshFiltering
