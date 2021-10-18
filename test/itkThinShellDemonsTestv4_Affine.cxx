@@ -92,9 +92,8 @@ itkThinShellDemonsTestv4_Affine(int args, char ** argv)
   Initialize fixed mesh polydata reader
   */
   ReaderType::Pointer           fixedPolyDataReader = ReaderType::New();
-  //typedef ReaderType::PointType PointType;
   fixedPolyDataReader->SetFileName(argv[1]);
-  //fixedPolyDataReader->SetFileName("/home/pranjal.sahu/ITKThinShellDemons/test/Baseline/fixedMesh.vtk");
+  
   try
   {
     fixedPolyDataReader->Update();
@@ -111,10 +110,8 @@ itkThinShellDemonsTestv4_Affine(int args, char ** argv)
   Initialize moving mesh polydata reader
   */
   ReaderType::Pointer           movingPolyDataReader = ReaderType::New();
-  //typedef ReaderType::PointType PointType;
   movingPolyDataReader->SetFileName(argv[2]);
-  // movingPolyDataReader->SetFileName("/home/pranjal.sahu/ITKThinShellDemons/test/Baseline/movingMesh.vtk");
-  //movingPolyDataReader->SetFileName("/home/pranjal.sahu/decimate_0.ICP_result.vtk");
+  
 
   try{
     movingPolyDataReader->Update();
@@ -126,10 +123,6 @@ itkThinShellDemonsTestv4_Affine(int args, char ** argv)
   }
 
   MeshType::Pointer movingMesh = movingPolyDataReader->GetOutput();
-
-
-  std::cout << "Fixed mesh points count " << fixedMesh->GetNumberOfPoints() << std::endl;
-  std::cout << "Moving mesh points count " << movingMesh->GetNumberOfPoints() << std::endl;
 
   /* Building the Cell Links to compute the neighbours later */
   fixedMesh->BuildCellLinks();
@@ -178,12 +171,7 @@ itkThinShellDemonsTestv4_Affine(int args, char ** argv)
   transform->SetIdentity();
   transform->SetCenter(minBounds + (maxBounds - minBounds) / 2);
 
-  std::cout << "Before creating the ThinShellDemonsMetricv4 " << std::endl;
 
-
-
-
-  
   using PointSetMetricType = itk::ThinShellDemonsMetricv4<MeshType, MeshType>;
   PointSetMetricType::Pointer metric = PointSetMetricType::New();
   metric->SetStretchWeight(1);
@@ -201,8 +189,6 @@ itkThinShellDemonsTestv4_Affine(int args, char ** argv)
   metric->SetMovingPointSet(fixedMesh);
   metric->SetVirtualDomainFromImage(fixedImage);
   metric->Initialize();
-
-  std::cout << "After creating the ThinShellDemonsMetricv4 " << std::endl;
 
   // Scales estimator
   using ScalesType = itk::RegistrationParameterScalesFromPhysicalShift<PointSetMetricType>;
@@ -223,7 +209,7 @@ itkThinShellDemonsTestv4_Affine(int args, char ** argv)
   optimizer->SetScalesEstimator( shiftScaleEstimator );
 */
   typedef itk::ConjugateGradientLineSearchOptimizerv4 OptimizerType;
-  OptimizerType::Pointer                              optimizer = OptimizerType::New();
+  OptimizerType::Pointer optimizer = OptimizerType::New();
   optimizer->SetNumberOfIterations(50);
   optimizer->SetScalesEstimator(shiftScaleEstimator);
   optimizer->SetMaximumStepSizeInPhysicalUnits(0.5);
@@ -261,7 +247,6 @@ itkThinShellDemonsTestv4_Affine(int args, char ** argv)
 
   for (PointIdentifier n = 0; n < movingMesh->GetNumberOfPoints(); n++)
   {
-    //PointType txMovingPoint = );
     movingMesh->SetPoint(n, tx->TransformPoint(movingMesh->GetPoint(n)));
   }
 

@@ -191,14 +191,7 @@ private:
 
   typedef std::vector< std::vector<double> > EdgeLengthMap;
   EdgeLengthMap edgeLengthMap;
-
-  /*
-  using PixelType = typename Superclass::PixelType;
-  typedef PolyData< PixelType> PolyDataType;
-  PolyDataType::Pointer movingVTKMesh;
-  PolyDataType::Pointer fixedVTKMesh;
-  PolyDataType::Pointer fixedCurvature;*/
-
+  
   vtkSmartPointer<vtkPolyData> movingVTKMesh;
   vtkSmartPointer<vtkPolyData> fixedVTKMesh;
   vtkSmartPointer<vtkPolyData> fixedCurvature;

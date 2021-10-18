@@ -144,7 +144,7 @@ int itkThinShellDemonsTest( int args, char **argv)
   registration->UpdateMovingMesh();
   MeshType::ConstPointer registeredMesh = registration->GetMovingMesh();
   writer->SetInput(registeredMesh);
-  writer->SetFileName( "/home/pranjal.sahu/registeredMesh_test.vtk");
+  writer->SetFileName( "registeredMesh.vtk");
   writer->Write();
   return EXIT_SUCCESS;
 }

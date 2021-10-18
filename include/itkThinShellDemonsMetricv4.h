@@ -126,7 +126,7 @@ public:
 
   using CurvatureFilterType = typename itk::DiscreteGaussianCurvatureQuadEdgeMeshFilter<QEMeshType, QEMeshType>;
   using CurvatureFilterTypePointer = typename CurvatureFilterType::Pointer;
-  
+
   void Initialize(void) override;
 
   MeasureType
@@ -208,7 +208,6 @@ protected:
   virtual ~ThinShellDemonsMetricv4() override = default;
 
   // Create a points locator for feature matching
-  // it has dimension 1 greater than the point's dimension
   using FeaturePointSetType = PointSet< double, FixedPointDimension+1>;
   
   using FeaturePointSetPointer = typename FeaturePointSetType::Pointer;
