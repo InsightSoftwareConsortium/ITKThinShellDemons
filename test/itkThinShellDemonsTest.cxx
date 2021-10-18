@@ -31,8 +31,6 @@ int itkThinShellDemonsTest( int args, char **argv)
   typedef itk::Mesh<double, Dimension>       MeshType;
   typedef itk::VTKPolyDataReader< MeshType > ReaderType;
 
-  std::cerr << "Pranjal: inside the  itkThinShellDemonsTest file " << std::endl;
-
   /*
   Initialize fixed mesh polydata reader
   */
@@ -144,7 +142,7 @@ int itkThinShellDemonsTest( int args, char **argv)
   registration->UpdateMovingMesh();
   MeshType::ConstPointer registeredMesh = registration->GetMovingMesh();
   writer->SetInput(registeredMesh);
-  writer->SetFileName( "registeredMesh.vtk");
+  writer->SetFileName( "registeredMesh.vtk" );
   writer->Write();
   return EXIT_SUCCESS;
 }

@@ -25,9 +25,9 @@
 namespace itk
 {
 
-template <typename TParametersValueType, unsigned int NDimensions>
-MeshDisplacementTransform<TParametersValueType, NDimensions>::MeshDisplacementTransform()
-  : Superclass(0)
+template<typename TParametersValueType, unsigned int NDimensions>
+MeshDisplacementTransform<TParametersValueType, NDimensions>
+  ::MeshDisplacementTransform() : Superclass(0)
 {
   m_MeshTemplate = ITK_NULLPTR;
   this->SpaceDimension = NDimensions;
@@ -35,22 +35,26 @@ MeshDisplacementTransform<TParametersValueType, NDimensions>::MeshDisplacementTr
 }
 
 
-template <typename TParametersValueType, unsigned int NDimensions>
-MeshDisplacementTransform<TParametersValueType, NDimensions>::~MeshDisplacementTransform()
-{}
-
-
-template <typename TParametersValueType, unsigned int NDimensions>
-void
-MeshDisplacementTransform<TParametersValueType, NDimensions>::SetParameters(const ParametersType & parameters)
+template<typename TParametersValueType, unsigned int NDimensions>
+MeshDisplacementTransform<TParametersValueType, NDimensions>
+::~MeshDisplacementTransform()
 {
-  if (parameters.Size() != this->ParametersDimension)
+}
+
+
+template<typename TParametersValueType, unsigned int NDimensions>
+void
+MeshDisplacementTransform<TParametersValueType, NDimensions>
+::SetParameters(const ParametersType & parameters)
+{
+  if( parameters.Size() != this->ParametersDimension )
   {
-    itkExceptionMacro(<< "Mismatch between parameters size " << parameters.Size()
-                      << " and expected number of parameters " << this->ParametersDimension);
+    itkExceptionMacro( << "Mismatch between parameters size "
+      << parameters.Size() << " and expected number of parameters "
+      << this->ParametersDimension );
   }
 
-  if (&parameters != &(this->m_VectorField))
+  if( &parameters != &( this->m_VectorField ) )
   {
     // Clean up this->m_InternalParametersBuffer because we will
     // use an externally supplied set of parameters as the buffer
@@ -62,17 +66,19 @@ MeshDisplacementTransform<TParametersValueType, NDimensions>::SetParameters(cons
   this->Modified();
 }
 
-template <typename TParametersValueType, unsigned int NDimensions>
+template<typename TParametersValueType, unsigned int NDimensions>
 const typename MeshDisplacementTransform<TParametersValueType, NDimensions>::ParametersType &
-MeshDisplacementTransform<TParametersValueType, NDimensions>::GetParameters() const
+MeshDisplacementTransform<TParametersValueType, NDimensions>
+::GetParameters() const
 {
 
   return this->m_VectorField;
 }
 
-template <typename TParametersValueType, unsigned int NDimensions>
+template<typename TParametersValueType, unsigned int NDimensions>
 void
-MeshDisplacementTransform<TParametersValueType, NDimensions>::SetIdentity()
+  MeshDisplacementTransform<TParametersValueType, NDimensions>
+  ::SetIdentity()
 {
   if (!m_MeshTemplate)
   {
@@ -86,9 +92,10 @@ MeshDisplacementTransform<TParametersValueType, NDimensions>::SetIdentity()
   m_VectorField.Fill(0);
 }
 
-template <typename TParametersValueType, unsigned int NDimensions>
+template<typename TParametersValueType, unsigned int NDimensions>
 void
-MeshDisplacementTransform<TParametersValueType, NDimensions>::Initialize()
+  MeshDisplacementTransform<TParametersValueType, NDimensions>
+  ::Initialize()
 {
   if (!m_MeshTemplate)
   {
@@ -96,31 +103,34 @@ MeshDisplacementTransform<TParametersValueType, NDimensions>::Initialize()
   }
 
   // the size of the parameters can only be determined after knowing the number of vertices
-  // the template mesh should be available before this initialization step
+    // the template mesh should be available before this initialization step
   m_VectorField.SetSize(m_MeshTemplate->GetNumberOfPoints() * SpaceDimension);
   m_VectorField.Fill(0);
   this->ParametersDimension = m_VectorField.GetSize();
+
 }
 
-template <typename TParametersValueType, unsigned int NDimensions>
+template<typename TParametersValueType, unsigned int NDimensions>
 void
-MeshDisplacementTransform<TParametersValueType, NDimensions>::PrintSelf(std::ostream & os, Indent indent) const
+MeshDisplacementTransform<TParametersValueType, NDimensions>
+::PrintSelf(std::ostream & os, Indent indent) const
 {
   Superclass::PrintSelf(os, indent);
 }
 
 
-template <typename TParametersValueType, unsigned int NDimensions>
+template<typename TParametersValueType, unsigned int NDimensions>
 typename MeshDisplacementTransform<TParametersValueType, NDimensions>::OutputPointType
-MeshDisplacementTransform<TParametersValueType, NDimensions>::TransformPoint(const InputPointType & point) const
+MeshDisplacementTransform<TParametersValueType, NDimensions>
+::TransformPoint(const InputPointType & point) const
 {
   return point;
 }
 
-template <typename TParametersValueType, unsigned int NDimensions>
+template<typename TParametersValueType, unsigned int NDimensions>
 typename MeshDisplacementTransform<TParametersValueType, NDimensions>::OutputPointType
-MeshDisplacementTransform<TParametersValueType, NDimensions>::TransformNthPoint(const InputPointType & point,
-                                                                                int                    identifier) const
+  MeshDisplacementTransform<TParametersValueType, NDimensions>
+  ::TransformNthPoint(const InputPointType & point, int identifier) const
 {
   InputVectorType vec;
   vec[0] = m_VectorField[identifier];
@@ -128,43 +138,46 @@ MeshDisplacementTransform<TParametersValueType, NDimensions>::TransformNthPoint(
   return point + vec;
 }
 
-template <typename TParametersValueType, unsigned int NDimensions>
+template<typename TParametersValueType, unsigned int NDimensions>
 typename MeshDisplacementTransform<TParametersValueType, NDimensions>::OutputVectorType
-MeshDisplacementTransform<TParametersValueType, NDimensions>::TransformVector(const InputVectorType & vect) const
+MeshDisplacementTransform<TParametersValueType, NDimensions>
+::TransformVector(const InputVectorType & vect) const
 {
   return vect;
 }
 
 
-template <typename TParametersValueType, unsigned int NDimensions>
+template<typename TParametersValueType, unsigned int NDimensions>
 typename MeshDisplacementTransform<TParametersValueType, NDimensions>::OutputVnlVectorType
-MeshDisplacementTransform<TParametersValueType, NDimensions>::TransformVector(const InputVnlVectorType & vect) const
+MeshDisplacementTransform<TParametersValueType, NDimensions>
+::TransformVector(const InputVnlVectorType & vect) const
 {
   return vect;
 }
 
 
-template <typename TParametersValueType, unsigned int NDimensions>
+template<typename TParametersValueType, unsigned int NDimensions>
 typename MeshDisplacementTransform<TParametersValueType, NDimensions>::OutputCovariantVectorType
-MeshDisplacementTransform<TParametersValueType, NDimensions>::TransformCovariantVector(
-  const InputCovariantVectorType & vect) const
+MeshDisplacementTransform<TParametersValueType, NDimensions>
+::TransformCovariantVector(const InputCovariantVectorType & vect) const
 {
   return vect;
 }
 
 
-template <typename TParametersValueType, unsigned int NDimensions>
+template<typename TParametersValueType, unsigned int NDimensions>
 typename MeshDisplacementTransform<TParametersValueType, NDimensions>::InverseTransformBasePointer
-MeshDisplacementTransform<TParametersValueType, NDimensions>::GetInverseTransform() const
+MeshDisplacementTransform<TParametersValueType, NDimensions>
+::GetInverseTransform() const
 {
   Pointer inv = New();
 
-  // return GetInverse(inv) ? inv.GetPointer() : ITK_NULLPTR;
+  //return GetInverse(inv) ? inv.GetPointer() : ITK_NULLPTR;
   return inv;
 }
 
 
-template <typename TParametersValueType, unsigned int NDimensions>
+template<typename TParametersValueType, unsigned int NDimensions>
 void
 MeshDisplacementTransform<TParametersValueType, NDimensions>::ComputeJacobianWithRespectToParameters(
   const InputPointType &,
@@ -176,18 +189,18 @@ MeshDisplacementTransform<TParametersValueType, NDimensions>::ComputeJacobianWit
 }
 
 
-template <typename TParametersValueType, unsigned int NDimensions>
+template<typename TParametersValueType, unsigned int NDimensions>
 void
-MeshDisplacementTransform<TParametersValueType, NDimensions>::ComputeJacobianWithRespectToPosition(
-  const InputPointType &,
-  JacobianType & jac) const
+MeshDisplacementTransform<TParametersValueType, NDimensions>
+::ComputeJacobianWithRespectToPosition(const InputPointType &,
+                                       JacobianType & jac) const
 {
-  jac.SetSize(NDimensions, NDimensions);
+  jac.SetSize( NDimensions, NDimensions );
   jac.Fill(0.0);
-  for (unsigned int dim = 0; dim < NDimensions; dim++)
-  {
+  for( unsigned int dim = 0; dim < NDimensions; dim++ )
+    {
     jac[dim][dim] = 1.0;
-  }
+    }
 }
 
 

@@ -191,7 +191,6 @@ private:
 
   typedef std::vector< std::vector<double> > EdgeLengthMap;
   EdgeLengthMap edgeLengthMap;
-  
   vtkSmartPointer<vtkPolyData> movingVTKMesh;
   vtkSmartPointer<vtkPolyData> fixedVTKMesh;
   vtkSmartPointer<vtkPolyData> fixedCurvature;

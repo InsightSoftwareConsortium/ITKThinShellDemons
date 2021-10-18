@@ -53,29 +53,28 @@ template< typename TFixedMesh, typename TMovingMesh >
 void
   MeshToMeshRegistrationMethod< TFixedMesh, TMovingMesh >
   ::Initialize()
-  throw ( ExceptionObject )
 {
-  if (!m_FixedMesh)
+  if ( !m_FixedMesh )
   {
     itkExceptionMacro(<< "FixedMesh is not present");
   }
 
-  if (!m_MovingMesh)
+  if ( !m_MovingMesh )
   {
     itkExceptionMacro(<< "MovingMesh is not present");
   }
 
-  if (!m_Metric)
+  if ( !m_Metric )
   {
     itkExceptionMacro(<< "Metric is not present");
   }
 
-  if (!m_Optimizer)
+  if ( !m_Optimizer )
   {
     itkExceptionMacro(<< "Optimizer is not present");
   }
 
-  if (!m_Transform)
+  if ( !m_Transform )
   {
     itkExceptionMacro(<< "Transform is not present");
   }
@@ -90,10 +89,12 @@ void
   m_Optimizer->SetCostFunction(m_Metric);
 
   // Validate initial transform parameters
-  if (m_InitialTransformParameters.Size() != m_Transform->GetNumberOfParameters())
+  if ( m_InitialTransformParameters.Size() !=
+    m_Transform->GetNumberOfParameters() )
   {
     itkExceptionMacro(<< "Size mismatch between initial parameter and transform");
   }
+
   m_Optimizer->SetInitialPosition(m_InitialTransformParameters);
 
   // Connect the transform to the Decorator

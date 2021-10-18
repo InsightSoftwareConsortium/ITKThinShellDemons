@@ -26,9 +26,7 @@
 #include "itkRegistrationParameterScalesFromPhysicalShift.h"
 #include "itkImageRegistrationMethodv4.h"
 #include "itkAffineTransform.h"
-
 #include "itkDiscreteGaussianCurvatureQuadEdgeMeshFilter.h"
-
 #include "itkMesh.h"
 #include "itkMeshFileReader.h"
 #include "itkMeshFileWriter.h"
@@ -38,49 +36,41 @@ template <typename TFilter>
 class CommandIterationUpdate : public itk::Command
 {
 public:
-  typedef CommandIterationUpdate  Self;
-  typedef itk::Command            Superclass;
-  typedef itk::SmartPointer<Self> Pointer;
-  itkNewMacro(Self);
-
+  typedef  CommandIterationUpdate   Self;
+  typedef  itk::Command             Superclass;
+  typedef itk::SmartPointer<Self>   Pointer;
+  itkNewMacro( Self );
 protected:
-  CommandIterationUpdate(){};
-
+  CommandIterationUpdate() {};
 public:
-  void
-  Execute(itk::Object * caller, const itk::EventObject & event) override
-  {
-    Execute((const itk::Object *)caller, event);
-  }
-
-  void
-  Execute(const itk::Object * object, const itk::EventObject & event) override
-  {
-    if (typeid(event) != typeid(itk::IterationEvent))
+  void Execute(itk::Object *caller, const itk::EventObject & event) override
     {
+    Execute( (const itk::Object *) caller, event);
+    }
+
+  void Execute(const itk::Object * object, const itk::EventObject & event) override
+    {
+    if( typeid( event ) != typeid( itk::IterationEvent ) )
+      {
       return;
-    }
-    const auto * optimizer = dynamic_cast<const TFilter *>(object);
+      }
+    const auto * optimizer = dynamic_cast< const TFilter * >( object );
 
-    if (!optimizer)
-    {
-      itkGenericExceptionMacro("Error dynamic_cast failed");
-    }
+    if( !optimizer )
+      {
+      itkGenericExceptionMacro( "Error dynamic_cast failed" );
+      }
     std::cout << "It: " << optimizer->GetCurrentIteration();
     std::cout << " metric value: " << optimizer->GetCurrentMetricValue();
     std::cout << std::endl;
-  }
+    }
 };
 
-int
-itkThinShellDemonsTestv4_Affine(int args, char ** argv)
+int itkThinShellDemonsTestv4_Affine( int args, char **argv)
 {
   const unsigned int Dimension = 3;
-  using PointType = double;
-  using CoordType = double;
-
-  // Declare the type of the input and output mesh
-  using MeshType = itk::Mesh<double, 3>;
+  
+  using MeshType = itk::Mesh<double, Dimension>;
   using PointsContainerPointer = MeshType::PointsContainerPointer;
   
   using ReaderType = itk::MeshFileReader<MeshType>;

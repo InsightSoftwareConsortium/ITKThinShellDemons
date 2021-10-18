@@ -207,7 +207,7 @@ protected:
   ThinShellDemonsMetricv4();
   virtual ~ThinShellDemonsMetricv4() override = default;
 
-  // Create a points locator for feature matching
+  //Create a points locator for feature matching
   using FeaturePointSetType = PointSet< double, FixedPointDimension+1>;
   
   using FeaturePointSetPointer = typename FeaturePointSetType::Pointer;
