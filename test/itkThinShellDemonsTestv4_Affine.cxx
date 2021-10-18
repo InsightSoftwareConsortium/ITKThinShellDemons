@@ -17,7 +17,6 @@
  *=========================================================================*/
 #include <cstdlib>
 
-//#include "itkVTKPolyDataReader.h"
 #include "itkVTKPolyDataWriter.h"
 
 #include "itkCommand.h"
@@ -30,16 +29,10 @@
 
 #include "itkDiscreteGaussianCurvatureQuadEdgeMeshFilter.h"
 
-// Pranjal added these
 #include "itkMesh.h"
 #include "itkMeshFileReader.h"
 #include "itkMeshFileWriter.h"
-
 #include "itkTriangleCell.h"
-#include <itkSimplexMesh.h>
-#include <itkTriangleMeshToSimplexMeshFilter.h>
-#include <itkSimplexMeshAdaptTopologyFilter.h>
-#include <itkRegularSphereMeshSource.h>
 
 template <typename TFilter>
 class CommandIterationUpdate : public itk::Command
@@ -83,11 +76,11 @@ int
 itkThinShellDemonsTestv4_Affine(int args, char ** argv)
 {
   const unsigned int Dimension = 3;
-  using PointType = float;
-  using CoordType = float;
+  using PointType = double;
+  using CoordType = double;
 
   // Declare the type of the input and output mesh
-  using MeshType = itk::Mesh<float, 3>;
+  using MeshType = itk::Mesh<double, 3>;
   using PointsContainerPointer = MeshType::PointsContainerPointer;
   
   using ReaderType = itk::MeshFileReader<MeshType>;
@@ -138,42 +131,9 @@ itkThinShellDemonsTestv4_Affine(int args, char ** argv)
   std::cout << "Fixed mesh points count " << fixedMesh->GetNumberOfPoints() << std::endl;
   std::cout << "Moving mesh points count " << movingMesh->GetNumberOfPoints() << std::endl;
 
-  std::cout << "[TEST DONE]" << std::endl;
-  
   /* Building the Cell Links to compute the neighbours later */
   fixedMesh->BuildCellLinks();
   movingMesh->BuildCellLinks();
-
-  std::cout << " movingMesh " << movingMesh << std::endl;
-  std::cout << " fixedMesh" << fixedMesh << std::endl;
-
-  //MeshType::CellLinksContainer itr = movingMesh->GetCellLinks()->Begin();
-  // MeshType::CellLinksContainer * itr = movingMesh->GetCellLinks();
-  // if (itr){
-  //   std::cout << " Size of cell links " << itr->Size() << std::endl;
-  // }
-  // else{
-  //   std::cout << " Cell Links does not exists " << std::endl;
-  // }
-  // while (itr != movingMesh->GetCellLinks()->End())
-  // {
-  //  std::cout << itr->Value();
-  //  ++itr;
-  // }
-  
-
-
-
-  // QEWriterType::Pointer  PolyDataWriter = QEWriterType::New();
-  // PolyDataWriter->SetFileName("./qe_curvature_mesh1.vtk");
-  // PolyDataWriter->SetInput(output);
-  // PolyDataWriter->Update();
-  
-  // PolyDataWriter->SetFileName("./qe_fixed_mesh1.vtk");
-  // PolyDataWriter->SetInput(qe_fixed_mesh);
-  // PolyDataWriter->Update();
-  
-
 
   using PixelType = double;
   using FixedImageType = itk::Image<PixelType, Dimension>;
@@ -299,16 +259,16 @@ itkThinShellDemonsTestv4_Affine(int args, char ** argv)
   std::cout << "Solution Value= " << metric->GetValue() << std::endl;
 
 
-//   for (unsigned int n = 0; n < movingMesh->GetNumberOfPoints(); n++)
-//   {
-//     TriangleMeshType::PointType txMovingPoint = tx->TransformPoint(movingMesh->GetPoint(n));
-//     movingMesh->SetPoint(n, txMovingPoint);
-//   }
+  for (PointIdentifier n = 0; n < movingMesh->GetNumberOfPoints(); n++)
+  {
+    //PointType txMovingPoint = );
+    movingMesh->SetPoint(n, tx->TransformPoint(movingMesh->GetPoint(n)));
+  }
 
-//   WriterType::Pointer writer = WriterType::New();
-//   writer->SetInput(movingMesh);
-//   writer->SetFileName("affineMovingMesh.vtk");
-//   writer->Update();
+  WriterType::Pointer writer = WriterType::New();
+  writer->SetInput(movingMesh);
+  writer->SetFileName("affineMovingMesh.vtk");
+  writer->Update();
 
   return EXIT_SUCCESS;
 }

@@ -27,9 +27,6 @@
 #include <itkQuadEdgeMeshExtendedTraits.h>
 #include <itkDiscreteGaussianCurvatureQuadEdgeMeshFilter.h>
 
-#include <vtkPolyData.h>
-#include <vtkSmartPointer.h>
-#include <itkSmartPointer.h>
 #include "itkMeshFileWriter.h"
 #include "itkMeshFileReader.h"
 #include "itkMeshToPolyDataFilter.h"
@@ -274,13 +271,8 @@ private:
   mutable MeshTypePointer movingITKMesh1;
   mutable QEMeshTypePointer  qeMeshCurvature;
 
-  mutable vtkSmartPointer<vtkPolyData> movingVTKMesh;
-  mutable vtkSmartPointer<vtkPolyData> fixedVTKMesh;
-  //mutable vtkSmartPointer<vtkDataArray> fixedCurvature;
   mutable QEMeshTypePointer fixedCurvature;
 
-  //mutable QEMeshTypePointer  fixedQEMesh;
-  //mutable QEMeshTypePointer  movingQEMesh;
   CurvatureFilterTypePointer gaussian_curvature_filter;
 
   double m_StretchWeight;

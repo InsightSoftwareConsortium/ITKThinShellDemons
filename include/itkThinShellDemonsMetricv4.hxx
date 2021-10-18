@@ -45,8 +45,8 @@ ThinShellDemonsMetricv4<TFixedMesh, TMovingMesh, TInternalComputationValueType>:
   m_UpdateFeatureMatchingAtEachIteration = false;
   m_MovingTransformedFeaturePointsLocator = nullptr;
   
-  fixedVTKMesh = nullptr;
-  movingVTKMesh = nullptr;
+  fixedITKMesh1 = nullptr;
+  movingITKMesh1 = nullptr;
   fixedCurvature = nullptr;
 }
 
@@ -151,11 +151,7 @@ ThinShellDemonsMetricv4<TFixedMesh, TMovingMesh, TInternalComputationValueType>:
   /* Build the Cell Links for the ITK Mesh for calculating the neighbours*/
   this->fixedITKMesh1->BuildCellLinks();
   this->movingITKMesh1->BuildCellLinks();
-
-  // generate a VTK copy of the same mesh
-  this->movingVTKMesh = itkMeshTovtkPolyData<MovingPointSetType>::Convert(this->m_MovingPointSet);
-  this->fixedVTKMesh = itkMeshTovtkPolyData<FixedPointSetType>::Convert(this->m_FixedPointSet);
-
+  
   this->qeMeshCurvature = QEMeshType::New();
   this->gaussian_curvature_filter = CurvatureFilterType::New();
 
@@ -187,13 +183,10 @@ template <typename TFixedMesh, typename TMovingMesh, typename TInternalComputati
 void
 ThinShellDemonsMetricv4<TFixedMesh, TMovingMesh, TInternalComputationValueType>::ComputeNeighbors()
 {
-  this->neighborMap.resize(fixedVTKMesh->GetNumberOfPoints());
-  this->edgeLengthMap.resize(fixedVTKMesh->GetNumberOfPoints());
+  this->neighborMap.resize(fixedITKMesh1->GetNumberOfPoints());
+  this->edgeLengthMap.resize(fixedITKMesh1->GetNumberOfPoints());
   
-  //std::cout << fixedVTKMesh->GetNumberOfPoints() << " neighborMap size is " << this->neighborMap.size() << std::endl;
-  //std::cout << fixedVTKMesh->GetNumberOfPoints() << " edgeLengthMap size is " << this->edgeLengthMap.size() << std::endl;
-
-  for (PointIdentifier id = 0; id < fixedVTKMesh->GetNumberOfPoints(); id++)
+  for (PointIdentifier id = 0; id < fixedITKMesh1->GetNumberOfPoints(); id++)
   {
     /* For iterating over the cells for a given point */
     const std::set<PointIdentifier> link_set = this->fixedITKMesh1->GetCellLinks()->ElementAt(id);
