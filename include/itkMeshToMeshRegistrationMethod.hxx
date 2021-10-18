@@ -33,16 +33,17 @@ MeshToMeshRegistrationMethod< TFixedMesh, TMovingMesh >
 
   m_InitialTransformParameters.Fill( 0 );
   m_LastTransformParameters.Fill( 0 );
-  
-  TransformOutputPointer transformDecorator =
-    itkDynamicCastInDebugMode<TransformOutputType *>(this->MakeOutput(0).GetPointer());
 
-  this->ProcessObject::SetNthOutput(0, transformDecorator.GetPointer());
+  TransformOutputPointer transformDecorator =
+    itkDynamicCastInDebugMode< TransformOutputType * >(this->MakeOutput(0).GetPointer() );
+
+  this->ProcessObject::SetNthOutput( 0, transformDecorator.GetPointer() );
 }
 
-template <typename TFixedMesh, typename TMovingMesh>
+template< typename TFixedMesh, typename TMovingMesh >
 void
-MeshToMeshRegistrationMethod<TFixedMesh, TMovingMesh>::SetInitialTransformParameters(const ParametersType & param)
+  MeshToMeshRegistrationMethod< TFixedMesh, TMovingMesh >
+  ::SetInitialTransformParameters(const ParametersType & param)
 {
   m_InitialTransformParameters = param;
   this->Modified();
@@ -52,6 +53,7 @@ template< typename TFixedMesh, typename TMovingMesh >
 void
   MeshToMeshRegistrationMethod< TFixedMesh, TMovingMesh >
   ::Initialize()
+  throw ( ExceptionObject )
 {
   if (!m_FixedMesh)
   {
@@ -92,25 +94,26 @@ void
   {
     itkExceptionMacro(<< "Size mismatch between initial parameter and transform");
   }
-
   m_Optimizer->SetInitialPosition(m_InitialTransformParameters);
 
   // Connect the transform to the Decorator
-  TransformOutputType * transformOutput = static_cast<TransformOutputType *>(this->ProcessObject::GetOutput(0));
+  TransformOutputType *transformOutput =
+    static_cast< TransformOutputType * >( this->ProcessObject::GetOutput(0) );
 
-  transformOutput->Set(m_Transform.GetPointer());
+  transformOutput->Set( m_Transform.GetPointer() );
 }
 
-template <typename TFixedMesh, typename TMovingMesh>
+template< typename TFixedMesh, typename TMovingMesh >
 void
-MeshToMeshRegistrationMethod<TFixedMesh, TMovingMesh>::GenerateData()
+  MeshToMeshRegistrationMethod< TFixedMesh, TMovingMesh >
+  ::GenerateData()
 {
   // Initialize the interconnects between components
   try
   {
     this->Initialize();
   }
-  catch (ExceptionObject & err)
+  catch ( ExceptionObject & err )
   {
     m_LastTransformParameters = ParametersType(1);
     m_LastTransformParameters.Fill(0.0f);
@@ -124,7 +127,7 @@ MeshToMeshRegistrationMethod<TFixedMesh, TMovingMesh>::GenerateData()
   {
     m_Optimizer->StartOptimization();
   }
-  catch (ExceptionObject & err)
+  catch ( ExceptionObject & err )
   {
     // An error has occurred in the optimization.
     // Update the parameters
@@ -140,37 +143,40 @@ MeshToMeshRegistrationMethod<TFixedMesh, TMovingMesh>::GenerateData()
   m_Transform->SetParameters(m_LastTransformParameters);
 }
 
-template <typename TFixedMesh, typename TMovingMesh>
-const typename MeshToMeshRegistrationMethod<TFixedMesh, TMovingMesh>::TransformOutputType *
-MeshToMeshRegistrationMethod<TFixedMesh, TMovingMesh>::GetOutput() const
+template< typename TFixedMesh, typename TMovingMesh >
+const typename MeshToMeshRegistrationMethod< TFixedMesh, TMovingMesh >::TransformOutputType *
+  MeshToMeshRegistrationMethod< TFixedMesh, TMovingMesh >
+  ::GetOutput() const
 {
-  return static_cast<const TransformOutputType *>(this->ProcessObject::GetOutput(0));
+  return static_cast< const TransformOutputType * >( this->ProcessObject::GetOutput(0) );
 }
 
-template <typename TFixedMesh, typename TMovingMesh>
+template< typename TFixedMesh, typename TMovingMesh >
 DataObject::Pointer
-MeshToMeshRegistrationMethod<TFixedMesh, TMovingMesh>::MakeOutput(DataObjectPointerArraySizeType output)
+MeshToMeshRegistrationMethod< TFixedMesh, TMovingMesh >
+::MakeOutput(DataObjectPointerArraySizeType output)
 {
-  switch (output)
+  switch ( output )
   {
-    case 0:
-      return TransformOutputType::New().GetPointer();
-      break;
-    default:
-      itkExceptionMacro("MakeOutput request for an output number larger than the expected number of outputs");
-      return ITK_NULLPTR;
+  case 0:
+    return TransformOutputType::New().GetPointer();
+    break;
+  default:
+    itkExceptionMacro("MakeOutput request for an output number larger than the expected number of outputs");
+    return ITK_NULLPTR;
   }
 }
 
-template <typename TFixedMesh, typename TMovingMesh>
+template< typename TFixedMesh, typename TMovingMesh >
 void
-MeshToMeshRegistrationMethod<TFixedMesh, TMovingMesh>::UpdateMovingMesh()
+MeshToMeshRegistrationMethod< TFixedMesh, TMovingMesh >
+::UpdateMovingMesh()
 {
   // update the moving mesh with the current transformation
-  typedef typename MovingMeshType::PointsContainer OutputPointsContainer;
-  typedef typename MovingMeshType::PointsContainer InputPointsContainer;
+  typedef typename MovingMeshType::PointsContainer  OutputPointsContainer;
+  typedef typename MovingMeshType::PointsContainer  InputPointsContainer;
 
-  const InputPointsContainer *                    inPoints = m_MovingMesh->GetPoints();
+  const InputPointsContainer *inPoints = m_MovingMesh->GetPoints();
   typename MovingMeshType::PointsContainerPointer outPoints = m_MovingMesh->GetPoints();
 
   typename InputPointsContainer::ConstIterator inputPoint = inPoints->Begin();
@@ -178,22 +184,21 @@ MeshToMeshRegistrationMethod<TFixedMesh, TMovingMesh>::UpdateMovingMesh()
   typename OutputPointsContainer::Iterator outputPoint = outPoints->Begin();
 
   ParametersType m_VectorField = m_Transform->GetParameters();
-  int            idx = 0;
-
-  while (inputPoint != inputEnd)
-  {
-    const typename TMovingMesh::PointType & originalPoint = inputPoint.Value();
-    typename TMovingMesh::PointType         displacedPoint;
-
-    for (unsigned int i = 0; i < 3; i++)
+  int idx = 0;
+  while ( inputPoint != inputEnd )
     {
-      displacedPoint[i] = originalPoint[i] + m_VectorField[idx * 3 + i];
-    }
+    const typename TMovingMesh::PointType & originalPoint = inputPoint.Value();
+    typename TMovingMesh::PointType   displacedPoint;
+
+    for ( unsigned int i = 0; i < 3; i++ )
+      {
+      displacedPoint[i] = originalPoint[i] + m_VectorField[idx*3 + i];
+      }
     outputPoint.Value() = displacedPoint;
     ++inputPoint;
     ++outputPoint;
     idx++;
-  }
+    }
 }
-} // namespace itk
+}
 #endif

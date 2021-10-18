@@ -51,15 +51,14 @@ itkMeshTovtkPolyData<TMeshType>
   int idx=0;
   double vpoint[3] = {0};
   unsigned int three = 3;
-  unsigned int min_value = std::min(PointType::Dimension, three);
-
-  while( points != myPoints->End() ){
+  while( points != myPoints->End() )
+  {
     point = points.Value();
-    for(unsigned int i =0; i < min_value; i++)
+    for(unsigned int i =0; i<std::min(PointType::Dimension, three); i++)
     {
       vpoint[i]= point[i];
     }
-    m_Points->SetPoint(idx++, vpoint);
+    m_Points->SetPoint(idx++,vpoint);
     points++;
   }
 
