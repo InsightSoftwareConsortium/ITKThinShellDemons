@@ -165,8 +165,6 @@ template <typename TFixedMesh, typename TMovingMesh>
 void
 MeshToMeshRegistrationMethod<TFixedMesh, TMovingMesh>::UpdateMovingMesh()
 {
-  std::cout << "Pranjal Inside UpdateMovingMesh" << std::endl;
-
   // update the moving mesh with the current transformation
   typedef typename MovingMeshType::PointsContainer OutputPointsContainer;
   typedef typename MovingMeshType::PointsContainer InputPointsContainer;
