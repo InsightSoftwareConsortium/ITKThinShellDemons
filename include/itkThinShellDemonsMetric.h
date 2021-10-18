@@ -108,7 +108,7 @@ public:
   /** Initialize the Metric by computing a target position
    * for each vertex in the fixed mesh using
    * Euclidean + Curvature distance */
-  virtual void Initialize(void) throw ( ExceptionObject ) ITK_OVERRIDE;
+  virtual void Initialize(void) ITK_OVERRIDE;
 
   /**
    * Stretching penalty weight

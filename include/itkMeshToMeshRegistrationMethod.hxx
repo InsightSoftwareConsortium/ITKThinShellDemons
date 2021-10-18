@@ -49,7 +49,8 @@ MeshToMeshRegistrationMethod<TFixedMesh, TMovingMesh>::SetInitialTransformParame
 
 template <typename TFixedMesh, typename TMovingMesh>
 void
-MeshToMeshRegistrationMethod<TFixedMesh, TMovingMesh>::Initialize() throw(ExceptionObject)
+  MeshToMeshRegistrationMethod< TFixedMesh, TMovingMesh >
+  ::Initialize()
 {
   if (!m_FixedMesh)
   {
