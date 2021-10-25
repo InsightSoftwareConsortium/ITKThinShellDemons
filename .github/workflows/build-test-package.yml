@@ -14,19 +14,16 @@ jobs:
             c-compiler: "gcc"
             cxx-compiler: "g++"
             itk-git-tag: "v5.2.0"
-            vtk-git-tag: "v9.0.3"
             cmake-build-type: "MinSizeRel"
           - os: windows-2019
             c-compiler: "cl.exe"
             cxx-compiler: "cl.exe"
             itk-git-tag: "v5.2.0"
-            vtk-git-tag: "v9.0.3"
             cmake-build-type: "Release"
           - os: macos-10.15
             c-compiler: "clang"
             cxx-compiler: "clang++"
             itk-git-tag: "v5.2.0"
-            vtk-git-tag: "v9.0.3"
             cmake-build-type: "MinSizeRel"
 
     steps:
@@ -45,45 +42,6 @@ jobs:
     - name: Get specific version of CMake, Ninja
       uses: lukka/get-cmake@v3.18.3
     
-    - name: Set up OpenGL
-      if: matrix.os == 'ubuntu-18.04'
-      run: |
-        sudo apt-get update
-        sudo apt-get -y install libglu1-mesa-dev freeglut3-dev mesa-common-dev
-    
-    - name: Set up OpenGL
-      if: matrix.os == 'windows-2019'
-      run: |
-        git clone --depth 1 git://github.com/pyvista/gl-ci-helpers.git
-        powershell gl-ci-helpers/appveyor/install_opengl.ps1
-    
-    - name: Download VTK
-      run: |
-        cd ..
-        git clone https://github.com/Kitware/VTK.git
-        cd VTK
-        git checkout ${{ matrix.vtk-git-tag }}
-    
-    - name: Build VTK
-      if: matrix.os != 'windows-2019'
-      run: |
-        cd ..
-        mkdir VTK-build
-        cd VTK-build
-        cmake -DCMAKE_C_COMPILER:FILEPATH="${{ matrix.c-compiler }}" -DCMAKE_CXX_COMPILER="${{ matrix.cxx-compiler }}" -DBUILD_SHARED_LIBS:BOOL=OFF -DCMAKE_BUILD_TYPE:STRING=RELEASE -DBUILD_EXAMPLES=OFF -DBUILD_TESTING=OFF -DVTK_USE_SYSTEM_EXPAT:BOOL=ON -DVTK_USE_SYSTEM_ZLIB:BOOL=ON -DVTK_LEGACY_REMOVE=ON -DVTK_Group_Rendering=OFF -DVTK_Group_StandAlone=OFF -DVTK_RENDERING_BACKEND=None -DVTK_WRAP_PYTHON=OFF -DModule_vtkCommonCore=ON -DModule_vtkCommonDataModel=ON -DModule_vtkFiltersCore=ON -DModule_vtkIOImage=ON -DModule_vtkImagingSources=ON -DVTK_GROUP_ENABLE_Views=NO -DVTK_GROUP_ENABLE_Web=NO -DVTK_GROUP_ENABLE_Imaging=NO -DVTK_GROUP_ENABLE_Qt=DONT_WANT -DVTK_GROUP_ENABLE_Rendering=DONT_WANT -DVTK_MODULE_ENABLE_VTK_InteractionStyle=YES -DVTK_MODULE_ENABLE_VTK_InteractionWidgets=YES -DVTK_MODULE_ENABLE_VTK_RenderingOpenGL2=YES -GNinja ../VTK
-        ninja
-    
-    - name: Build VTK
-      if: matrix.os == 'windows-2019'
-      run: |
-        cd ..
-        mkdir VTK-build
-        cd VTK-build
-        call "C:\Program Files (x86)\Microsoft Visual Studio\2019\Enterprise\VC\Auxiliary\Build\vcvars64.bat"
-        cmake -DCMAKE_C_COMPILER:FILEPATH="${{ matrix.c-compiler }}" -DCMAKE_CXX_COMPILER="${{ matrix.cxx-compiler }}" -DBUILD_SHARED_LIBS:BOOL=OFF -DCMAKE_BUILD_TYPE:STRING=RELEASE -DBUILD_EXAMPLES=OFF -DBUILD_TESTING=OFF -DVTK_USE_SYSTEM_EXPAT:BOOL=ON -DVTK_USE_SYSTEM_ZLIB:BOOL=ON -DVTK_LEGACY_REMOVE=ON -DVTK_Group_Rendering=OFF -DVTK_Group_StandAlone=OFF -DVTK_RENDERING_BACKEND=None -DVTK_WRAP_PYTHON=OFF -DModule_vtkCommonCore=ON -DModule_vtkCommonDataModel=ON -DModule_vtkFiltersCore=ON -DModule_vtkIOImage=ON -DModule_vtkImagingSources=ON -DVTK_GROUP_ENABLE_Views=NO -DVTK_GROUP_ENABLE_Web=NO -DVTK_GROUP_ENABLE_Imaging=NO -DVTK_GROUP_ENABLE_Qt=DONT_WANT -DVTK_GROUP_ENABLE_Rendering=DONT_WANT -DVTK_MODULE_ENABLE_VTK_InteractionStyle=YES -DVTK_MODULE_ENABLE_VTK_InteractionWidgets=YES -DVTK_MODULE_ENABLE_VTK_RenderingOpenGL2=YES -GNinja ../VTK
-        ninja
-      shell: cmd
-    
     - name: Download ITK
       run: |
         cd ..
@@ -97,7 +55,7 @@ jobs:
         cd ..
         mkdir ITK-build
         cd ITK-build
-        cmake -DCMAKE_C_COMPILER:FILEPATH="${{ matrix.c-compiler }}" -DBUILD_SHARED_LIBS:BOOL=ON -DCMAKE_CXX_COMPILER="${{ matrix.cxx-compiler }}" -DCMAKE_BUILD_TYPE:STRING=${{ matrix.cmake-build-type }} -DBUILD_TESTING:BOOL=OFF -DModule_ITKVtkGlue:BOOL=ON -DVTK_DIR:PATH=../VTK-build -GNinja ../ITK
+        cmake -DCMAKE_C_COMPILER:FILEPATH="${{ matrix.c-compiler }}" -DBUILD_SHARED_LIBS:BOOL=ON -DCMAKE_CXX_COMPILER="${{ matrix.cxx-compiler }}" -DCMAKE_BUILD_TYPE:STRING=${{ matrix.cmake-build-type }} -DBUILD_TESTING:BOOL=OFF -GNinja ../ITK
         ninja
 
     - name: Build ITK
@@ -107,7 +65,7 @@ jobs:
         mkdir ITK-build
         cd ITK-build
         call "C:\Program Files (x86)\Microsoft Visual Studio\2019\Enterprise\VC\Auxiliary\Build\vcvars64.bat"
-        cmake -DCMAKE_C_COMPILER:FILEPATH="${{ matrix.c-compiler }}" -DBUILD_SHARED_LIBS:BOOL=ON -DCMAKE_CXX_COMPILER="${{ matrix.cxx-compiler }}" -DCMAKE_BUILD_TYPE:STRING=${{ matrix.cmake-build-type }} -DBUILD_TESTING:BOOL=OFF -DModule_ITKVtkGlue:BOOL=ON -DVTK_DIR:PATH=../VTK-build -GNinja ../ITK
+        cmake -DCMAKE_C_COMPILER:FILEPATH="${{ matrix.c-compiler }}" -DBUILD_SHARED_LIBS:BOOL=ON -DCMAKE_CXX_COMPILER="${{ matrix.cxx-compiler }}" -DCMAKE_BUILD_TYPE:STRING=${{ matrix.cmake-build-type }} -DBUILD_TESTING:BOOL=OFF -GNinja ../ITK
         ninja
       shell: cmd
 
