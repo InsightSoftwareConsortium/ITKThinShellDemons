@@ -23,13 +23,11 @@
 #include "itkRegistrationParameterScalesFromPhysicalShift.h"
 #include "itkImageRegistrationMethodv4.h"
 #include "itkAffineTransform.h"
-#include "itkDiscreteGaussianCurvatureQuadEdgeMeshFilter.h"
 #include "itkMesh.h"
 #include "itkMeshFileReader.h"
 #include "itkMeshFileWriter.h"
-#include "itkTriangleCell.h"
 
-template <typename TFilter>
+template<typename TFilter>
 class CommandIterationUpdate : public itk::Command
 {
 public:
@@ -79,7 +77,6 @@ int itkThinShellDemonsTestv4_Affine( int args, char **argv)
   Initialize fixed mesh polydata reader
   */
   ReaderType::Pointer fixedPolyDataReader = ReaderType::New();
-
   fixedPolyDataReader->SetFileName(argv[1]);
   try
   {
