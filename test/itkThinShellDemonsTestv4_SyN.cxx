@@ -17,14 +17,14 @@
  *=========================================================================*/
 #include <cstdlib>
 
-#include "itkVTKPolyDataReader.h"
-#include "itkVTKPolyDataWriter.h"
-
 #include "itkThinShellDemonsMetricv4.h"
 #include "itkAffineTransform.h"
 #include "itkDisplacementFieldTransformParametersAdaptor.h"
 #include "itkSyNImageRegistrationMethod.h"
 #include "itkEuclideanDistancePointSetToPointSetMetricv4.h"
+#include "itkMesh.h"
+#include "itkMeshFileReader.h"
+#include "itkMeshFileWriter.h"
 
 /**
  * The implementation of the thin shell metricin the v4
@@ -35,15 +35,16 @@
 int itkThinShellDemonsTestv4_SyN( int args, char **argv)
 {
   const unsigned int Dimension = 3;
-  typedef itk::Mesh<double, Dimension>         MeshType;
+  using MeshType = itk::Mesh<double, Dimension>;
   using PointsContainerPointer = MeshType::PointsContainerPointer;
-  typedef itk::VTKPolyDataReader< MeshType >   ReaderType;
+  
+  using ReaderType = itk::MeshFileReader<MeshType>;
+  using WriterType = itk::MeshFileWriter<MeshType>;
 
   /*
   Initialize fixed mesh polydata reader
   */
   ReaderType::Pointer fixedPolyDataReader = ReaderType::New();
-  typedef ReaderType::PointType PointType;
   fixedPolyDataReader->SetFileName(argv[1]);
   try
   {
@@ -61,7 +62,6 @@ int itkThinShellDemonsTestv4_SyN( int args, char **argv)
   Initialize moving mesh polydata reader
   */
   ReaderType::Pointer  movingPolyDataReader = ReaderType::New();
-  typedef ReaderType::PointType PointType;
   movingPolyDataReader->SetFileName(argv[2]);
   try
   {
@@ -75,6 +75,9 @@ int itkThinShellDemonsTestv4_SyN( int args, char **argv)
   }
   MeshType::Pointer movingMesh = movingPolyDataReader->GetOutput();
 
+  /* Building the Cell Links to compute the neighbours later */
+  fixedMesh->BuildCellLinks();
+  movingMesh->BuildCellLinks();
 
   using PixelType = double;
   using FixedImageType = itk::Image<PixelType, Dimension>;
@@ -152,7 +155,7 @@ int itkThinShellDemonsTestv4_SyN( int args, char **argv)
   using PointSetMetricType = itk::EuclideanDistancePointSetToPointSetMetricv4<MeshType>;
   PointSetMetricType::Pointer metric = PointSetMetricType::New();
 */
-  using PointSetMetricType = itk::ThinShellDemonsMetricv4<MeshType> ;
+  using PointSetMetricType = itk::ThinShellDemonsMetricv4<MeshType, MeshType> ;
   PointSetMetricType::Pointer metric = PointSetMetricType::New();
   metric->SetStretchWeight(1);
   metric->SetBendWeight(5);
@@ -238,16 +241,15 @@ int itkThinShellDemonsTestv4_SyN( int args, char **argv)
   std::cout << "Solution Value= " << metric->GetValue() << std::endl;
 
   OutputTransformType::Pointer tx = registration->GetModifiableTransform();
-  for (unsigned int n = 0; n < movingMesh->GetNumberOfPoints(); n++)
+  for (PointIdentifier n = 0; n < movingMesh->GetNumberOfPoints(); n++)
   {
-    PointType txMovingPoint = tx->TransformPoint(movingMesh->GetPoint(n));
-    movingMesh->SetPoint(n, txMovingPoint);
+    movingMesh->SetPoint(n, tx->TransformPoint(movingMesh->GetPoint(n)));
   }
 
-  typedef itk::VTKPolyDataWriter<MeshType> WriterType;
   WriterType::Pointer writer = WriterType::New();
   writer->SetInput(movingMesh);
-  writer->SetFileName( "synMovingMesh.vtk" );
-  writer->Write();
+  writer->SetFileName("synMovingMesh.vtk");
+  writer->Update();
+  
   return EXIT_SUCCESS;
 }

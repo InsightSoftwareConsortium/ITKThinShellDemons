@@ -77,6 +77,9 @@ ThinShellDemonsMetricv4< TFixedMesh, TMovingMesh, TInternalComputationValueType 
 
   this->fixedITKMesh = MeshType::New();
   this->movingITKMesh = MeshType::New();
+  this->fixedQEMesh = QEMeshType::New();
+  this->movingQEMesh = QEMeshType::New();
+  this->fixedCurvature = QEMeshType::New();
 
   /* TODO: Avoid repetition and make a function for this */  
   /* Insert points and cells in the fixedITKMesh */
@@ -143,7 +146,6 @@ ThinShellDemonsMetricv4< TFixedMesh, TMovingMesh, TInternalComputationValueType 
   this->fixedITKMesh->BuildCellLinks();
   this->movingITKMesh->BuildCellLinks();
   
-  this->qeMeshCurvature = QEMeshType::New();
   this->gaussian_curvature_filter = CurvatureFilterType::New();
 
   /* Compute Neighbors which will be used to calculate the stretch and bend energy*/
@@ -349,13 +351,13 @@ ThinShellDemonsMetricv4< TFixedMesh, TMovingMesh, TInternalComputationValueType 
   this->InitializeFeaturePointsLocators();
 }
 
-/* It is called in the beginning once to obtain the feature points using the curvature information */
 template< typename TFixedMesh, typename TMovingMesh, typename TInternalComputationValueType >
 typename ThinShellDemonsMetricv4< TFixedMesh, TMovingMesh, TInternalComputationValueType >::FeaturePointSetPointer
 ThinShellDemonsMetricv4< TFixedMesh, TMovingMesh, TInternalComputationValueType >
 ::GenerateFeaturePointSets(bool fixed) const
 {
   MeshTypePointer VMesh;
+  QEMeshTypePointer qeMesh;
 
   // Update meshes according to current transforms
   if (fixed)
@@ -367,6 +369,7 @@ ThinShellDemonsMetricv4< TFixedMesh, TMovingMesh, TInternalComputationValueType 
     }
 
     VMesh = fixedITKMesh;
+    qeMesh = fixedQEMesh;
   }
   else
   {
@@ -377,10 +380,10 @@ ThinShellDemonsMetricv4< TFixedMesh, TMovingMesh, TInternalComputationValueType 
     }
 
     VMesh = movingITKMesh;
+    qeMesh = movingQEMesh;
   }
-
-  /* Create a QE Mesh to get the curvature */
-  QEMeshTypePointer qeMesh = QEMeshType::New();
+  
+  /* Update the QE Mesh to get the curvature */
   for (unsigned int n = 0; n < VMesh->GetNumberOfPoints(); n++)
   {
     MeshPointIdentifier point_id = n;
@@ -388,27 +391,30 @@ ThinShellDemonsMetricv4< TFixedMesh, TMovingMesh, TInternalComputationValueType 
     QEMeshPointIdentifier id1 = n;
     qeMesh->SetPoint(id1, point);
   }
-
-  /* Clear Re-make the cells in the QE Mesh */
-  for (unsigned int n = 0; n < VMesh->GetNumberOfCells(); n++)
+  
+  /* Make the cells in the QE Mesh for the first time only */
+  if (qeMesh->GetNumberOfCells() == 0)
   {
-    MeshCellIdentifier cell_id = n;
-    MeshCellAutoPointer tri_cell;
-    VMesh->GetCell(cell_id, tri_cell);
-
-    /* Creating a QE Cell from the Triangle Cell and inserting it into the QEMesh */
-    auto * triangleCell = new QETriangleCellType;
-    QECellAutoPointer qe_cell;
-
-    itk::Array<float> point_ids = tri_cell->GetPointIdsContainer();
-    for (unsigned int k = 0; k < 3; ++k)
+    for (unsigned int n = 0; n < VMesh->GetNumberOfCells(); n++)
     {
-      triangleCell->SetPointId(k, point_ids[k]);
-    }
+      MeshCellIdentifier cell_id = n;
+      MeshCellAutoPointer tri_cell;
+      VMesh->GetCell(cell_id, tri_cell);
 
-    QECellIdentifier qe_cell_id = n;
-    qe_cell.TakeOwnership(triangleCell);
-    qeMesh->SetCell(qe_cell_id, qe_cell);
+      /* Creating a QE Cell from the Triangle Cell and inserting it into the QEMesh */
+      auto * triangleCell = new QETriangleCellType;
+      QECellAutoPointer qe_cell;
+
+      itk::Array<float> point_ids = tri_cell->GetPointIdsContainer();
+      for (unsigned int k = 0; k < 3; ++k)
+      {
+        triangleCell->SetPointId(k, point_ids[k]);
+      }
+
+      QECellIdentifier qe_cell_id = n;
+      qe_cell.TakeOwnership(triangleCell);
+      qeMesh->SetCell(qe_cell_id, qe_cell);
+    }
   }
   
   QEMeshTypePointer curvature_output;
@@ -420,7 +426,7 @@ ThinShellDemonsMetricv4< TFixedMesh, TMovingMesh, TInternalComputationValueType 
 
   if( fixed )
     {
-    fixedCurvature = curvature_output;
+     fixedCurvature->SetPointData(curvature_output->GetPointData());
     }
   else
     {
@@ -432,7 +438,6 @@ ThinShellDemonsMetricv4< TFixedMesh, TMovingMesh, TInternalComputationValueType 
     }
   }
 
-  //std::cout << "Obtained the curvature " << std::endl;
   return features;
 }
 

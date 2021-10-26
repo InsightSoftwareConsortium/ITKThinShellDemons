@@ -251,8 +251,8 @@ private:
 
   mutable MeshTypePointer fixedITKMesh;
   mutable MeshTypePointer movingITKMesh;
-  mutable QEMeshTypePointer  qeMeshCurvature;
-
+  mutable QEMeshTypePointer fixedQEMesh;
+  mutable QEMeshTypePointer movingQEMesh;
   mutable QEMeshTypePointer fixedCurvature;
 
   CurvatureFilterTypePointer gaussian_curvature_filter;
