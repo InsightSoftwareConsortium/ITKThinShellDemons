@@ -209,13 +209,10 @@ protected:
 
   //Create a points locator for feature matching
   using FeaturePointSetType = PointSet< double, FixedPointDimension+1>;
-  
   using FeaturePointSetPointer = typename FeaturePointSetType::Pointer;
   using FeaturePointType = typename FeaturePointSetType::PointType;
-
   using FeaturePointsContainer = typename FeaturePointSetType::PointsContainer;
   using FeaturePointsContainerPointer = typename FeaturePointsContainer::Pointer;
-  
   using FeaturePointsLocatorType = PointsLocator<FeaturePointsContainer>;
   using FeaturePointsLocatorPointer = typename FeaturePointsLocatorType::Pointer;
 
