@@ -146,15 +146,6 @@ ThinShellDemonsMetricv4< TFixedMesh, TMovingMesh, TInternalComputationValueType 
   this->qeMeshCurvature = QEMeshType::New();
   this->gaussian_curvature_filter = CurvatureFilterType::New();
 
-  /*
-  QEWriterTypePointer  PolyDataWriter = QEWriterType::New();
-  PolyDataWriter->SetFileName("./qe_curvature_mesh_3.vtk");
-  PolyDataWriter->SetInput(output);
-  PolyDataWriter->Update();
-  */
-
-  //std::cout << "Pranjal Obtained vtk mesh from the itkmesh using the filter " << std::endl;
-
   /* Compute Neighbors which will be used to calculate the stretch and bend energy*/
   this->ComputeNeighbors();
 
@@ -364,8 +355,6 @@ typename ThinShellDemonsMetricv4< TFixedMesh, TMovingMesh, TInternalComputationV
 ThinShellDemonsMetricv4< TFixedMesh, TMovingMesh, TInternalComputationValueType >
 ::GenerateFeaturePointSets(bool fixed) const
 {
-  
-  std::cout << "Inside the GenerateFeaturePoint" << std::endl;
   MeshTypePointer VMesh;
 
   // Update meshes according to current transforms
