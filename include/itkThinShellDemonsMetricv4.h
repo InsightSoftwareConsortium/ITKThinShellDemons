@@ -127,6 +127,8 @@ public:
   using CurvatureFilterType = typename itk::DiscreteGaussianCurvatureQuadEdgeMeshFilter<QEMeshType, QEMeshType>;
   using CurvatureFilterTypePointer = typename CurvatureFilterType::Pointer;
 
+  using PointSetPointer = typename Superclass::FixedPointSetType::ConstPointer;
+
   void Initialize(void) override;
 
   MeasureType
@@ -265,6 +267,7 @@ private:
   bool m_UpdateFeatureMatchingAtEachIteration;
   bool m_UseMaximalDistanceConfidenceSigma;
 
+  void FillPointAndCell(PointSetPointer &pointset, MeshTypePointer &currentITKMesh);
   double ComputeConfidenceValueAndDerivative(const VectorType &v,
                                              VectorType &derivative) const;
   void ComputeStretchAndBend(const PointIdentifier &index,

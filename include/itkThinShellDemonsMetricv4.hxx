@@ -42,8 +42,50 @@ ThinShellDemonsMetricv4< TFixedMesh, TMovingMesh, TInternalComputationValueType 
   
   fixedITKMesh = nullptr;
   movingITKMesh = nullptr;
+  fixedQEMesh = nullptr;
+  movingQEMesh = nullptr;
   fixedCurvature = nullptr;
+
 }
+
+/* Set the points and cells for the mesh */
+template <typename TFixedMesh, typename TMovingMesh, typename TInternalComputationValueType>
+void
+ThinShellDemonsMetricv4< TFixedMesh, TMovingMesh, TInternalComputationValueType >
+::FillPointAndCell(PointSetPointer &pointset, MeshTypePointer &currentITKMesh)
+{
+  /* Insert points and cells in the currentITKMesh */
+  for (unsigned int n = 0; n < pointset->GetNumberOfPoints(); n++)
+  {
+    PointIdentifier point_id = n;
+    PointType point = pointset->GetPoint(point_id);
+    MeshPointIdentifier id1 = n;
+    currentITKMesh->SetPoint(id1, point);
+  }
+  
+  for (unsigned int n = 0; n < pointset->GetNumberOfCells(); n++)
+  {
+    MeshCellIdentifier cell_id = n;
+    MeshCellAutoPointer tri_cell;
+    pointset->GetCell(cell_id, tri_cell);
+
+    // Creating a Cell from the Triangle Cell and inserting it into the Mesh 
+    auto * triangleCell = new MeshTriangleCellType;
+    
+    itk::Array<float> point_ids = tri_cell->GetPointIdsContainer();
+    for (unsigned int k = 0; k < 3; ++k)
+    {
+      triangleCell->SetPointId(k, point_ids[k]);
+    }
+
+    MeshCellAutoPointer t_cell;
+    MeshCellIdentifier mesh_cell_id = n;
+    t_cell.TakeOwnership(triangleCell);
+    currentITKMesh->SetCell(mesh_cell_id, t_cell);
+  }
+
+}
+
 
 /** Initialize the metric */
 template< typename TFixedMesh, typename TMovingMesh, typename TInternalComputationValueType >
@@ -74,74 +116,17 @@ ThinShellDemonsMetricv4< TFixedMesh, TMovingMesh, TInternalComputationValueType 
     this->m_FixedPointSet->GetSource()->Update();
   }
 
-
   this->fixedITKMesh = MeshType::New();
   this->movingITKMesh = MeshType::New();
   this->fixedQEMesh = QEMeshType::New();
   this->movingQEMesh = QEMeshType::New();
   this->fixedCurvature = QEMeshType::New();
 
-  /* TODO: Avoid repetition and make a function for this */  
-  /* Insert points and cells in the fixedITKMesh */
-  for (unsigned int n = 0; n < this->m_FixedPointSet->GetNumberOfPoints(); n++)
-  {
-    PointIdentifier point_id = n;
-    PointType point = this->m_FixedPointSet->GetPoint(point_id);
-    MeshPointIdentifier id1 = n;
-    this->fixedITKMesh->SetPoint(id1, point);
-  }
+  /* fill points and cells in fixed mesh */
+  FillPointAndCell(this->m_FixedPointSet, this->fixedITKMesh);
+  /* fill points and cells in moving mesh */
+  FillPointAndCell(this->m_MovingPointSet, this->movingITKMesh);
   
-  for (unsigned int n = 0; n < this->m_FixedPointSet->GetNumberOfCells(); n++)
-  {
-    MeshCellIdentifier cell_id = n;
-    MeshCellAutoPointer tri_cell;
-    this->m_FixedPointSet->GetCell(cell_id, tri_cell);
-
-    // Creating a Cell from the Triangle Cell and inserting it into the Mesh 
-    auto * triangleCell = new MeshTriangleCellType;
-    
-    itk::Array<float> point_ids = tri_cell->GetPointIdsContainer();
-    for (unsigned int k = 0; k < 3; ++k)
-    {
-      triangleCell->SetPointId(k, point_ids[k]);
-    }
-
-    MeshCellAutoPointer t_cell;
-    MeshCellIdentifier mesh_cell_id = n;
-    t_cell.TakeOwnership(triangleCell);
-    this->fixedITKMesh->SetCell(mesh_cell_id, t_cell);
-  }
-
-  /* Insert points and cells in the movingITKMesh */
-  for (unsigned int n = 0; n < this->m_MovingPointSet->GetNumberOfPoints(); n++)
-  {
-    PointIdentifier point_id = n;
-    PointType point = this->m_MovingPointSet->GetPoint(point_id);
-    MeshPointIdentifier id1 = n;
-    this->movingITKMesh->SetPoint(id1, point);
-  }
-  
-  for (unsigned int n = 0; n < this->m_MovingPointSet->GetNumberOfCells(); n++)
-  {
-    MeshCellIdentifier cell_id = n;
-    MeshCellAutoPointer tri_cell;
-    this->m_MovingPointSet->GetCell(cell_id, tri_cell);
-
-    // Creating a Cell from the Triangle Cell and inserting it into the Mesh 
-    auto * triangleCell = new MeshTriangleCellType;
-    
-    itk::Array<float> point_ids = tri_cell->GetPointIdsContainer();
-    for (unsigned int k = 0; k < 3; ++k)
-    {
-      triangleCell->SetPointId(k, point_ids[k]);
-    }
-
-    MeshCellAutoPointer t_cell;
-    MeshCellIdentifier mesh_cell_id = n;
-    t_cell.TakeOwnership(triangleCell);
-    this->movingITKMesh->SetCell(mesh_cell_id, t_cell);
-  }
-
   /* Build the Cell Links for the ITK Mesh for calculating the neighbours*/
   this->fixedITKMesh->BuildCellLinks();
   this->movingITKMesh->BuildCellLinks();
