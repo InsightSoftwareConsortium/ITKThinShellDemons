@@ -61,7 +61,7 @@ public:
     }
 };
 
-int itkThinShellDemonsTestv4_Affine( int args, char **argv)
+int itkThinShellDemonsTestv4_Affine( int args, char *argv [])
 {
   const unsigned int Dimension = 3;
   

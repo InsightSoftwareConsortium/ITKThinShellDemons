@@ -32,7 +32,7 @@
  * to comnine the thin shell regularization with for
  * example the SyN diffeomoprhic transformations.
  */
-int itkThinShellDemonsTestv4_SyN( int args, char **argv)
+int itkThinShellDemonsTestv4_SyN( int args, char *argv [])
 {
   const unsigned int Dimension = 3;
   using MeshType = itk::Mesh<double, Dimension>;

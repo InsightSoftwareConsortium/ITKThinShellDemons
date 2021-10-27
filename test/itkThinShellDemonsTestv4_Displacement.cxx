@@ -62,7 +62,7 @@ public:
     }
 };
 
-int itkThinShellDemonsTestv4_Displacement( int args, char **argv)
+int itkThinShellDemonsTestv4_Displacement( int args, char *argv [])
 {
   const unsigned int Dimension = 3;
   using MeshType = itk::Mesh<double, Dimension>;
