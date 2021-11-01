@@ -17,9 +17,6 @@
  *=========================================================================*/
 #include <cstdlib>
 
-#include "itkVTKPolyDataReader.h"
-#include "itkVTKPolyDataWriter.h"
-
 #include "itkCommand.h"
 #include "itkThinShellDemonsMetricv4.h"
 #include "itkImageRegistrationMethodv4.h"
@@ -27,6 +24,9 @@
 //#include "itkMeshDisplacementTransform.h"
 #include "itkConjugateGradientLineSearchOptimizerv4.h"
 #include "itkLBFGS2Optimizerv4.h"
+#include "itkMesh.h"
+#include "itkMeshFileReader.h"
+#include "itkMeshFileWriter.h"
 
 template<typename TFilter>
 class CommandIterationUpdate : public itk::Command
@@ -62,18 +62,19 @@ public:
     }
 };
 
-int itkThinShellDemonsTestv4_Displacement( int args, char **argv)
+int itkThinShellDemonsTestv4_Displacement( int args, char *argv [])
 {
   const unsigned int Dimension = 3;
-  typedef itk::Mesh<double, Dimension>         MeshType;
+  using MeshType = itk::Mesh<double, Dimension>;
   using PointsContainerPointer = MeshType::PointsContainerPointer;
-  typedef itk::VTKPolyDataReader< MeshType >   ReaderType;
+  
+  using ReaderType = itk::MeshFileReader<MeshType>;
+  using WriterType = itk::MeshFileWriter<MeshType>;
 
   /*
   Initialize fixed mesh polydata reader
   */
   ReaderType::Pointer fixedPolyDataReader = ReaderType::New();
-  typedef ReaderType::PointType PointType;
   fixedPolyDataReader->SetFileName(argv[1]);
   try
   {
@@ -91,7 +92,6 @@ int itkThinShellDemonsTestv4_Displacement( int args, char **argv)
   Initialize moving mesh polydata reader
   */
   ReaderType::Pointer  movingPolyDataReader = ReaderType::New();
-  typedef ReaderType::PointType PointType;
   movingPolyDataReader->SetFileName(argv[2]);
   try
   {
@@ -105,6 +105,9 @@ int itkThinShellDemonsTestv4_Displacement( int args, char **argv)
   }
   MeshType::Pointer movingMesh = movingPolyDataReader->GetOutput();
 
+  /* Building the Cell Links to compute the neighbours later */
+  fixedMesh->BuildCellLinks();
+  movingMesh->BuildCellLinks();
 
   using PixelType = double;
   using FixedImageType = itk::Image<PixelType, Dimension>;
@@ -156,7 +159,7 @@ int itkThinShellDemonsTestv4_Displacement( int args, char **argv)
   field->Allocate();
   transform->SetDisplacementField(field);
 
-  using PointSetMetricType = itk::ThinShellDemonsMetricv4<MeshType> ;
+  using PointSetMetricType = itk::ThinShellDemonsMetricv4<MeshType, MeshType> ;
   PointSetMetricType::Pointer metric = PointSetMetricType::New();
   metric->SetStretchWeight(1);
   metric->SetBendWeight(5);
@@ -230,16 +233,14 @@ int itkThinShellDemonsTestv4_Displacement( int args, char **argv)
   TransformType::Pointer tx = registration->GetModifiableTransform();
   metric->SetTransform(tx);
   std::cout << "Solution Value= " << metric->GetValue() << std::endl;
-  for (unsigned int n = 0; n < movingMesh->GetNumberOfPoints(); n++)
+  for (PointIdentifier n = 0; n < movingMesh->GetNumberOfPoints(); n++)
   {
-    PointType txMovingPoint = tx->TransformPoint(movingMesh->GetPoint(n));
-    movingMesh->SetPoint(n, txMovingPoint);
+    movingMesh->SetPoint(n, tx->TransformPoint(movingMesh->GetPoint(n)));
   }
 
-  typedef itk::VTKPolyDataWriter<MeshType> WriterType;
   WriterType::Pointer writer = WriterType::New();
   writer->SetInput(movingMesh);
-  writer->SetFileName( "displacedMovingMesh.vtk" );
-  writer->Write();
+  writer->SetFileName("displacedMovingMesh.vtk");
+  writer->Update();
   return EXIT_SUCCESS;
 }
