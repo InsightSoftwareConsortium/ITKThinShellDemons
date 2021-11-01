@@ -18,11 +18,9 @@
 #ifndef itkThinShellDemonsMetricv4_hxx
 #define itkThinShellDemonsMetricv4_hxx
 
+
 #include "itkThinShellDemonsMetricv4.h"
-
-#include <vtkCurvatures.h>
-#include <vtkPointData.h>
-
+#include "itkPointSet.h"
 #include <math.h>
 
 namespace itk
@@ -35,15 +33,55 @@ ThinShellDemonsMetricv4< TFixedMesh, TMovingMesh, TInternalComputationValueType 
   m_BendWeight = 1;
   m_StretchWeight = 1;
   m_GeometricFeatureWeight = 0;
+
   m_ConfidenceSigma = 3;
   m_UseMaximalDistanceConfidenceSigma = true;
   m_UseConfidenceWeighting = true;
   m_UpdateFeatureMatchingAtEachIteration = false;
   m_MovingTransformedFeaturePointsLocator = nullptr;
-  fixedVTKMesh = nullptr;
-  movingVTKMesh = nullptr;
+  
+  fixedITKMesh = nullptr;
+  movingITKMesh = nullptr;
+  fixedQEMesh = nullptr;
+  movingQEMesh = nullptr;
   fixedCurvature = nullptr;
+
 }
+
+/* Set the points and cells for the mesh */
+template <typename TFixedMesh, typename TMovingMesh, typename TInternalComputationValueType>
+void
+ThinShellDemonsMetricv4< TFixedMesh, TMovingMesh, TInternalComputationValueType >
+::FillPointAndCell(PointSetPointer &pointset, MeshTypePointer &currentITKMesh)
+{
+  /* Insert points and cells in the currentITKMesh */
+  for (unsigned int n = 0; n < pointset->GetNumberOfPoints(); n++)
+  {
+    PointType point = pointset->GetPoint(n);
+    currentITKMesh->SetPoint(n, point);
+  }
+  
+  for (unsigned int n = 0; n < pointset->GetNumberOfCells(); n++)
+  {
+    MeshCellAutoPointer tri_cell;
+    pointset->GetCell(n, tri_cell);
+
+    // Creating a Cell from the Triangle Cell and inserting it into the Mesh 
+    auto * triangleCell = new MeshTriangleCellType;
+    
+    itk::Array<float> point_ids = tri_cell->GetPointIdsContainer();
+    for (unsigned int k = 0; k < 3; ++k)
+    {
+      triangleCell->SetPointId(k, point_ids[k]);
+    }
+
+    MeshCellAutoPointer t_cell;
+    t_cell.TakeOwnership(triangleCell);
+    currentITKMesh->SetCell(n, t_cell);
+  }
+
+}
+
 
 /** Initialize the metric */
 template< typename TFixedMesh, typename TMovingMesh, typename TInternalComputationValueType >
@@ -74,12 +112,24 @@ ThinShellDemonsMetricv4< TFixedMesh, TMovingMesh, TInternalComputationValueType 
     this->m_FixedPointSet->GetSource()->Update();
   }
 
-    //generate a VTK copy of the same mesh
-  this->movingVTKMesh =
-    itkMeshTovtkPolyData<MovingPointSetType>::Convert(this->m_MovingPointSet);
-  this->fixedVTKMesh =
-    itkMeshTovtkPolyData<FixedPointSetType>::Convert(this->m_FixedPointSet);
+  this->fixedITKMesh = MeshType::New();
+  this->movingITKMesh = MeshType::New();
+  this->fixedQEMesh = QEMeshType::New();
+  this->movingQEMesh = QEMeshType::New();
+  this->fixedCurvature = QEMeshType::New();
 
+  /* fill points and cells in fixed mesh */
+  FillPointAndCell(this->m_FixedPointSet, this->fixedITKMesh);
+  /* fill points and cells in moving mesh */
+  FillPointAndCell(this->m_MovingPointSet, this->movingITKMesh);
+  
+  /* Build the Cell Links for the ITK Mesh for calculating the neighbours*/
+  this->fixedITKMesh->BuildCellLinks();
+  this->movingITKMesh->BuildCellLinks();
+  
+  this->gaussian_curvature_filter = CurvatureFilterType::New();
+
+  /* Compute Neighbors which will be used to calculate the stretch and bend energy*/
   this->ComputeNeighbors();
 
   Superclass::Initialize();
@@ -91,37 +141,43 @@ ThinShellDemonsMetricv4< TFixedMesh, TMovingMesh, TInternalComputationValueType 
     }
 }
 
-template< typename TFixedMesh, typename TMovingMesh, typename TInternalComputationValueType >
+/* Iterate over all the cells in which a point belongs and get the points present in those cells*/
+template <typename TFixedMesh, typename TMovingMesh, typename TInternalComputationValueType>
 void
 ThinShellDemonsMetricv4< TFixedMesh, TMovingMesh, TInternalComputationValueType >
 ::ComputeNeighbors()
 {
-  this->neighborMap.resize(fixedVTKMesh->GetNumberOfPoints());
-  this->edgeLengthMap.resize(fixedVTKMesh->GetNumberOfPoints());
-  for(PointIdentifier id=0; id<fixedVTKMesh->GetNumberOfPoints(); id++)
-    {
-    //Collect all neighbors
-    vtkSmartPointer<vtkIdList> cellIdList = vtkSmartPointer<vtkIdList>::New();
-    fixedVTKMesh->GetPointCells(id, cellIdList);
-    vtkSmartPointer<vtkIdList> pointIdList = vtkSmartPointer<vtkIdList>::New();
-    for(PointIdentifier i = 0; i < cellIdList->GetNumberOfIds(); i++)
-      {
-      vtkSmartPointer<vtkIdList> pointIdListTmp = vtkSmartPointer<vtkIdList>::New();
-      fixedVTKMesh->GetCellPoints(cellIdList->GetId(i), pointIdListTmp);
-      for(PointIdentifier j=0; j < pointIdListTmp->GetNumberOfIds(); j++)
-        {
-        if(pointIdListTmp->GetId(j) != id)
-          {
-          pointIdList->InsertUniqueId(pointIdListTmp->GetId(j) );
+  this->neighborMap.resize(fixedITKMesh->GetNumberOfPoints());
+  this->edgeLengthMap.resize(fixedITKMesh->GetNumberOfPoints());
+  
+  for (PointIdentifier id = 0; id < fixedITKMesh->GetNumberOfPoints(); id++)
+  {
+    /* For iterating over the cells for a given point */
+    const std::set<PointIdentifier> link_set = this->fixedITKMesh->GetCellLinks()->ElementAt(id);
+    std::set<PointIdentifier> pointIdSet;
+
+    /* Iterate over the cells  and get the neighbouring points */
+    for (auto elem : link_set){
+        MeshCellAutoPointer tri_cell;
+        this->fixedITKMesh->GetCell(elem, tri_cell);
+        MeshCellPointIdConstIterator point_ids = tri_cell->GetPointIds();
+        for (int ik = 0; ik < 3; ++ik){
+          if (point_ids[ik] != id){
+            pointIdSet.insert(point_ids[ik]);
           }
         }
-      }
+    } 
+
+    // Convert Set to Vector for  later use
+    std::vector<PointIdentifier> pointIdList( pointIdSet.begin(), pointIdSet.end() );
+    
     //Store edge lengths
-    edgeLengthMap[id].resize(pointIdList->GetNumberOfIds());
-    const PointType &p = this->m_FixedPointSet->GetPoint(id);
-    for(PointIdentifier j=0; j < pointIdList->GetNumberOfIds(); j++)
-      {
-      const vtkIdType &nid = pointIdList->GetId(j);
+    edgeLengthMap[id].resize(pointIdList.size());
+    
+    const PointType & p = this->m_FixedPointSet->GetPoint(id);
+    for (unsigned long int j=0; j < pointIdList.size(); ++j)
+    {
+      PointIdentifier nid = pointIdList[j];
       const PointType &pn = this->m_FixedPointSet->GetPoint(nid);
       edgeLengthMap[id][j] =  p.EuclideanDistanceTo(pn);
       //Avoid division by zero
@@ -176,16 +232,17 @@ ThinShellDemonsMetricv4< TFixedMesh, TMovingMesh, TInternalComputationValueType 
   stretch.Fill(0);
   bend.Fill(0);
 
-  //Collect all neighbors
-  const vtkSmartPointer<vtkIdList> &pointIdList = this->neighborMap[identifier];
-  int degree = pointIdList->GetNumberOfIds();
+  // Collect all neighbors
+  std::vector<PointIdentifier> pointIdList = this->neighborMap[identifier];
+  int degree = pointIdList.size();
   VectorType v = this->GetMovingDirection(identifier);
   VectorType bEnergy;
   bEnergy.Fill(0);
-  for(PointIdentifier i=0; i < pointIdList->GetNumberOfIds(); i++)
-    {
-    PointIdentifier neighborIdx = pointIdList->GetId(i);
-    int nDegree =  this->neighborMap[neighborIdx]->GetNumberOfIds();
+
+  for (long unsigned int i=0; i < pointIdList.size(); ++i)
+  {
+    PointIdentifier neighborIdx = pointIdList[i];
+    int nDegree = this->neighborMap[neighborIdx].size();
 
     VectorType vn = this->GetMovingDirection(neighborIdx);
     VectorType dx = (v - vn);
@@ -206,7 +263,9 @@ ThinShellDemonsMetricv4< TFixedMesh, TMovingMesh, TInternalComputationValueType 
   stretchEnergy /= degree;
 }
 
-template< typename TFixedMesh, typename TMovingMesh, typename TInternalComputationValueType >
+/* Function definition of the original method definition in itkPointSetToPointSetMetric*/
+/* Performs the computation in a multi-threaded manner */
+template <typename TFixedMesh, typename TMovingMesh, typename TInternalComputationValueType>
 typename ThinShellDemonsMetricv4< TFixedMesh, TMovingMesh, TInternalComputationValueType >
 ::MeasureType
 ThinShellDemonsMetricv4< TFixedMesh, TMovingMesh, TInternalComputationValueType >
@@ -220,7 +279,10 @@ ThinShellDemonsMetricv4< TFixedMesh, TMovingMesh, TInternalComputationValueType 
   return value;
 }
 
-template< typename TFixedMesh, typename TMovingMesh, typename TInternalComputationValueType >
+/* Function definition of the original method definition in itkPointSetToPointSetMetric*/
+/* Performs the computation in a multi-threaded manner */
+/* This method is called inside the CalculateValueAndDerivative in itkPointSetToPointSetMetricWithIndexv4.hxx */
+template <typename TFixedMesh, typename TMovingMesh, typename TInternalComputationValueType>
 void
 ThinShellDemonsMetricv4< TFixedMesh, TMovingMesh, TInternalComputationValueType >
 ::GetLocalNeighborhoodValueAndDerivativeWithIndex(const PointIdentifier &identifier,
@@ -229,7 +291,9 @@ ThinShellDemonsMetricv4< TFixedMesh, TMovingMesh, TInternalComputationValueType 
                                          LocalDerivativeType &derivative,
                                          const PixelType & pixel) const
 {
-  FeaturePointType fpoint = this->GetFeaturePoint(point, fixedCurvature->GetTuple1(identifier) );
+  
+  FeaturePointType fpoint = this->GetFeaturePoint(point, fixedCurvature->GetPointData()->ElementAt(identifier));
+  
   PointIdentifier mPointId = this->m_MovingTransformedFeaturePointsLocator->FindClosestPoint(fpoint);
   PointType closestPoint = this->m_MovingTransformedPointSet->GetPoint(mPointId);
 
@@ -247,6 +311,8 @@ ThinShellDemonsMetricv4< TFixedMesh, TMovingMesh, TInternalComputationValueType 
   VectorType bD;
   this->ComputeStretchAndBend(identifier, sE, bE, sD, bD);
   VectorType dx = direction * confidence * 2 - m_StretchWeight*sD - bD * m_BendWeight;
+
+  /* Refer to Equation 2 in the MIUA2015 paper */
   value = confidence * dist + m_StretchWeight * sE + m_BendWeight * bE;
   if(this->m_UseConfidenceWeighting && this->m_UpdateFeatureMatchingAtEachIteration)
     {
@@ -260,6 +326,7 @@ void
 ThinShellDemonsMetricv4< TFixedMesh, TMovingMesh, TInternalComputationValueType >
 ::InitializePointSets() const
 {
+  /* The call to Superclass initializes the m_MovingTransformedPointSet */
   Superclass::InitializePointSets();
   this->InitializeFeaturePointsLocators();
 }
@@ -270,49 +337,77 @@ typename ThinShellDemonsMetricv4< TFixedMesh, TMovingMesh, TInternalComputationV
 ThinShellDemonsMetricv4< TFixedMesh, TMovingMesh, TInternalComputationValueType >
 ::GenerateFeaturePointSets(bool fixed) const
 {
+  MeshTypePointer VMesh;
+  QEMeshTypePointer qeMesh;
 
-  vtkSmartPointer<vtkPolyData> vMesh;
   //Update meshes according to current transforms
   if(fixed)
     {
-    vtkSmartPointer<vtkPoints> pts = fixedVTKMesh->GetPoints();
     for(PointIdentifier i=0; i<this->m_FixedTransformedPointSet->GetNumberOfPoints(); i++ )
       {
-      pts->SetPoint(i, this->m_FixedTransformedPointSet->GetPoint(i).data());
-      }
-    vMesh = fixedVTKMesh;
-    }
-  else
-    {
-    vtkSmartPointer<vtkPoints> pts = movingVTKMesh->GetPoints();
-    for(PointIdentifier i=0; i<this->m_MovingTransformedPointSet->GetNumberOfPoints(); i++ )
-      {
-      pts->SetPoint(i, this->m_MovingTransformedPointSet->GetPoint(i).data());
-      }
-    vMesh = movingVTKMesh;
+      PointType data1 = this->m_FixedTransformedPointSet->GetPoint(i);
+      fixedQEMesh->SetPoint(i, data1);
     }
 
-  vtkSmartPointer<vtkCurvatures> curvaturesFilter = vtkSmartPointer<vtkCurvatures>::New();
-  curvaturesFilter->SetInputData(vMesh);
-  curvaturesFilter->SetCurvatureTypeToGaussian();
-  curvaturesFilter->Update();
-  vtkSmartPointer<vtkPolyData> curvaturesOutput = curvaturesFilter->GetOutput();
-  vtkSmartPointer<vtkDataArray> curvature = curvaturesOutput->GetPointData()->GetScalars();
-  FeaturePointSetPointer features = FeaturePointSetType::New();
+    VMesh = fixedITKMesh;
+    qeMesh = fixedQEMesh;
+  }
+  else
+  {
+    for (PointIdentifier i = 0; i < this->m_MovingTransformedPointSet->GetNumberOfPoints(); i++)
+    {
+      PointType data1 = this->m_MovingTransformedPointSet->GetPoint(i);
+      movingQEMesh->SetPoint(i, data1);
+    }
+
+    VMesh = movingITKMesh;
+    qeMesh = movingQEMesh;
+  }
+  
+  /* Make the cells in the QE Mesh for the first time only */
+  if (qeMesh->GetNumberOfCells() == 0)
+  {
+    for (unsigned int n = 0; n < VMesh->GetNumberOfCells(); n++)
+    {
+      MeshCellAutoPointer tri_cell;
+      VMesh->GetCell(n, tri_cell);
+
+      /* Creating a QE Cell from the Triangle Cell and inserting it into the QEMesh */
+      auto * triangleCell = new QETriangleCellType;
+      QECellAutoPointer qe_cell;
+
+      itk::Array<float> point_ids = tri_cell->GetPointIdsContainer();
+      for (unsigned int k = 0; k < 3; ++k)
+      {
+        triangleCell->SetPointId(k, point_ids[k]);
+      }
+      
+      qe_cell.TakeOwnership(triangleCell);
+      qeMesh->SetCell(n, qe_cell);
+    }
+  }
+  
+  QEMeshTypePointer curvature_output;
+  gaussian_curvature_filter->SetInput(qeMesh);
+  gaussian_curvature_filter->Update();
+  curvature_output = gaussian_curvature_filter->GetOutput();
+  
+  FeaturePointSetPointer        features = FeaturePointSetType::New();
+
   if( fixed )
     {
-    fixedCurvature = curvature;
+     fixedCurvature->SetPointData(curvature_output->GetPointData());
     }
   else
     {
     auto fPoints = features->GetPoints();
-    for(PointIdentifier i=0; i<vMesh->GetNumberOfPoints(); i++)
-      {
-      FeaturePointType point =
-        this->GetFeaturePoint(vMesh->GetPoint(i), curvature->GetTuple1(i) );
+    for (PointIdentifier i = 0; i < qeMesh->GetNumberOfPoints(); i++)
+    {
+      FeaturePointType point = this->GetFeaturePoint(qeMesh->GetPoint(i), curvature_output->GetPointData()->ElementAt(i));
       fPoints->InsertElement(i, point);
-      }
     }
+  }
+
   return features;
 }
 
@@ -325,10 +420,9 @@ ThinShellDemonsMetricv4< TFixedMesh, TMovingMesh, TInternalComputationValueType 
   FeaturePointsContainerPointer mpoints =
     this->m_MovingTransformedFeaturePointsLocator->GetPoints();
   double maximalDistance = 0;
-  for(PointIdentifier i = 0; i < fixedVTKMesh->GetNumberOfPoints(); i++)
-    {
-    FeaturePointType fpoint =
-      this->GetFeaturePoint(fixedVTKMesh->GetPoint(i), fixedCurvature->GetTuple1(i));
+  for (PointIdentifier i = 0; i < fixedITKMesh->GetNumberOfPoints(); i++)
+  {
+    FeaturePointType fpoint = this->GetFeaturePoint(fixedITKMesh->GetPoint(i), fixedCurvature->GetPointData()->ElementAt(i));
     PointIdentifier id = this->m_MovingTransformedFeaturePointsLocator->FindClosestPoint(fpoint);
     FeaturePointType cpoint = mpoints->GetElement(id);
     double dist = cpoint.SquaredEuclideanDistanceTo(fpoint);
@@ -363,6 +457,8 @@ ThinShellDemonsMetricv4< TFixedMesh, TMovingMesh, TInternalComputationValueType 
     {
       this->m_MovingTransformedFeaturePointsLocator = FeaturePointsLocatorType::New();
     }
+
+    // Only for the moving mesh, pass false to the GenerateFeaturePointSets
     FeaturePointSetPointer features = this->GenerateFeaturePointSets(false);
     this->m_MovingTransformedFeaturePointsLocator->SetPoints(
         features->GetPoints());
@@ -379,6 +475,7 @@ ThinShellDemonsMetricv4< TFixedMesh, TMovingMesh, TInternalComputationValueType 
     */
 }
 
+/* returns point with values [x, y, z, feature] */
 template< typename TFixedMesh, typename TMovingMesh, typename TInternalComputationValueType >
 typename ThinShellDemonsMetricv4< TFixedMesh, TMovingMesh, TInternalComputationValueType >
 ::FeaturePointType
