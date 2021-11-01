@@ -1,7 +1,6 @@
 itk_module_test()
 
 set(ThinShellDemonsTests
-  itkThinShellDemonsTest.cxx
   itkThinShellDemonsTestv4_Affine.cxx
   itkThinShellDemonsTestv4_Displacement.cxx
   itkThinShellDemonsTestv4_SyN.cxx
@@ -9,12 +8,6 @@ set(ThinShellDemonsTests
 
 CreateTestDriver(ThinShellDemons "${ThinShellDemons-Test_LIBRARIES}" "${ThinShellDemonsTests}")
 
-itk_add_test(NAME itkThinShellDemonsTest
-  COMMAND ThinShellDemonsTestDriver
-  itkThinShellDemonsTest
-  DATA{Baseline/fixedMesh.vtk}
-  DATA{Baseline/movingMesh.vtk}
-  )
 
 itk_add_test(NAME itkThinShellDemonsTestv4_Affine
   COMMAND ThinShellDemonsTestDriver

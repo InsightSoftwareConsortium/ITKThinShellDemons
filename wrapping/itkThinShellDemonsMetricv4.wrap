@@ -1,12 +1,13 @@
 itk_wrap_include("itkPointSet.h")
+itk_wrap_include("itkMesh.h")
 itk_wrap_include("itkDefaultStaticMeshTraits.h")
 
 UNIQUE(types "${WRAP_ITK_SCALAR};D")
 
-itk_wrap_class("itk::ThinShellDemonsMetricv4" POINTER)
+itk_wrap_class("itk::ThinShellDemonsMetricv4" POINTER_WITH_2_SUPERCLASSES)
   foreach(d ${ITK_WRAP_IMAGE_DIMS})
     foreach(t ${types})
-      itk_wrap_template("PS${ITKM_${t}}${d}" "itk::PointSet< ${ITKT_${t}},${d} >")
+      itk_wrap_template("PS${ITKM_${t}}${d}" "itk::Mesh< ${ITKT_${t}},${d} >")
     endforeach()
   endforeach()
 itk_end_wrap_class()
@@ -15,7 +16,7 @@ itk_wrap_class("itk::RegistrationParameterScalesFromPhysicalShift" POINTER_WITH_
   foreach(d ${ITK_WRAP_IMAGE_DIMS})
     foreach(t ${types})
       itk_wrap_template("EBPSTPSMPS${ITKM_${t}}${d}"
-        "itk::ThinShellDemonsMetricv4< itk::PointSet< ${ITKT_${t}},${d} > >")
+        "itk::ThinShellDemonsMetricv4< itk::Mesh< ${ITKT_${t}},${d} > >")
     endforeach()
   endforeach()
 itk_end_wrap_class()
