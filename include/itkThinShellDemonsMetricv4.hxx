@@ -116,7 +116,6 @@ ThinShellDemonsMetricv4< TFixedMesh, TMovingMesh, TInternalComputationValueType 
   this->movingITKMesh = MeshType::New();
   this->fixedQEMesh = QEMeshType::New();
   this->movingQEMesh = QEMeshType::New();
-  this->fixedCurvature = QEMeshType::New();
 
   /* fill points and cells in fixed mesh */
   FillPointAndCell(this->m_FixedPointSet, this->fixedITKMesh);
@@ -396,7 +395,11 @@ ThinShellDemonsMetricv4< TFixedMesh, TMovingMesh, TInternalComputationValueType 
 
   if( fixed )
     {
-     fixedCurvature->SetPointData(curvature_output->GetPointData());
+      /* Instantiate first time and re-use it for later iterations */
+      if(!this->fixedCurvature){
+        this->fixedCurvature = QEMeshType::New();
+      }
+     this->fixedCurvature->SetPointData(curvature_output->GetPointData());
     }
   else
     {
