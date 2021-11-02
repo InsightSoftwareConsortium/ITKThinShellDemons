@@ -16,10 +16,6 @@
  *
  *=========================================================================*/
 #include <cstdlib>
-
-#include "itkVTKPolyDataReader.h"
-#include "itkVTKPolyDataWriter.h"
-
 #include "itkCommand.h"
 #include "itkThinShellDemonsMetricv4.h"
 #include "itkConjugateGradientLineSearchOptimizerv4.h"
@@ -27,6 +23,9 @@
 #include "itkRegistrationParameterScalesFromPhysicalShift.h"
 #include "itkImageRegistrationMethodv4.h"
 #include "itkAffineTransform.h"
+#include "itkMesh.h"
+#include "itkMeshFileReader.h"
+#include "itkMeshFileWriter.h"
 
 template<typename TFilter>
 class CommandIterationUpdate : public itk::Command
@@ -62,12 +61,15 @@ public:
     }
 };
 
-int itkThinShellDemonsTestv4_Affine( int args, char **argv)
+int itkThinShellDemonsTestv4_Affine( int args, char *argv [])
 {
   const unsigned int Dimension = 3;
-  typedef itk::Mesh<double, Dimension>         MeshType;
+  
+  using MeshType = itk::Mesh<double, Dimension>;
   using PointsContainerPointer = MeshType::PointsContainerPointer;
-  typedef itk::VTKPolyDataReader< MeshType >   ReaderType;
+  
+  using ReaderType = itk::MeshFileReader<MeshType>;
+  using WriterType = itk::MeshFileWriter<MeshType>;
 
   unsigned int numberOfIterations = 100;
 
@@ -75,7 +77,6 @@ int itkThinShellDemonsTestv4_Affine( int args, char **argv)
   Initialize fixed mesh polydata reader
   */
   ReaderType::Pointer fixedPolyDataReader = ReaderType::New();
-  typedef ReaderType::PointType PointType;
   fixedPolyDataReader->SetFileName(argv[1]);
   try
   {
@@ -93,7 +94,6 @@ int itkThinShellDemonsTestv4_Affine( int args, char **argv)
   Initialize moving mesh polydata reader
   */
   ReaderType::Pointer  movingPolyDataReader = ReaderType::New();
-  typedef ReaderType::PointType PointType;
   movingPolyDataReader->SetFileName(argv[2]);
   try
   {
@@ -107,6 +107,9 @@ int itkThinShellDemonsTestv4_Affine( int args, char **argv)
   }
   MeshType::Pointer movingMesh = movingPolyDataReader->GetOutput();
 
+  /* Building the Cell Links to compute the neighbours later */
+  fixedMesh->BuildCellLinks();
+  movingMesh->BuildCellLinks();
 
   using PixelType = double;
   using FixedImageType = itk::Image<PixelType, Dimension>;
@@ -151,7 +154,8 @@ int itkThinShellDemonsTestv4_Affine( int args, char **argv)
   transform->SetIdentity();
   transform->SetCenter(minBounds + (maxBounds - minBounds)/2);
 
-  using PointSetMetricType = itk::ThinShellDemonsMetricv4<MeshType> ;
+
+  using PointSetMetricType = itk::ThinShellDemonsMetricv4<MeshType, MeshType>;
   PointSetMetricType::Pointer metric = PointSetMetricType::New();
   metric->SetStretchWeight(1);
   metric->SetBendWeight(5);
@@ -223,16 +227,17 @@ int itkThinShellDemonsTestv4_Affine( int args, char **argv)
   TransformType::Pointer tx = registration->GetModifiableTransform();
   metric->SetTransform(tx);
   std::cout << "Solution Value= " << metric->GetValue() << std::endl;
-  for (unsigned int n = 0; n < movingMesh->GetNumberOfPoints(); n++)
+
+
+  for (PointIdentifier n = 0; n < movingMesh->GetNumberOfPoints(); n++)
   {
-    PointType txMovingPoint = tx->TransformPoint(movingMesh->GetPoint(n));
-    movingMesh->SetPoint(n, txMovingPoint);
+    movingMesh->SetPoint(n, tx->TransformPoint(movingMesh->GetPoint(n)));
   }
 
-  typedef itk::VTKPolyDataWriter<MeshType> WriterType;
   WriterType::Pointer writer = WriterType::New();
   writer->SetInput(movingMesh);
-  writer->SetFileName( "affineMovingMesh.vtk" );
-  writer->Write();
+  writer->SetFileName("affineMovingMesh.vtk");
+  writer->Update();
+
   return EXIT_SUCCESS;
 }

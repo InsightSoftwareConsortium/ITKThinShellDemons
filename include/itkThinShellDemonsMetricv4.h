@@ -19,13 +19,15 @@
 #define itkThinShellDemonsMetricv4_h
 
 #include "itkPointSetToPointSetMetricWithIndexv4.h"
-#include "itkMeshTovtkPolyData.h"
 
 #include <itkMesh.h>
+#include <itkQuadEdge.h>
+#include <itkQuadEdgeMesh.h>
+#include <itkQuadEdgeMeshExtendedTraits.h>
+#include <itkDiscreteGaussianCurvatureQuadEdgeMeshFilter.h>
 
-#include <vtkDataArray.h>
-#include <vtkPolyData.h>
-#include <vtkSmartPointer.h>
+#include "itkMeshFileWriter.h"
+#include "itkMeshFileReader.h"
 
 namespace itk
 {
@@ -94,6 +96,30 @@ public:
   static constexpr DimensionType MovingPointDimension = Superclass::MovingPointDimension;
 
   using VectorType = typename itk::Vector<double, PointType::Dimension>;
+
+  /* For the QE Mesh and to obtain the curvature using it */
+  using CoordType = float;
+  using QETraits = typename itk::QuadEdgeMeshExtendedTraits<CoordType, PointType::Dimension, 2, CoordType, CoordType, CoordType, bool, bool>;
+  using QEMeshType = typename itk::QuadEdgeMesh<CoordType, PointType::Dimension, QETraits>;
+  using QEMeshTypePointer = typename QEMeshType::Pointer;
+  using QEPointsContainerPointer = typename QEMeshType::PointsContainerPointer;
+
+  using MeshType = TFixedMesh;
+  using MeshTypePointer = typename MeshType::Pointer;
+  using MeshCellType = typename MeshType::CellType;
+  using MeshCellPointIdConstIterator = typename MeshCellType::PointIdConstIterator;
+  using MeshCellAutoPointer = typename MeshCellType::CellAutoPointer;
+  using MeshTriangleCellType = itk::TriangleCell<MeshCellType>;
+
+  using QEMeshPointType = typename QEMeshType::PointType;
+  using QECellType = typename QEMeshType::CellType;
+  using QECellAutoPointer = typename QECellType::SelfAutoPointer;
+  using QETriangleCellType = itk::TriangleCell<QECellType>;
+  
+  using CurvatureFilterType = typename itk::DiscreteGaussianCurvatureQuadEdgeMeshFilter<QEMeshType, QEMeshType>;
+  using CurvatureFilterTypePointer = typename CurvatureFilterType::Pointer;
+
+  using PointSetPointer = typename Superclass::FixedPointSetType::ConstPointer;
 
   void Initialize(void) override;
 
@@ -211,15 +237,19 @@ protected:
   void PrintSelf(std::ostream & os, Indent indent) const ITK_OVERRIDE;
 
 private:
-  typedef std::vector<vtkSmartPointer<vtkIdList>> NeighborhoodMap;
+  typedef std::vector<std::vector<PointIdentifier>> NeighborhoodMap;
   NeighborhoodMap neighborMap;
 
   typedef std::vector< std::vector<double> > EdgeLengthMap;
   EdgeLengthMap edgeLengthMap;
 
-  mutable vtkSmartPointer<vtkPolyData> movingVTKMesh;
-  mutable vtkSmartPointer<vtkPolyData> fixedVTKMesh;
-  mutable vtkSmartPointer<vtkDataArray> fixedCurvature;
+  mutable MeshTypePointer fixedITKMesh;
+  mutable MeshTypePointer movingITKMesh;
+  mutable QEMeshTypePointer fixedQEMesh;
+  mutable QEMeshTypePointer movingQEMesh;
+  mutable QEMeshTypePointer fixedCurvature;
+
+  CurvatureFilterTypePointer gaussian_curvature_filter;
 
   double m_StretchWeight;
   double m_BendWeight;
@@ -229,6 +259,7 @@ private:
   bool m_UpdateFeatureMatchingAtEachIteration;
   bool m_UseMaximalDistanceConfidenceSigma;
 
+  void FillPointAndCell(PointSetPointer &pointset, MeshTypePointer &currentITKMesh);
   double ComputeConfidenceValueAndDerivative(const VectorType &v,
                                              VectorType &derivative) const;
   void ComputeStretchAndBend(const PointIdentifier &index,
