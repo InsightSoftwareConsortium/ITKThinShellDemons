@@ -15,11 +15,11 @@ itk_module(ThinShellDemons
   ENABLE_SHARED
   COMPILE_DEPENDS
     ITKCommon
-	  ITKMesh
+    ITKMesh
     ITKIOMeshBase
-	  ITKRegistrationCommon
-	  ITKQuadEdgeMesh
-	  ITKQuadEdgeMeshFiltering
+    ITKRegistrationCommon
+    ITKQuadEdgeMesh
+    ITKQuadEdgeMeshFiltering
     ITKMetricsv4
     ITKRegistrationMethodsv4
     ITKOptimizersv4
