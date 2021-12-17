@@ -42,10 +42,7 @@ ThinShellDemonsMetricv4< TFixedMesh, TMovingMesh, TInternalComputationValueType 
   
   fixedITKMesh = nullptr;
   movingITKMesh = nullptr;
-  fixedQEMesh = nullptr;
-  movingQEMesh = nullptr;
   fixedCurvature = nullptr;
-
 }
 
 /* Set the points and cells for the mesh */
@@ -114,8 +111,6 @@ ThinShellDemonsMetricv4< TFixedMesh, TMovingMesh, TInternalComputationValueType 
 
   this->fixedITKMesh = MeshType::New();
   this->movingITKMesh = MeshType::New();
-  this->fixedQEMesh = QEMeshType::New();
-  this->movingQEMesh = QEMeshType::New();
 
   /* fill points and cells in fixed mesh */
   FillPointAndCell(this->m_FixedPointSet, this->fixedITKMesh);
@@ -126,7 +121,7 @@ ThinShellDemonsMetricv4< TFixedMesh, TMovingMesh, TInternalComputationValueType 
   this->fixedITKMesh->BuildCellLinks();
   this->movingITKMesh->BuildCellLinks();
   
-  this->gaussian_curvature_filter = CurvatureFilterType::New();
+  this->curvature_filter = CurvatureFilterType::New();
 
   /* Compute Neighbors which will be used to calculate the stretch and bend energy*/
   this->ComputeNeighbors();
@@ -299,7 +294,7 @@ ThinShellDemonsMetricv4< TFixedMesh, TMovingMesh, TInternalComputationValueType 
   VectorType direction = closestPoint - point;
   double dist = direction.GetSquaredNorm();
   double confidence = 1;
-  VectorType confidenceDerivative;
+  VectorType confidenceDerivative{};
   if(this->m_UseConfidenceWeighting)
     {
     confidence = this->ComputeConfidenceValueAndDerivative(direction, confidenceDerivative);
@@ -336,8 +331,7 @@ typename ThinShellDemonsMetricv4< TFixedMesh, TMovingMesh, TInternalComputationV
 ThinShellDemonsMetricv4< TFixedMesh, TMovingMesh, TInternalComputationValueType >
 ::GenerateFeaturePointSets(bool fixed) const
 {
-  MeshTypePointer VMesh;
-  QEMeshTypePointer qeMesh;
+  MeshTypePointer currentMesh;
 
   //Update meshes according to current transforms
   if(fixed)
@@ -345,51 +339,26 @@ ThinShellDemonsMetricv4< TFixedMesh, TMovingMesh, TInternalComputationValueType 
     for(PointIdentifier i=0; i<this->m_FixedTransformedPointSet->GetNumberOfPoints(); i++ )
       {
       PointType data1 = this->m_FixedTransformedPointSet->GetPoint(i);
-      fixedQEMesh->SetPoint(i, data1);
+      fixedITKMesh->SetPoint(i, data1);
     }
 
-    VMesh = fixedITKMesh;
-    qeMesh = fixedQEMesh;
+    currentMesh = fixedITKMesh;
   }
   else
   {
     for (PointIdentifier i = 0; i < this->m_MovingTransformedPointSet->GetNumberOfPoints(); i++)
     {
       PointType data1 = this->m_MovingTransformedPointSet->GetPoint(i);
-      movingQEMesh->SetPoint(i, data1);
+      movingITKMesh->SetPoint(i, data1);
     }
 
-    VMesh = movingITKMesh;
-    qeMesh = movingQEMesh;
+    currentMesh = movingITKMesh;
   }
-  
-  /* Make the cells in the QE Mesh for the first time only */
-  if (qeMesh->GetNumberOfCells() == 0)
-  {
-    for (unsigned int n = 0; n < VMesh->GetNumberOfCells(); n++)
-    {
-      MeshCellAutoPointer tri_cell;
-      VMesh->GetCell(n, tri_cell);
 
-      /* Creating a QE Cell from the Triangle Cell and inserting it into the QEMesh */
-      auto * triangleCell = new QETriangleCellType;
-      QECellAutoPointer qe_cell;
-
-      itk::Array<float> point_ids = tri_cell->GetPointIdsContainer();
-      for (unsigned int k = 0; k < 3; ++k)
-      {
-        triangleCell->SetPointId(k, point_ids[k]);
-      }
-      
-      qe_cell.TakeOwnership(triangleCell);
-      qeMesh->SetCell(n, qe_cell);
-    }
-  }
-  
-  QEMeshTypePointer curvature_output;
-  gaussian_curvature_filter->SetInput(qeMesh);
-  gaussian_curvature_filter->Update();
-  curvature_output = gaussian_curvature_filter->GetOutput();
+  curvature_filter->SetTriangleMesh(currentMesh);
+  curvature_filter->SetCurvatureTypeToGaussian();
+  curvature_filter->Compute();
+  auto curvature_output = curvature_filter->GetGaussCurvatureData();
   
   FeaturePointSetPointer        features = FeaturePointSetType::New();
 
@@ -397,16 +366,23 @@ ThinShellDemonsMetricv4< TFixedMesh, TMovingMesh, TInternalComputationValueType 
     {
       /* Instantiate first time and re-use it for later iterations */
       if(!this->fixedCurvature){
-        this->fixedCurvature = QEMeshType::New();
+        this->fixedCurvature = MeshType::New();
+        PointDataContainerPointer pointData = PointDataContainer::New();
+        pointData->Reserve(currentMesh->GetNumberOfPoints());
+        this->fixedCurvature->SetPointData(pointData);
       }
-     this->fixedCurvature->SetPointData(curvature_output->GetPointData());
+
+      for (PointIdentifier i = 0; i < currentMesh->GetNumberOfPoints(); i++)
+      {
+        this->fixedCurvature->SetPointData(i, curvature_output->GetElement(i));
+      }
     }
   else
     {
     auto fPoints = features->GetPoints();
-    for (PointIdentifier i = 0; i < qeMesh->GetNumberOfPoints(); i++)
+    for (PointIdentifier i = 0; i < currentMesh->GetNumberOfPoints(); i++)
     {
-      FeaturePointType point = this->GetFeaturePoint(qeMesh->GetPoint(i), curvature_output->GetPointData()->ElementAt(i));
+      FeaturePointType point = this->GetFeaturePoint(currentMesh->GetPoint(i), curvature_output->GetElement(i));
       fPoints->InsertElement(i, point);
     }
   }
