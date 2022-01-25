@@ -71,7 +71,7 @@ int itkThinShellDemonsTestv4_Affine( int args, char *argv [])
   using ReaderType = itk::MeshFileReader<MeshType>;
   using WriterType = itk::MeshFileWriter<MeshType>;
 
-  unsigned int numberOfIterations = 100;
+  unsigned int numberOfIterations = 50;
 
   /*
   Initialize fixed mesh polydata reader
@@ -192,7 +192,7 @@ int itkThinShellDemonsTestv4_Affine( int args, char *argv [])
 */
   typedef itk::ConjugateGradientLineSearchOptimizerv4 OptimizerType;
   OptimizerType::Pointer optimizer = OptimizerType::New();
-  optimizer->SetNumberOfIterations( 50 );
+  optimizer->SetNumberOfIterations( numberOfIterations );
   optimizer->SetScalesEstimator( shiftScaleEstimator );
   optimizer->SetMaximumStepSizeInPhysicalUnits( 0.5 );
   optimizer->SetMinimumConvergenceValue( 0.0 );

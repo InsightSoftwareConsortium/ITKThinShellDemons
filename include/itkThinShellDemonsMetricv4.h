@@ -20,12 +20,8 @@
 
 #include "itkPointSetToPointSetMetricWithIndexv4.h"
 
-#include <itkMesh.h>
-#include <itkQuadEdge.h>
-#include <itkQuadEdgeMesh.h>
-#include <itkQuadEdgeMeshExtendedTraits.h>
-#include <itkDiscreteGaussianCurvatureQuadEdgeMeshFilter.h>
-
+#include "itkMesh.h"
+#include "itkTriangleMeshCurvatureCalculator.h"
 #include "itkMeshFileWriter.h"
 #include "itkMeshFileReader.h"
 
@@ -97,26 +93,17 @@ public:
 
   using VectorType = typename itk::Vector<double, PointType::Dimension>;
 
-  /* For the QE Mesh and to obtain the curvature using it */
   using CoordType = float;
-  using QETraits = typename itk::QuadEdgeMeshExtendedTraits<CoordType, PointType::Dimension, 2, CoordType, CoordType, CoordType, bool, bool>;
-  using QEMeshType = typename itk::QuadEdgeMesh<CoordType, PointType::Dimension, QETraits>;
-  using QEMeshTypePointer = typename QEMeshType::Pointer;
-  using QEPointsContainerPointer = typename QEMeshType::PointsContainerPointer;
-
   using MeshType = TFixedMesh;
   using MeshTypePointer = typename MeshType::Pointer;
   using MeshCellType = typename MeshType::CellType;
+  using PointDataContainer = typename MeshType::PointDataContainer;
+  using PointDataContainerPointer = typename PointDataContainer::Pointer;
   using MeshCellPointIdConstIterator = typename MeshCellType::PointIdConstIterator;
   using MeshCellAutoPointer = typename MeshCellType::CellAutoPointer;
   using MeshTriangleCellType = itk::TriangleCell<MeshCellType>;
 
-  using QEMeshPointType = typename QEMeshType::PointType;
-  using QECellType = typename QEMeshType::CellType;
-  using QECellAutoPointer = typename QECellType::SelfAutoPointer;
-  using QETriangleCellType = itk::TriangleCell<QECellType>;
-  
-  using CurvatureFilterType = typename itk::DiscreteGaussianCurvatureQuadEdgeMeshFilter<QEMeshType, QEMeshType>;
+  using CurvatureFilterType = typename itk::TriangleMeshCurvatureCalculator<MeshType>;
   using CurvatureFilterTypePointer = typename CurvatureFilterType::Pointer;
 
   using PointSetPointer = typename Superclass::FixedPointSetType::ConstPointer;
@@ -245,11 +232,9 @@ private:
 
   mutable MeshTypePointer fixedITKMesh;
   mutable MeshTypePointer movingITKMesh;
-  mutable QEMeshTypePointer fixedQEMesh;
-  mutable QEMeshTypePointer movingQEMesh;
-  mutable QEMeshTypePointer fixedCurvature;
+  mutable MeshTypePointer fixedCurvature;
 
-  CurvatureFilterTypePointer gaussian_curvature_filter;
+  CurvatureFilterTypePointer curvature_filter;
 
   double m_StretchWeight;
   double m_BendWeight;
