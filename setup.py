@@ -12,9 +12,9 @@ except ImportError:
 
 setup(
     name='itk-thinshelldemons',
-    version='0.1.0',
-    author='Samuel Gerber',
-    author_email='samuel.gerber@kitware.com',
+    version='0.1.1',
+    author='Pranjal Sahu',
+    author_email='pranjal.sahu@kitware.com',
     packages=['itk'],
     package_dir={'itk': 'itk'},
     download_url=r'https://github.com/InsightSoftwareConsortium/ITKThinShellDemons',
