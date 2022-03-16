@@ -11,16 +11,14 @@ This module implements the Thin Shell Demons regularization proposed in
 > MIUA 2015  
 
 
-There are two implementations of this approach available:
-1. (TSHDv4) An implementation taking advantage of the point set to point set registration
-   capabilities of the ITK v4 registration framework.
-2. (TSHD) An implementation started by Qingyu Zhao and updated to fix some remaining task
-   and run with ITK 5
 
 > :warning: **This module requires to be compiled against an ITK version with**  
 > - [PointSetToPointSetMetricWithIndexv4](https://github.com/InsightSoftwareConsortium/ITK/pull/2385)   
 > 
-> If you are compiling against an older version  use the ones inlcuded in this repository marked with h/hxx-unused (remove the -unused).
+
+<p align="center">
+<img src="https://user-images.githubusercontent.com/1044135/158479969-7313ed94-c5fb-4803-ae8d-2c0631893664.png" width="400" height="300">
+</p>
 
 ## V4 version (TSHDv4)
 
@@ -29,6 +27,11 @@ transformation can be combined with the thin shell regularization. For examples 
 1. [Affine](./test/itkThinShellDemonsTestv4_Affine.cxx)
 2. [DisplacementField](./test/itkThinShellDemonsTestv4_Displacement.cxx)
 3. [SyN Diffeomorphism](./test/itkThinShellDemonsTestv4_SyN.cxx)
+
+For Python samples please see:
+1. [Affine](./examples/test_tsd_affine.py)
+2. [DisplacementField](./examples/test_tsd_displacement.py)
+3. [SyN Diffeomorphism](./examples/test_tsd_syn.py)
 
 Please be aware that the regularization is implemented on the fixed mesh. This is due to the 
 nomenclature in of the moving transform being computed from fixed image to moving image. For 
@@ -40,63 +43,11 @@ register a point set it is the fixed point set that is transformed to the moving
 domain and it is computationally more efficient to regularize on the fixed mesh.
 
 
-## Original version (TSHD)
-
-This is an implementation that fits within the pre v4 ITK registration workflow.
-The implementation is not very generic at this point and miss details to be able
-to interact with other registration components in the ITK registration ecosystem.
-However, different optimizers can be used within this method.
-
-For an example see [ThinShellDemonsTest](./test/itkThinShellDemonsTest.cxx)
-
-The implementation has the followings components:
-
-1. Transformation (itkMeshDisplacementTransform)
-
-The class "MeshDisplacementTransformation" defines a finite dimensional vector
-space on mesh vertices. Its private member m_VectorField is a 1D parameter
-array in the form of [x_1,y_1,z_1,x_2,y_2,z_2,...], where the subscript denote
-the index of the vertex.  A mesh has to be initially associated with a transformation
-object to serve as a template. The template essentially designates the number of
-vertices, so that m_VectorField can be initialized and allocated with a correct
-size (# of vertices * 3)
-
-2. Metric (itkMeshToMeshMetric -> itkThinShellDemonsMetric)
-
-MeshToMeshMetric: This class is templated over the type of PointsetToPointsetMetric.
-This class serves as the basis for all kinds of mesh-to-mesh metrics (in some sense
-computing the similarity between two meshes). It expects a mesh-to-mesh transformation
-to be plugged in. This class computes an objective function value (also with its
-derivative w.r.t. the transformation parameters) that measures a registration
-metric between the fixed mesh and the moving mesh.
-
-ThinShellDemonsMetric: This Class inherits the basic MeshToMeshMetric. It expects a
-mesh-to-mesh transformaton to be plugged in. This class computes a metric value, which
-is a combination of geometric feature matching quality and the Thin Shell deformation
-Energy. This metric computation part (objective function) is the core of the Thin Shell
-Demons algorithm. When initializing a metric object of this class with two meshes,
-the metric object first pre-computes geometric feature matching between the two meshes.
-~~The matching results stay the same during the optimization process~~. *This was changed
-to be updated during optimization and curvature matching was implemented.*
-
-3. Optimizer
-
-Different thin shell energy approximation leads to different objective function
-formulations, thereby requiring different optimizers. The current objective
-function adopts a quadratic form. Therefore, Conjugate Gradient or LBFGS is a
-preferable optimizer.
-
-4. Registration Method (itkMeshToMeshRegistrationMethod)
-
-This class is templated over the point set to pointset registration method. Users
-will create an object of this class to perform Thin Shell Demons. See the test
-example for usage.
-
-
 ## Requirements
 
-Compile against ITK with ITKVtkGlue module built.
+Compile against ITK.
 
 ## Authors
 Qingyu Zhao (original version)  
-Samuel Gerber (v4 version and updates to original)
+Samuel Gerber (v4 version and updates to original)  
+Pranjal Sahu

@@ -22,7 +22,6 @@ import numpy as np
 import itk
 import math
 
-
 fixedMesh = itk.meshread('../test/Baseline/fixedMesh.vtk', itk.D)
 movingMesh = itk.meshread('../test/Baseline/movingMesh.vtk', itk.D)
 
@@ -52,7 +51,7 @@ bounding_box.ComputeBoundingBox()
 minBounds = np.array(bounding_box.GetMinimum())
 maxBounds = np.array(bounding_box.GetMaximum())
 
-imageDiagonal = 100
+imageDiagonal = 200
 spacing = np.sqrt(bounding_box.GetDiagonalLength2()) / imageDiagonal
 diff = maxBounds - minBounds
 
@@ -77,43 +76,17 @@ fixedImage.SetDirection( fixedImageDirection )
 fixedImage.SetSpacing( fixedImageSpacing )
 fixedImage.Allocate()
 
-VectorType = itk.Vector[itk.D, Dimension]
-zeroVector = VectorType()
-zeroVector.Fill(0)
 
-DisplacementFieldType = itk.Image[VectorType, Dimension]
-
-displacementField = DisplacementFieldType.New()
-displacementField.CopyInformation(fixedImage)
-displacementField.SetRegions(fixedImage.GetBufferedRegion())
-displacementField.Allocate()
-displacementField.FillBuffer(zeroVector)
-
-inverseDisplacementField = DisplacementFieldType.New()
-inverseDisplacementField.CopyInformation(fixedImage)
-inverseDisplacementField.SetRegions(fixedImage.GetBufferedRegion())
-inverseDisplacementField.Allocate()
-inverseDisplacementField.FillBuffer(zeroVector)
-
+# Displacement Transform Object
 TransformType = itk.DisplacementFieldTransform[itk.D, Dimension]
-
-DisplacementFieldRegistrationType = itk.SyNImageRegistrationMethod[FixedImageType, MovingImageType,
-            TransformType, FixedImageType, MeshType]
-registration  = DisplacementFieldRegistrationType.New()
-
-OutputTransformType = TransformType
-outputTransform = OutputTransformType.New()
-outputTransform.SetDisplacementField(displacementField)
-outputTransform.SetInverseDisplacementField(inverseDisplacementField)
-registration.SetInitialTransform(outputTransform)
-registration.InPlaceOn()
-
-
-# Affine Transform Object
-AffineTransformType = itk.AffineTransform.D3
-transform = AffineTransformType.New()
-transform.SetIdentity()
-transform.SetCenter(minBounds + (maxBounds - minBounds)/2)
+transform = TransformType.New()
+field = itk.Image[itk.Vector[itk.D, Dimension], Dimension].New()
+field.SetRegions( fixedImageSize )
+field.SetOrigin( fixedImageOrigin )
+field.SetDirection( fixedImageDirection )
+field.SetSpacing( fixedImageSpacing )
+field.Allocate()
+transform.SetDisplacementField(field)
 
 print('Transform Created')
 print(transform)
@@ -126,7 +99,7 @@ metric.SetBendWeight(5)
 metric.SetGeometricFeatureWeight(10)
 metric.UseConfidenceWeightingOn()
 metric.UseMaximalDistanceConfidenceSigmaOn()
-metric.UpdateFeatureMatchingAtEachIterationOff()
+metric.UpdateFeatureMatchingAtEachIterationOn()
 metric.SetMovingTransform(transform)
 # Reversed due to using points instead of an image
 # to keep semantics the same as in itkThinShellDemonsTest.cxx
@@ -138,41 +111,48 @@ metric.Initialize()
 
 print('TSD Metric Created')
 
-varianceForUpdateField = spacing*spacing*25
-varianceForTotalField = 0.0
-registration.SetGaussianSmoothingVarianceForTheUpdateField(varianceForUpdateField)
-registration.SetGaussianSmoothingVarianceForTheTotalField(varianceForTotalField)
+shiftScaleEstimator = itk.RegistrationParameterScalesFromPhysicalShift[MetricType].New()
+shiftScaleEstimator.SetMetric(metric)
+shiftScaleEstimator.SetVirtualDomainPointSet(metric.GetVirtualTransformedPointSet())
+
+
+optimizer = itk.ConjugateGradientLineSearchOptimizerv4Template[itk.D].New()
+optimizer.SetNumberOfIterations( 50 )
+optimizer.SetScalesEstimator( shiftScaleEstimator )
+optimizer.SetMaximumStepSizeInPhysicalUnits( 0.5 )
+optimizer.SetMinimumConvergenceValue( 0.0 )
+optimizer.SetConvergenceWindowSize( 10 )
+
+def iteration_update():
+    metric_value = optimizer.GetValue()
+    current_parameters = optimizer.GetCurrentPosition()
+    current_iteration = optimizer.GetCurrentIteration()
+    print(f"It: {current_iteration} Metric: {metric_value:.8g}")
+
+iteration_command = itk.PyCommand.New()
+iteration_command.SetCommandCallable(iteration_update)
+optimizer.AddObserver(itk.IterationEvent(), iteration_command)
+
+print('Optimizer created')
+
+
+AffineRegistrationType = itk.ImageRegistrationMethodv4.REGv4D3D3TD3D3MD3.New()
+registration = AffineRegistrationType.New()
+registration.SetNumberOfLevels(1)
+registration.SetObjectName("registration")
 registration.SetFixedPointSet(movingMesh)
 registration.SetMovingPointSet(fixedMesh)
-registration.SetMovingInitialTransform(transform)
+registration.SetInitialTransform(transform)
 registration.SetMetric(metric)
+registration.SetOptimizer(optimizer)
 
-
-numberOfLevels = 3
-registration.SetNumberOfLevels(numberOfLevels)
-numberOfIterationsPerLevel = itk.Array[itk.UI]()
-numberOfIterationsPerLevel.SetSize(numberOfLevels)
-numberOfIterationsPerLevel[0] = 5
-numberOfIterationsPerLevel[1] = 10
-numberOfIterationsPerLevel[2] = 50
-registration.SetNumberOfIterationsPerLevel(numberOfIterationsPerLevel)
-
-shrinkFactorsPerLevel  = itk.Array[itk.UI]()
-shrinkFactorsPerLevel.SetSize(numberOfLevels)
-shrinkFactorsPerLevel.Fill(1)
-
-smoothingSigmasPerLevel = itk.Array[itk.UI]()
-smoothingSigmasPerLevel.SetSize(numberOfLevels)
-smoothingSigmasPerLevel.Fill(0)
-
-registration.SetShrinkFactorsPerLevel(shrinkFactorsPerLevel)
-registration.SetSmoothingSigmasPerLevel(smoothingSigmasPerLevel)
-
+print('Registration Object created')
 print('Initial Value of Metric ', metric.GetValue())
+
 try:
     registration.Update()
-except:
-    print('Error Occured')
+except e:
+    print('Error is ', e)
 
 print('Final Value of Metric ', metric.GetValue())
 
@@ -181,4 +161,4 @@ numberOfPoints = movingMesh.GetNumberOfPoints()
 for n in range(0, numberOfPoints):
     movingMesh.SetPoint(n, finalTransform.TransformPoint(movingMesh.GetPoint(n)))
 
-itk.meshwrite(movingMesh, "synMovingMesh.vtk")
+itk.meshwrite(movingMesh, "displacedMovingMesh.vtk")
