@@ -23,7 +23,7 @@ This module implements the Thin Shell Demons regularization proposed in
 ## V4 version (TSHDv4)
 
 The v4 version is implemented in ThinShellDemonsMetricv4. With this approach different
-transformation can be combined with the thin shell regularization. For examples see:
+transformation can be combined with the thin shell regularization. For C++ examples see:
 1. [Affine](./test/itkThinShellDemonsTestv4_Affine.cxx)
 2. [DisplacementField](./test/itkThinShellDemonsTestv4_Displacement.cxx)
 3. [SyN Diffeomorphism](./test/itkThinShellDemonsTestv4_SyN.cxx)
@@ -32,6 +32,7 @@ For Python samples please see:
 1. [Affine](./examples/test_tsd_affine.py)
 2. [DisplacementField](./examples/test_tsd_displacement.py)
 3. [SyN Diffeomorphism](./examples/test_tsd_syn.py)
+4. [BSpline](./examples/test_tsd_bspline.ipynb)
 
 Please be aware that the regularization is implemented on the fixed mesh. This is due to the 
 nomenclature in of the moving transform being computed from fixed image to moving image. For 
