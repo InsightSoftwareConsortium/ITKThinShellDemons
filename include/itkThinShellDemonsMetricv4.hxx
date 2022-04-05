@@ -253,8 +253,11 @@ ThinShellDemonsMetricv4< TFixedMesh, TMovingMesh, TInternalComputationValueType 
     bend += dx * (degree * 4 / (degree+nDegree));
     }
 
-  bendEnergy = bEnergy.GetSquaredNorm() / degree;
-  stretchEnergy /= degree;
+  if (degree > 0)
+  {
+    bendEnergy = bEnergy.GetSquaredNorm() / degree;
+    stretchEnergy /= degree;
+  }
 }
 
 /* Function definition of the original method definition in itkPointSetToPointSetMetric*/
