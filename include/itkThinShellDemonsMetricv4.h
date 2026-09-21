@@ -221,7 +221,7 @@ protected:
     return false;
   };
 
-  void PrintSelf(std::ostream & os, Indent indent) const ITK_OVERRIDE;
+  void PrintSelf(std::ostream & os, Indent indent) const override;
 
 private:
   typedef std::vector<std::vector<PointIdentifier>> NeighborhoodMap;
