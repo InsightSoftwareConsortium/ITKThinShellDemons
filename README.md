@@ -11,11 +11,6 @@ This module implements the Thin Shell Demons regularization proposed in
 > MIUA 2015  
 
 
-
-> :warning: **This module requires to be compiled against an ITK version with**  
-> - [PointSetToPointSetMetricWithIndexv4](https://github.com/InsightSoftwareConsortium/ITK/pull/2385)   
-> 
-
 <p align="center">
 <img src="https://user-images.githubusercontent.com/1044135/158479969-7313ed94-c5fb-4803-ae8d-2c0631893664.png" width="400" height="300">
 </p>

@@ -32,12 +32,13 @@
  * to comnine the thin shell regularization with for
  * example the SyN diffeomoprhic transformations.
  */
-int itkThinShellDemonsTestv4_SyN( int args, char *argv [])
+int
+itkThinShellDemonsTestv4_SyN(int args, char * argv[])
 {
   const unsigned int Dimension = 3;
   using MeshType = itk::Mesh<double, Dimension>;
   using PointsContainerPointer = MeshType::PointsContainerPointer;
-  
+
   using ReaderType = itk::MeshFileReader<MeshType>;
   using WriterType = itk::MeshFileWriter<MeshType>;
 
@@ -50,7 +51,7 @@ int itkThinShellDemonsTestv4_SyN( int args, char *argv [])
   {
     fixedPolyDataReader->Update();
   }
-  catch( itk::ExceptionObject & excp )
+  catch (itk::ExceptionObject & excp)
   {
     std::cerr << "Error during Fixed Mesh Update() " << std::endl;
     std::cerr << excp << std::endl;
@@ -61,13 +62,13 @@ int itkThinShellDemonsTestv4_SyN( int args, char *argv [])
   /*
   Initialize moving mesh polydata reader
   */
-  ReaderType::Pointer  movingPolyDataReader = ReaderType::New();
+  ReaderType::Pointer movingPolyDataReader = ReaderType::New();
   movingPolyDataReader->SetFileName(argv[2]);
   try
   {
     movingPolyDataReader->Update();
   }
-  catch( itk::ExceptionObject & excp )
+  catch (itk::ExceptionObject & excp)
   {
     std::cerr << "Error during Moving Mesh Update() " << std::endl;
     std::cerr << excp << std::endl;
@@ -84,37 +85,37 @@ int itkThinShellDemonsTestv4_SyN( int args, char *argv [])
   using MovingImageType = itk::Image<PixelType, Dimension>;
 
 
-  FixedImageType::SizeType fixedImageSize;
-  FixedImageType::PointType fixedImageOrigin;
+  FixedImageType::SizeType      fixedImageSize;
+  FixedImageType::PointType     fixedImageOrigin;
   FixedImageType::DirectionType fixedImageDirection;
-  FixedImageType::SpacingType fixedImageSpacing;
+  FixedImageType::SpacingType   fixedImageSpacing;
 
   using PointIdentifier = MeshType::PointIdentifier;
   using BoundingBoxType = itk::BoundingBox<PointIdentifier, Dimension>;
   BoundingBoxType::Pointer boundingBox = BoundingBoxType::New();
-  PointsContainerPointer points = movingMesh->GetPoints();
+  PointsContainerPointer   points = movingMesh->GetPoints();
   boundingBox->SetPoints(points);
   boundingBox->ComputeBoundingBox();
   typename BoundingBoxType::PointType minBounds = boundingBox->GetMinimum();
   typename BoundingBoxType::PointType maxBounds = boundingBox->GetMaximum();
 
-  int imageDiagonal = 100;
+  int    imageDiagonal = 100;
   double spacing = sqrt(boundingBox->GetDiagonalLength2()) / imageDiagonal;
-  auto diff = maxBounds - minBounds;
-  fixedImageSize[0] = ceil( 1.2 * diff[0] / spacing );
-  fixedImageSize[1] = ceil( 1.2 * diff[1] / spacing );
-  fixedImageSize[2] = ceil( 1.2 * diff[2] / spacing );
-  fixedImageOrigin[0] = minBounds[0] - 0.1*diff[0];
-  fixedImageOrigin[1] = minBounds[1] - 0.1*diff[1];
-  fixedImageOrigin[2] = minBounds[2] - 0.1*diff[2];
+  auto   diff = maxBounds - minBounds;
+  fixedImageSize[0] = ceil(1.2 * diff[0] / spacing);
+  fixedImageSize[1] = ceil(1.2 * diff[1] / spacing);
+  fixedImageSize[2] = ceil(1.2 * diff[2] / spacing);
+  fixedImageOrigin[0] = minBounds[0] - 0.1 * diff[0];
+  fixedImageOrigin[1] = minBounds[1] - 0.1 * diff[1];
+  fixedImageOrigin[2] = minBounds[2] - 0.1 * diff[2];
   fixedImageDirection.SetIdentity();
-  fixedImageSpacing.Fill( spacing );
+  fixedImageSpacing.Fill(spacing);
 
   FixedImageType::Pointer fixedImage = FixedImageType::New();
-  fixedImage->SetRegions( fixedImageSize );
-  fixedImage->SetOrigin( fixedImageOrigin );
-  fixedImage->SetDirection( fixedImageDirection );
-  fixedImage->SetSpacing( fixedImageSpacing );
+  fixedImage->SetRegions(fixedImageSize);
+  fixedImage->SetOrigin(fixedImageOrigin);
+  fixedImage->SetDirection(fixedImageDirection);
+  fixedImage->SetSpacing(fixedImageSpacing);
   fixedImage->Allocate();
 
   using VectorType = itk::Vector<double, Dimension>;
@@ -136,10 +137,8 @@ int itkThinShellDemonsTestv4_SyN( int args, char *argv [])
   using TransformType = itk::DisplacementFieldTransform<double, Dimension>;
 
   using DisplacementFieldRegistrationType =
-    itk::SyNImageRegistrationMethod<FixedImageType, MovingImageType,
-                                    TransformType, FixedImageType, MeshType>;
-  DisplacementFieldRegistrationType::Pointer registration =
-    DisplacementFieldRegistrationType::New();
+    itk::SyNImageRegistrationMethod<FixedImageType, MovingImageType, TransformType, FixedImageType, MeshType>;
+  DisplacementFieldRegistrationType::Pointer registration = DisplacementFieldRegistrationType::New();
 
   using OutputTransformType = DisplacementFieldRegistrationType::OutputTransformType;
   OutputTransformType::Pointer outputTransform = OutputTransformType::New();
@@ -151,11 +150,11 @@ int itkThinShellDemonsTestv4_SyN( int args, char *argv [])
   using AffineTransformType = itk::AffineTransform<double, MeshType::PointDimension>;
   AffineTransformType::Pointer transform = AffineTransformType::New();
   transform->SetIdentity();
-/*
-  using PointSetMetricType = itk::EuclideanDistancePointSetToPointSetMetricv4<MeshType>;
-  PointSetMetricType::Pointer metric = PointSetMetricType::New();
-*/
-  using PointSetMetricType = itk::ThinShellDemonsMetricv4<MeshType, MeshType> ;
+  /*
+    using PointSetMetricType = itk::EuclideanDistancePointSetToPointSetMetricv4<MeshType>;
+    PointSetMetricType::Pointer metric = PointSetMetricType::New();
+  */
+  using PointSetMetricType = itk::ThinShellDemonsMetricv4<MeshType, MeshType>;
   PointSetMetricType::Pointer metric = PointSetMetricType::New();
   metric->SetStretchWeight(1);
   metric->SetBendWeight(5);
@@ -163,22 +162,20 @@ int itkThinShellDemonsTestv4_SyN( int args, char *argv [])
   metric->UseConfidenceWeightingOn();
   metric->UseMaximalDistanceConfidenceSigmaOn();
   metric->UpdateFeatureMatchingAtEachIterationOff();
-  metric->SetMovingTransform( transform );
-  //Reversed due to using points instead of an image
-  //to keep semantics the same as in itkThinShellDemonsTest.cxx
-  //For the ThinShellDemonsMetricv4 the fixed mesh is
-  //regularized
-  metric->SetFixedPointSet( movingMesh );
-  metric->SetMovingPointSet( fixedMesh );
-  metric->SetVirtualDomainFromImage( fixedImage );
+  metric->SetMovingTransform(transform);
+  // Reversed due to using points instead of an image
+  // to keep semantics the same as in itkThinShellDemonsTest.cxx
+  // For the ThinShellDemonsMetricv4 the fixed mesh is
+  // regularized
+  metric->SetFixedPointSet(movingMesh);
+  metric->SetMovingPointSet(fixedMesh);
+  metric->SetVirtualDomainFromImage(fixedImage);
   metric->Initialize();
 
-  double varianceForUpdateField = spacing*spacing*25;
+  double varianceForUpdateField = spacing * spacing * 25;
   double varianceForTotalField = 0.0;
-  registration->SetGaussianSmoothingVarianceForTheUpdateField(
-      varianceForUpdateField);
-  registration->SetGaussianSmoothingVarianceForTheTotalField(
-      varianceForTotalField);
+  registration->SetGaussianSmoothingVarianceForTheUpdateField(varianceForUpdateField);
+  registration->SetGaussianSmoothingVarianceForTheTotalField(varianceForTotalField);
   registration->SetFixedPointSet(movingMesh);
   registration->SetMovingPointSet(fixedMesh);
   registration->SetMovingInitialTransform(transform);
@@ -230,14 +227,14 @@ int itkThinShellDemonsTestv4_SyN( int args, char *argv [])
 
   std::cout << "Start Value= " << metric->GetValue() << std::endl;
   try
-    {
+  {
     registration->Update();
-    }
-  catch( itk::ExceptionObject &e )
-    {
+  }
+  catch (itk::ExceptionObject & e)
+  {
     std::cerr << "Exception caught: " << e << std::endl;
     return EXIT_FAILURE;
-    }
+  }
   std::cout << "Solution Value= " << metric->GetValue() << std::endl;
 
   OutputTransformType::Pointer tx = registration->GetModifiableTransform();
@@ -250,6 +247,6 @@ int itkThinShellDemonsTestv4_SyN( int args, char *argv [])
   writer->SetInput(movingMesh);
   writer->SetFileName("synMovingMesh.vtk");
   writer->Update();
-  
+
   return EXIT_SUCCESS;
 }
