@@ -55,20 +55,19 @@ namespace itk
  *
  * \ingroup ThinShellDemons
  */
-template< typename TFixedMesh, typename TMovingMesh = TFixedMesh,
-          class TInternalComputationValueType = double >
-class ITK_TEMPLATE_EXPORT ThinShellDemonsMetricv4:
-  public PointSetToPointSetMetricWithIndexv4< TFixedMesh, TMovingMesh, TInternalComputationValueType>
+template <typename TFixedMesh, typename TMovingMesh = TFixedMesh, class TInternalComputationValueType = double>
+class ITK_TEMPLATE_EXPORT ThinShellDemonsMetricv4
+  : public PointSetToPointSetMetricWithIndexv4<TFixedMesh, TMovingMesh, TInternalComputationValueType>
 {
 public:
   ITK_DISALLOW_COPY_AND_MOVE(ThinShellDemonsMetricv4);
 
   /** Standard class typedefs. */
-  typedef ThinShellDemonsMetricv4                                        Self;
-  typedef PointSetToPointSetMetricWithIndexv4< TFixedMesh, TMovingMesh > Superclass;
+  typedef ThinShellDemonsMetricv4                                      Self;
+  typedef PointSetToPointSetMetricWithIndexv4<TFixedMesh, TMovingMesh> Superclass;
 
-  typedef SmartPointer< Self >       Pointer;
-  typedef SmartPointer< const Self > ConstPointer;
+  typedef SmartPointer<Self>       Pointer;
+  typedef SmartPointer<const Self> ConstPointer;
 
   /** Method for creation through the object factory. */
   itkNewMacro(Self);
@@ -77,8 +76,8 @@ public:
   itkTypeMacro(ThinShellDemonsMetricv4, PointSetToPointSetMetricWithIndexv4);
 
   /** Types transferred from the base class. */
-  typedef typename Superclass::FixedPointSetType      FixedPointSetType;
-  typedef typename Superclass::MovingPointSetType     MovingPointSetType;
+  typedef typename Superclass::FixedPointSetType  FixedPointSetType;
+  typedef typename Superclass::MovingPointSetType MovingPointSetType;
 
   /** Types transferred from the base class */
   using MeasureType = typename Superclass::MeasureType;
@@ -108,16 +107,20 @@ public:
 
   using PointSetPointer = typename Superclass::FixedPointSetType::ConstPointer;
 
-  void Initialize(void) override;
+  void
+  Initialize(void) override;
 
   MeasureType
-  GetLocalNeighborhoodValueWithIndex(const PointIdentifier &, const PointType &,
-                            const PixelType & pixel = 0) const override;
+  GetLocalNeighborhoodValueWithIndex(const PointIdentifier &,
+                                     const PointType &,
+                                     const PixelType & pixel = 0) const override;
 
   void
-  GetLocalNeighborhoodValueAndDerivativeWithIndex(const PointIdentifier &, const PointType &,
-                                         MeasureType &, LocalDerivativeType &,
-                                         const PixelType & pixel = 0) const override;
+  GetLocalNeighborhoodValueAndDerivativeWithIndex(const PointIdentifier &,
+                                                  const PointType &,
+                                                  MeasureType &,
+                                                  LocalDerivativeType &,
+                                                  const PixelType & pixel = 0) const override;
 
   /**
    * Stretching penalty weight
@@ -139,7 +142,7 @@ public:
   itkSetMacro(GeometricFeatureWeight, double);
   itkGetConstReferenceMacro(GeometricFeatureWeight, double);
 
-   /**
+  /**
    * Update feature match at each iteration.
    *
    * When used in conjunction with UseConfidenceWeighting and
@@ -188,8 +191,8 @@ protected:
   ThinShellDemonsMetricv4();
   virtual ~ThinShellDemonsMetricv4() override = default;
 
-  //Create a points locator for feature matching
-  using FeaturePointSetType = PointSet< double, FixedPointDimension+1>;
+  // Create a points locator for feature matching
+  using FeaturePointSetType = PointSet<double, FixedPointDimension + 1>;
   using FeaturePointSetPointer = typename FeaturePointSetType::Pointer;
   using FeaturePointType = typename FeaturePointSetType::PointType;
   using FeaturePointsContainer = typename FeaturePointSetType::PointsContainer;
@@ -204,31 +207,36 @@ protected:
    *
    * Override to use geometric features
    */
-  virtual void InitializePointSets() const override;
-  void InitializeFeaturePointsLocators() const;
+  virtual void
+  InitializePointSets() const override;
+  void
+  InitializeFeaturePointsLocators() const;
 
   /**
    * This class uses it's own Points locators to
    * accomodate feature matching
    */
-  bool RequiresMovingPointsLocator() const override
+  bool
+  RequiresMovingPointsLocator() const override
   {
     return false;
   };
 
-  bool RequiresFixedPointsLocator() const override
+  bool
+  RequiresFixedPointsLocator() const override
   {
     return false;
   };
 
-  void PrintSelf(std::ostream & os, Indent indent) const override;
+  void
+  PrintSelf(std::ostream & os, Indent indent) const override;
 
 private:
   typedef std::vector<std::vector<PointIdentifier>> NeighborhoodMap;
-  NeighborhoodMap neighborMap;
+  NeighborhoodMap                                   neighborMap;
 
-  typedef std::vector< std::vector<double> > EdgeLengthMap;
-  EdgeLengthMap edgeLengthMap;
+  typedef std::vector<std::vector<double>> EdgeLengthMap;
+  EdgeLengthMap                            edgeLengthMap;
 
   mutable MeshTypePointer fixedITKMesh;
   mutable MeshTypePointer movingITKMesh;
@@ -236,35 +244,42 @@ private:
 
   CurvatureFilterTypePointer curvature_filter;
 
-  double m_StretchWeight;
-  double m_BendWeight;
-  double m_GeometricFeatureWeight;
+  double         m_StretchWeight;
+  double         m_BendWeight;
+  double         m_GeometricFeatureWeight;
   mutable double m_ConfidenceSigma;
-  bool m_UseConfidenceWeighting;
-  bool m_UpdateFeatureMatchingAtEachIteration;
-  bool m_UseMaximalDistanceConfidenceSigma;
+  bool           m_UseConfidenceWeighting;
+  bool           m_UpdateFeatureMatchingAtEachIteration;
+  bool           m_UseMaximalDistanceConfidenceSigma;
 
-  void FillPointAndCell(PointSetPointer &pointset, MeshTypePointer &currentITKMesh);
-  double ComputeConfidenceValueAndDerivative(const VectorType &v,
-                                             VectorType &derivative) const;
-  void ComputeStretchAndBend(const PointIdentifier &index,
-                             double &stretchEnergy,
-                             double &bendEnergy,
-                             VectorType &stretch,
-                             VectorType &bend) const;
-  void ComputeNeighbors();
-  void ComputeMaximalDistanceSigma() const;
-  FeaturePointType GetFeaturePoint(const double *v, const double &c) const;
-  FeaturePointType GetFeaturePoint(const PointType &v, const double &c) const;
-  VectorType GetMovingDirection(const PointIdentifier &identifier) const;
-  FeaturePointSetPointer GenerateFeaturePointSets(bool fixed) const;
-
+  void
+  FillPointAndCell(PointSetPointer & pointset, MeshTypePointer & currentITKMesh);
+  double
+  ComputeConfidenceValueAndDerivative(const VectorType & v, VectorType & derivative) const;
+  void
+  ComputeStretchAndBend(const PointIdentifier & index,
+                        double &                stretchEnergy,
+                        double &                bendEnergy,
+                        VectorType &            stretch,
+                        VectorType &            bend) const;
+  void
+  ComputeNeighbors();
+  void
+  ComputeMaximalDistanceSigma() const;
+  FeaturePointType
+  GetFeaturePoint(const double * v, const double & c) const;
+  FeaturePointType
+  GetFeaturePoint(const PointType & v, const double & c) const;
+  VectorType
+  GetMovingDirection(const PointIdentifier & identifier) const;
+  FeaturePointSetPointer
+  GenerateFeaturePointSets(bool fixed) const;
 };
 
 } // end namespace itk
 
 #ifndef ITK_MANUAL_INSTANTIATION
-#include "itkThinShellDemonsMetricv4.hxx"
+#  include "itkThinShellDemonsMetricv4.hxx"
 #endif
 
 #endif
